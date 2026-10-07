@@ -1,0 +1,74 @@
+{
+ "552be560-91ff-558c-a3f1-59113cae57bd": {
+  "name": "Sizing|Allocated (GB)",
+  "formula": "sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) / 1048576",
+  "description": "Sum of configured memory across the cluster's VMs. The one base figure with no native cluster metric. Note: powered-off VMs and templates still report configured memory, so treat this as an upper bound on what is really running.",
+  "unitId": "gb",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "ffe8d4b5-eb3a-5899-9d30-c3f17e06fea5": {
+  "name": "Sizing|Tierable of Used (GB)",
+  "formula": "((sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|consumed_average, depth=1}) - sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1})) / 2) / 1048576",
+  "description": "Cold memory currently backed in DRAM, halved for conservatism. Consumed minus active, in that order -- active is the working set within consumed.",
+  "unitId": "gb",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "17140d43-d897-5731-9c5e-03b6e0afb381": {
+  "name": "Sizing|Active of Allocated (%)",
+  "formula": "(sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2})) * 100",
+  "description": "Raw active as a share of allocated, with NO headroom factor applied, so the number means what its name says. Apply headroom in the classification, not here.",
+  "unitId": "percent",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "ba1a8cf7-0168-51e1-afbf-e8fcc6af5eb1": {
+  "name": "Sizing|Active of Consumed (%)",
+  "formula": "(sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|consumed_average, depth=1})) * 100",
+  "description": "Plausibility check on the whole exercise. Typical estates sit at 8-12%, nearer 15% where databases dominate. Outside 5-20% suspect the metric, not the workload.",
+  "unitId": "percent",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "c25ea9ee-44d4-55cf-bed3-8a991542d205": {
+  "name": "Sizing|TEST Fleet Active depth3 (GB)",
+  "formula": "sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=3}) / 1048576",
+  "description": "A/B TEST ONLY. Measured tree depth from vSphere World to HostSystem is 3.",
+  "unitId": "gb",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "vSphere World",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "32111908-6660-5ffe-8d42-1f3ef17b74f8": {
+  "name": "Sizing|TEST Fleet Active depth10 (GB)",
+  "formula": "sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=10}) / 1048576",
+  "description": "A/B TEST ONLY. The inherited content uses depth=10. If this one reports data and depth3 does not, depth means 'up to N'; if the reverse, it means 'exactly N'.",
+  "unitId": "gb",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "vSphere World",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ }
+}

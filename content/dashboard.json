@@ -1,0 +1,644 @@
+{
+ "entries": {
+  "resourceKind": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "internalId": "resourceKind:id:0_::_",
+    "adapterKindKey": "VMWARE"
+   },
+   {
+    "resourceKindKey": "HostSystem",
+    "internalId": "resourceKind:id:1_::_",
+    "adapterKindKey": "VMWARE"
+   },
+   {
+    "resourceKindKey": "VirtualMachine",
+    "internalId": "resourceKind:id:2_::_",
+    "adapterKindKey": "VMWARE"
+   }
+  ],
+  "resource": []
+ },
+ "dashboards": [
+  {
+   "id": "089a4b09-27fb-5213-9836-e9dd8f0e2639",
+   "name": "Memory Tiering Sizing - Clusters",
+   "description": "Sizing a vSphere estate for NVMe memory tiering, from metrics the vCenter adapter already collects.",
+   "userId": "00000000-0000-0000-0000-000000000000",
+   "lastUpdateUserId": "00000000-0000-0000-0000-000000000000",
+   "shared": true,
+   "hidden": false,
+   "disabled": false,
+   "locked": false,
+   "editAllowed": true,
+   "homeTab": false,
+   "rank": 0,
+   "creationTime": 0,
+   "lastUpdateTime": 0,
+   "importAttempts": 0,
+   "importComplete": true,
+   "autoswitchEnabled": false,
+   "columnCount": 0,
+   "columnProportion": "1",
+   "gridsterMaxColumns": 12,
+   "states": [],
+   "dashboardNavigations": {},
+   "widgets": [
+    {
+     "collapsed": false,
+     "id": "9f484e8b-405c-5198-873f-75e1c890c196",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 5,
+      "y": 1
+     },
+     "state": "",
+     "type": "TextDisplay",
+     "title": "How to read this",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "9f484e8b-405c-5198-873f-75e1c890c196",
+      "description": "",
+      "title": "How to read this",
+      "refreshContent": {
+       "refreshContent": false
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": true
+      },
+      "editorData": "<p style=\"color:#7f8c9a\"><b style=\"color:#9fb0c0;font-weight:bold\">Memory tiering sizing &mdash; sample.</b> Every tile below reads a metric the\nvCenter adapter already collects. <b style=\"color:#9fb0c0;font-weight:bold\">No super metrics are required for this dashboard</b>; if you\nimport <code style=\"color:#7f8c9a\">supermetric.json</code> as well, the derived figures become available for a second\nscreen.</p>\n<p style=\"color:#7f8c9a\"><b style=\"color:#9fb0c0;font-weight:bold\">This is a sizing tool, not a monitoring tool.</b> It answers <i style=\"color:#7f8c9a\">what hardware would this\nworkload need if it were tiered</i>. On a vSphere 8 estate there is no tiering to report, which\nis the point &mdash; the assessment happens before the upgrade.</p>\n<p style=\"color:#7f8c9a\"><b style=\"color:#9fb0c0;font-weight:bold\">Reading this on a cluster that already has tiering enabled?</b> Then\n<code style=\"color:#7f8c9a\">mem|host_provisioned</code> is <i style=\"color:#7f8c9a\">presented</i> memory &mdash; installed DRAM plus the NVMe\ntier &mdash; not installed DRAM. Measured on a tiered lab host: 639.4 GiB presented against a\n127.9 GiB DRAM tier, a 5.00&times; overstatement. Every tile labelled <i style=\"color:#7f8c9a\">presented memory</i>\nsays presented for that reason. On an untiered vSphere 8 host the two are the same number.</p>\n<p style=\"color:#7f8c9a\"><b style=\"color:#9fb0c0;font-weight:bold\">Tiles show the latest sample, not a peak.</b> Sizing must be done on business-cycle peaks,\nwhich need a View transformation rather than a dashboard tile. Treat these values as a shape\ncheck, not as the number on the quote.</p>",
+      "locationFile": "",
+      "locationUrl": "",
+      "viewModeHTML": true
+     },
+     "height": 0,
+     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+    },
+    {
+     "collapsed": false,
+     "id": "12e91473-e871-5c56-8fb8-e34d6a511bfa",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 4,
+      "y": 6
+     },
+     "state": "",
+     "type": "Scoreboard",
+     "title": "Cluster memory",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "12e91473-e871-5c56-8fb8-e34d6a511bfa",
+      "description": "",
+      "title": "Cluster memory",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": true
+      },
+      "metric": {
+       "mode": "resourceKind",
+       "resourceMetrics": [],
+       "resourceKindMetrics": [
+        {
+         "metricKey": "mem|host_provisioned",
+         "metricName": "Presented memory",
+         "isStringMetric": false,
+         "resourceKindId": "resourceKind:id:0_::_",
+         "resourceKindName": "ClusterComputeResource",
+         "colorMethod": 1,
+         "handleOldColoring": false,
+         "id": "extModel1-1",
+         "label": "Presented memory (KB)",
+         "yellowBound": null,
+         "orangeBound": null,
+         "redBound": null
+        },
+        {
+         "metricKey": "mem|consumed_average",
+         "metricName": "Consumed",
+         "isStringMetric": false,
+         "resourceKindId": "resourceKind:id:0_::_",
+         "resourceKindName": "ClusterComputeResource",
+         "colorMethod": 1,
+         "handleOldColoring": false,
+         "id": "extModel2-1",
+         "label": "Consumed (KB)",
+         "yellowBound": null,
+         "orangeBound": null,
+         "redBound": null
+        },
+        {
+         "metricKey": "mem|active_average",
+         "metricName": "Active",
+         "isStringMetric": false,
+         "resourceKindId": "resourceKind:id:0_::_",
+         "resourceKindName": "ClusterComputeResource",
+         "colorMethod": 1,
+         "handleOldColoring": false,
+         "id": "extModel3-1",
+         "label": "Active (KB)",
+         "yellowBound": null,
+         "orangeBound": null,
+         "redBound": null
+        }
+       ]
+      },
+      "resource": [],
+      "relationshipMode": {
+       "relationshipMode": 0
+      },
+      "depth": 1,
+      "resInteractionMode": null,
+      "visualTheme": 8,
+      "mode": {
+       "layoutMode": "fixedView"
+      },
+      "showResourceName": {
+       "showResourceName": true
+      },
+      "showMetricName": {
+       "showMetricName": true
+      },
+      "showMetricUnit": {
+       "showMetricUnit": true
+      },
+      "showDT": {
+       "showDT": false
+      },
+      "showSparkline": {
+       "showSparkline": true
+      },
+      "periodLength": null,
+      "maxCellCount": 100,
+      "oldMetricValues": false,
+      "roundDecimals": 1,
+      "valueSize": 24,
+      "labelSize": 12,
+      "boxHeight": null,
+      "boxColumns": 1,
+      "focusOnPercent": false,
+      "showPercentText": false,
+      "showRemaining": false,
+      "viewDetails": ""
+     },
+     "height": 0,
+     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+    },
+    {
+     "collapsed": false,
+     "id": "4bb14fb6-d90a-51b1-b6d5-970797a28463",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 7,
+      "y": 10
+     },
+     "state": "",
+     "type": "Heatmap",
+     "title": "Hosts: memory usage (%), sized by presented memory, grouped by cluster",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "4bb14fb6-d90a-51b1-b6d5-970797a28463",
+      "description": "",
+      "title": "Hosts: memory usage (%), sized by presented memory, grouped by cluster",
+      "refreshContent": {
+       "refreshContent": false
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": true
+      },
+      "mode": "all",
+      "depth": 10,
+      "resource": [],
+      "relationshipMode": {
+       "relationshipMode": [
+        1,
+        -1,
+        0
+       ]
+      },
+      "value": 0,
+      "viewDetails": "",
+      "configs": [
+       {
+        "id": "extModel1-1",
+        "name": "Hosts: memory usage (%), sized by presented memory, grouped by cluster",
+        "nameOrig": "Hosts: memory usage (%), sized by presented memory, grouped by cluster",
+        "nameLocalized": "Hosts: memory usage (%), sized by presented memory, grouped by cluster",
+        "resourceKind": "resourceKind:id:1_::_",
+        "colorBy": {
+         "metricKey": "mem|usage_average",
+         "value": "Memory usage (%)"
+        },
+        "sizeBy": {
+         "metricKey": "mem|host_provisioned",
+         "value": "Presented memory"
+        },
+        "attributeKind": {
+         "value": ""
+        },
+        "customFilter": {
+         "filter": [],
+         "excludedResources": null,
+         "includedResources": null
+        },
+        "groupBy": {
+         "resourceKind": "ClusterComputeResource",
+         "adapterKind": "VMWARE",
+         "typeId": "resourceKind:id:0_::_",
+         "id": "004null002006VMWAREClusterComputeResource",
+         "text": "Cluster Compute Resource",
+         "type": "resourceKind",
+         "parentText": "vCenter",
+         "parentId": "VMWARE"
+        },
+        "thenBy": null,
+        "color": {
+         "thresholds": {
+          "values": [
+           0,
+           40,
+           80,
+           100
+          ],
+          "colors": [
+           "#5A5A5A",
+           "#67CA16",
+           "#FFDB24",
+           "#FF4D2E"
+          ]
+         }
+        },
+        "colorRange": {
+         "min": null,
+         "max": null
+        },
+        "filterMode": "tagPicker",
+        "focusOnGroups": true,
+        "relationalGrouping": false,
+        "solidColoring": false,
+        "mode": {
+         "mode": false
+        },
+        "config": {
+         "value": ""
+        }
+       }
+      ]
+     },
+     "height": 0,
+     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+    },
+    {
+     "collapsed": false,
+     "id": "5a6e2eaf-ddd0-511e-b58b-9d76e46e270d",
+     "gridsterCoords": {
+      "w": 6,
+      "x": 1,
+      "h": 7,
+      "y": 17
+     },
+     "state": "",
+     "type": "ParetoAnalysis",
+     "title": "Hosts by consumed memory",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "5a6e2eaf-ddd0-511e-b58b-9d76e46e270d",
+      "description": "",
+      "title": "Hosts by consumed memory",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": true
+      },
+      "resource": [],
+      "relationshipMode": {
+       "relationshipMode": [
+        -1,
+        0
+       ]
+      },
+      "mode": "all",
+      "filterMode": "tagPicker",
+      "tagFilter": null,
+      "depth": 10,
+      "filterOldMetrics": {
+       "filterOldMetrics": false
+      },
+      "topOption": "metricsHighestUtilization",
+      "barsCount": 15,
+      "roundDecimals": 1.0,
+      "regenerationTime": 15,
+      "percentileValue": null,
+      "metricName": "Consumed",
+      "metricUnit": {
+       "metricUnitId": -1,
+       "metricUnitName": "Auto"
+      },
+      "additionalColumns": [],
+      "metric": {
+       "metricKey": "mem|consumed_average",
+       "name": "Consumed"
+      },
+      "resourceKind": [
+       {
+        "id": "resourceKind:id:1_::_"
+       }
+      ]
+     },
+     "height": 0,
+     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+    },
+    {
+     "collapsed": false,
+     "id": "9024b22a-170e-5183-a415-17c5c90b4a20",
+     "gridsterCoords": {
+      "w": 6,
+      "x": 7,
+      "h": 7,
+      "y": 17
+     },
+     "state": "",
+     "type": "ParetoAnalysis",
+     "title": "Hosts by active memory",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "9024b22a-170e-5183-a415-17c5c90b4a20",
+      "description": "",
+      "title": "Hosts by active memory",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": true
+      },
+      "resource": [],
+      "relationshipMode": {
+       "relationshipMode": [
+        -1,
+        0
+       ]
+      },
+      "mode": "all",
+      "filterMode": "tagPicker",
+      "tagFilter": null,
+      "depth": 10,
+      "filterOldMetrics": {
+       "filterOldMetrics": false
+      },
+      "topOption": "metricsHighestUtilization",
+      "barsCount": 15,
+      "roundDecimals": 1.0,
+      "regenerationTime": 15,
+      "percentileValue": null,
+      "metricName": "Active",
+      "metricUnit": {
+       "metricUnitId": -1,
+       "metricUnitName": "Auto"
+      },
+      "additionalColumns": [],
+      "metric": {
+       "metricKey": "mem|active_average",
+       "name": "Active"
+      },
+      "resourceKind": [
+       {
+        "id": "resourceKind:id:1_::_"
+       }
+      ]
+     },
+     "height": 0,
+     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+    },
+    {
+     "collapsed": false,
+     "id": "d0ca3b81-719f-52ac-94f7-13f3e25ef015",
+     "gridsterCoords": {
+      "w": 6,
+      "x": 1,
+      "h": 7,
+      "y": 24
+     },
+     "state": "",
+     "type": "ParetoAnalysis",
+     "title": "VMs by configured memory (allocated)",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "d0ca3b81-719f-52ac-94f7-13f3e25ef015",
+      "description": "",
+      "title": "VMs by configured memory (allocated)",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": true
+      },
+      "resource": [],
+      "relationshipMode": {
+       "relationshipMode": [
+        -1,
+        0
+       ]
+      },
+      "mode": "all",
+      "filterMode": "tagPicker",
+      "tagFilter": null,
+      "depth": 10,
+      "filterOldMetrics": {
+       "filterOldMetrics": false
+      },
+      "topOption": "metricsHighestUtilization",
+      "barsCount": 25,
+      "roundDecimals": 1.0,
+      "regenerationTime": 15,
+      "percentileValue": null,
+      "metricName": "Configured",
+      "metricUnit": {
+       "metricUnitId": -1,
+       "metricUnitName": "Auto"
+      },
+      "additionalColumns": [],
+      "metric": {
+       "metricKey": "mem|guest_provisioned",
+       "name": "Configured"
+      },
+      "resourceKind": [
+       {
+        "id": "resourceKind:id:2_::_"
+       }
+      ]
+     },
+     "height": 0,
+     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+    },
+    {
+     "collapsed": false,
+     "id": "6ab63e5a-6b97-5ea4-90c0-ed5e6f063e77",
+     "gridsterCoords": {
+      "w": 6,
+      "x": 7,
+      "h": 7,
+      "y": 24
+     },
+     "state": "",
+     "type": "ParetoAnalysis",
+     "title": "VMs by active memory",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "6ab63e5a-6b97-5ea4-90c0-ed5e6f063e77",
+      "description": "",
+      "title": "VMs by active memory",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": true
+      },
+      "resource": [],
+      "relationshipMode": {
+       "relationshipMode": [
+        -1,
+        0
+       ]
+      },
+      "mode": "all",
+      "filterMode": "tagPicker",
+      "tagFilter": null,
+      "depth": 10,
+      "filterOldMetrics": {
+       "filterOldMetrics": false
+      },
+      "topOption": "metricsHighestUtilization",
+      "barsCount": 25,
+      "roundDecimals": 1.0,
+      "regenerationTime": 15,
+      "percentileValue": null,
+      "metricName": "Active",
+      "metricUnit": {
+       "metricUnitId": -1,
+       "metricUnitName": "Auto"
+      },
+      "additionalColumns": [],
+      "metric": {
+       "metricKey": "mem|active_average",
+       "name": "Active"
+      },
+      "resourceKind": [
+       {
+        "id": "resourceKind:id:2_::_"
+       }
+      ]
+     },
+     "height": 0,
+     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+    },
+    {
+     "collapsed": false,
+     "id": "8b03a2aa-b78e-566d-a899-9f56757d04b9",
+     "gridsterCoords": {
+      "w": 6,
+      "x": 1,
+      "h": 7,
+      "y": 31
+     },
+     "state": "",
+     "type": "ParetoAnalysis",
+     "title": "VMs by reserved memory (cannot be tiered)",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "8b03a2aa-b78e-566d-a899-9f56757d04b9",
+      "description": "",
+      "title": "VMs by reserved memory (cannot be tiered)",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": true
+      },
+      "resource": [],
+      "relationshipMode": {
+       "relationshipMode": [
+        -1,
+        0
+       ]
+      },
+      "mode": "all",
+      "filterMode": "tagPicker",
+      "tagFilter": null,
+      "depth": 10,
+      "filterOldMetrics": {
+       "filterOldMetrics": false
+      },
+      "topOption": "metricsHighestUtilization",
+      "barsCount": 25,
+      "roundDecimals": 1.0,
+      "regenerationTime": 15,
+      "percentileValue": null,
+      "metricName": "Reserved",
+      "metricUnit": {
+       "metricUnitId": -1,
+       "metricUnitName": "Auto"
+      },
+      "additionalColumns": [],
+      "metric": {
+       "metricKey": "mem|reservation_used",
+       "name": "Reserved"
+      },
+      "resourceKind": [
+       {
+        "id": "resourceKind:id:2_::_"
+       }
+      ]
+     },
+     "height": 0,
+     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+    }
+   ]
+  }
+ ],
+ "uuid": "6494a68a-fda1-5d8d-9527-e199f7aa1e79"
+}
