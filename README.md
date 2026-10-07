@@ -1,3 +1,22 @@
+> ## ⚠️ NOT RELEASED — nothing here has been through a successful install
+>
+> There are **no releases**, and there will not be one until a pak installs on an
+> instance that is not the author's own lab. Specifically, as of 2026-10-07:
+>
+> - **The `.pak` does not install.** Five builds. A pak without `<Kind>.conf` installs with a
+>   clean log and registers nothing; a pak with the `.conf` but no container image reference
+>   fails at *Applied Adapter*. See [Status](#status).
+> - **`install_content.py` has never been run end to end against a live instance.** Its wire
+>   format is verified offline against real artefacts, which is not the same thing.
+> - **The dashboard and super metrics are real** — every metric key was verified present and
+>   populated on a live 9.1.1 instance — but they have not been imported and looked at.
+>
+> Nothing in this repository is signed, attested, or built in public CI. The only assurance
+> offered is that you can read the source and regenerate the content yourself.
+>
+> Watch the [Releases](../../releases) page. An empty one is the honest signal that this is not
+> ready.
+
 # Memory Tiering Sizing for VCF Operations
 
 Dashboards and super metrics that size a vSphere estate for **VCF 9 NVMe memory tiering**,
