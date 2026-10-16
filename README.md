@@ -14,9 +14,18 @@
 > verification off unless the VMCA root is trusted). Unlike earlier builds this adapter does
 > collect: VM advanced parameters, VM options and ESXi advanced settings, as properties.
 >
-> **Opt clusters in** by tagging them `memtier-include` in vCenter. Only tagged clusters appear
-> in the fleet projection, so a cluster you are deferring is excluded from the total while
-> staying visible per-cluster.
+> **Opt clusters in** by tagging them `memtier-include` in vCenter. A cluster you are deferring
+> is then excluded from the fleet total while staying visible per-cluster.
+>
+> ### Known defect in v2.0.0 — the fleet total reads blank
+>
+> The four `MemTier Fleet *` super metrics in **v2.0.0 are bound to a resource kind that does
+> not exist** (`VMWARE/Environment`; group kinds belong to the `Container` adapter). They
+> import without error and then attach to nothing, so the opted-in fleet projection never
+> produces a value. **Per-cluster figures are unaffected.** Found and fixed in source on
+> 2026-10-16, on branch `agent/memtier-sizing`; not yet released, because a release here is
+> gated on a pak completing an install on an instance that is not the author's lab, and that
+> has still not happened. See `docs/` and the development repo's `LESSONS.md` §10.3.
 >
 > **Verified on VCF Operations 9.1.1**: content imports and resolves, every metric key present
 > on live objects, image pulls anonymously and matches the pinned digest.
@@ -27,8 +36,13 @@
 Dashboards and super metrics that size a vSphere estate for **VCF 9 NVMe memory tiering**,
 using only metrics the built-in vCenter adapter already collects.
 
-Built for **Aria Operations 8.18** and **VCF Operations 9.x**. No adapter, no container image,
-no registry, no collector — this is content, and it reads metrics that are already there.
+Built for **Aria Operations 8.18** and **VCF Operations 9.x**.
+
+The dashboards and super metrics read only metrics the built-in vCenter adapter already
+collects, so the sizing content stands on its own. From 2.0.0 the pak **also** ships a small
+read-only collector for the one thing vCenter does not expose — the per-VM settings that
+disqualify a workload from tiering. Configuring it is optional; without it the pinned columns
+read blank and every saving figure should be read as an upper bound.
 
 ---
 
