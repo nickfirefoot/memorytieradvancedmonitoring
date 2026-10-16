@@ -1,17 +1,26 @@
-> ## Released: [v1.4.1](../../releases/tag/v1.4.1)
+> ## Released: [v2.0.0](../../releases/tag/v2.0.0)
 >
-> `MemoryTieringSizing_1.4.1.pak` — 18 super metrics, 3 views, 1 dashboard.
-> Install through **Administration → Integrations → Repository → Add**, ticking both
-> *Install even if already installed* and *Ignore signature checking*. Unsigned installs must
-> be enabled once per instance under `https://<ops>/admin` → Administrator Settings →
-> Security Settings → **Activate Unsigned PAK Installation**.
+> `MemoryTierAdvanced_2.0.0.pak` — 29 super metrics, 3 views, **2 dashboards**, an opt-in
+> custom group, and an adapter that collects the tiering disqualifiers Operations cannot
+> otherwise see.
 >
-> **Then enable the super metrics in the active policy** — they arrive disabled however they
-> are imported, and until they are enabled every derived column reads no data.
+> **Install** — Administration → Integrations → Repository → Add, ticking both *Install even if
+> already installed* and *Ignore signature checking*. Unsigned installs must be enabled once per
+> instance at `https://<ops>/admin` → Administrator Settings → Security Settings.
+> **Then enable the super metrics in the active policy** — they arrive disabled however they are
+> imported.
 >
-> **Verified on VCF Operations 9.1.1**, where all 18 super metrics, 3 views and the dashboard
-> import and resolve, with every metric key confirmed present on live objects.
-> **Not yet verified on 8.18.** The pak is unsigned and is not built in public CI.
+> **Configure an adapter instance** (vCenter FQDN, a **read-only** account, certificate
+> verification off unless the VMCA root is trusted). Unlike earlier builds this adapter does
+> collect: VM advanced parameters, VM options and ESXi advanced settings, as properties.
+>
+> **Opt clusters in** by tagging them `memtier-include` in vCenter. Only tagged clusters appear
+> in the fleet projection, so a cluster you are deferring is excluded from the total while
+> staying visible per-cluster.
+>
+> **Verified on VCF Operations 9.1.1**: content imports and resolves, every metric key present
+> on live objects, image pulls anonymously and matches the pinned digest.
+> **Not yet verified on 8.18**, and the pak install itself is not yet proven end to end.
 
 # Memory Tiering Sizing for VCF Operations
 

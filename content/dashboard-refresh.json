@@ -1,0 +1,234 @@
+{
+ "entries": {
+  "resourceKind": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "internalId": "resourceKind:id:0_::_",
+    "adapterKindKey": "VMWARE"
+   },
+   {
+    "resourceKindKey": "HostSystem",
+    "internalId": "resourceKind:id:1_::_",
+    "adapterKindKey": "VMWARE"
+   },
+   {
+    "resourceKindKey": "VirtualMachine",
+    "internalId": "resourceKind:id:2_::_",
+    "adapterKindKey": "VMWARE"
+   }
+  ],
+  "resource": []
+ },
+ "dashboards": [
+  {
+   "id": "0e903b81-5596-5367-acd9-4453d8dbe985",
+   "name": "Memory Tier Advanced - Hardware Refresh",
+   "description": "Sizes replacement hosts: how much DRAM and NVMe to buy, and what tiering saves against an untiered refresh.",
+   "userId": "00000000-0000-0000-0000-000000000000",
+   "lastUpdateUserId": "00000000-0000-0000-0000-000000000000",
+   "shared": true,
+   "hidden": false,
+   "disabled": false,
+   "locked": false,
+   "editAllowed": true,
+   "homeTab": false,
+   "rank": 0,
+   "creationTime": 0,
+   "lastUpdateTime": 0,
+   "importAttempts": 0,
+   "importComplete": true,
+   "autoswitchEnabled": false,
+   "columnCount": 0,
+   "columnProportion": "1",
+   "gridsterMaxColumns": 12,
+   "states": [],
+   "dashboardNavigations": {},
+   "widgetInteractions": [
+    {
+     "widgetIdProvider": "c8a2e4af-117d-5efc-be43-b49dd4377853",
+     "type": "resourceId",
+     "widgetIdReceiver": "d8ec1029-57fd-5616-b087-86186fcea768"
+    },
+    {
+     "widgetIdProvider": "c8a2e4af-117d-5efc-be43-b49dd4377853",
+     "type": "resourceId",
+     "widgetIdReceiver": "af265b25-a92a-5853-a07c-d0cf9a8d2289"
+    }
+   ],
+   "widgets": [
+    {
+     "collapsed": false,
+     "id": "b27fac50-7c46-57a0-b776-5c899ebb88e8",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 7,
+      "y": 1
+     },
+     "state": "",
+     "type": "TextDisplay",
+     "title": "Sizing new hardware",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "b27fac50-7c46-57a0-b776-5c899ebb88e8",
+      "description": "",
+      "title": "Sizing new hardware",
+      "refreshContent": {
+       "refreshContent": false
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": true
+      },
+      "editorData": "<h3 style=\"color:#e8eaed;font-size:15px;margin:0 0 8px\">Hardware refresh &mdash; sizing new hosts</h3>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\">This screen answers <b style=\"color:#e8eaed\">how much RAM do we actually need to buy</b>. Installed DRAM\nis an <i>output</i> here: size presented memory to the workload, then split it DRAM/NVMe by the\nratio the workload can carry. The companion screen,\n<b style=\"color:#e8eaed\">Memory Tier Advanced &mdash; Clusters</b>, answers the other case: keeping the hosts you\nown and adding NVMe.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">Read these columns, in this order.</b>\n<b style=\"color:#e8eaed\">Allocated (powered on)</b> is what the new hosts must present &mdash; not the raw\nallocated figure, which counts powered-off VMs and templates. &middot;\n<b style=\"color:#e8eaed\">DRAM floor</b> is peak active: the least DRAM that holds the working set. &middot;\n<b style=\"color:#e8eaed\">DRAM conservative</b> is the planning number. &middot;\n<b style=\"color:#e8eaed\">RAM saved</b> is what you do not buy, versus an untiered refresh where every presented\nGB must be DRAM.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8b84b\">Subtract pinned memory before quoting anything.</b> <b style=\"color:#e8eaed\">Pinned GB</b> is\nmemory belonging to VMs that cannot be tiered at all &mdash; 1 GB pages, latency-sensitive,\nlocked reservations, PCI passthrough or vGPU, or fully reserved. That memory must be DRAM in\nany design, so the real saving is the saving column <i>less</i> the pinned column.\n<b style=\"color:#e8eaed\">Tierable GB</b> does that subtraction for you.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8b84b\">And check CPU before believing the memory answer.</b> New hosts sized on memory\nalone will be wrong if CPU binds first &mdash; compare <b style=\"color:#e8eaed\">CPU headroom %</b> against\n<b style=\"color:#e8eaed\">Active of host RAM %</b>. Ready time that is fixable by rightsizing frees CPU and moves\nthe constraint back to memory, which is where tiering pays.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\">Everything here reads the <b style=\"color:#e8eaed\">Maximum</b> over the dashboard time range, so set it\nto a full business cycle. A 24-hour window sizes a purchase off a quiet Tuesday.</p>",
+      "locationFile": "",
+      "locationUrl": "",
+      "viewModeHTML": true
+     },
+     "height": 0,
+     "tabId": "0e903b81-5596-5367-acd9-4453d8dbe985"
+    },
+    {
+     "collapsed": false,
+     "id": "c8a2e4af-117d-5efc-be43-b49dd4377853",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 11,
+      "y": 8
+     },
+     "state": "",
+     "type": "View",
+     "title": "Clusters to refresh",
+     "config": {
+      "refreshInterval": 400,
+      "widgetId": "c8a2e4af-117d-5efc-be43-b49dd4377853",
+      "description": "",
+      "title": "Clusters to refresh",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": true
+      },
+      "resource": {
+       "resourceId": "resource:id:0_::_",
+       "traversalSpecId": "",
+       "resourceName": "vSphere World",
+       "resourceKindId": "002006VMWAREvSphere World"
+      },
+      "traversalSpecId": null,
+      "isUpdatedView": true,
+      "viewDefinitionId": "662da61f-58e3-5ca2-8424-80b8fae3a9f3",
+      "titleLocalized": "Clusters to refresh",
+      "chartViewItems": [],
+      "selectFirstRow": {
+       "selectFirstRow": true
+      },
+      "viewDetails": ""
+     },
+     "height": 0,
+     "tabId": "0e903b81-5596-5367-acd9-4453d8dbe985"
+    },
+    {
+     "collapsed": false,
+     "id": "d8ec1029-57fd-5616-b087-86186fcea768",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 11,
+      "y": 19
+     },
+     "state": "",
+     "type": "View",
+     "title": "VMs in the selected cluster",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "d8ec1029-57fd-5616-b087-86186fcea768",
+      "description": "",
+      "title": "VMs in the selected cluster",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": false
+      },
+      "resource": null,
+      "traversalSpecId": "",
+      "isUpdatedView": true,
+      "viewDefinitionId": "91c85969-77f1-5f84-a26b-5f96c34afa00",
+      "titleLocalized": "VMs in the selected cluster",
+      "viewType": "LIST",
+      "chartViewItems": [],
+      "selectFirstRow": {
+       "selectFirstRow": false
+      },
+      "viewDetails": "",
+      "periodLength": "dashboardTime"
+     },
+     "height": 0,
+     "tabId": "0e903b81-5596-5367-acd9-4453d8dbe985"
+    },
+    {
+     "collapsed": false,
+     "id": "af265b25-a92a-5853-a07c-d0cf9a8d2289",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 9,
+      "y": 30
+     },
+     "state": "",
+     "type": "View",
+     "title": "Hosts in the selected cluster",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "af265b25-a92a-5853-a07c-d0cf9a8d2289",
+      "description": "",
+      "title": "Hosts in the selected cluster",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": false
+      },
+      "resource": null,
+      "traversalSpecId": "",
+      "isUpdatedView": true,
+      "viewDefinitionId": "54330058-ae23-54ad-bceb-618b0894a114",
+      "titleLocalized": "Hosts in the selected cluster",
+      "viewType": "LIST",
+      "chartViewItems": [],
+      "selectFirstRow": {
+       "selectFirstRow": false
+      },
+      "viewDetails": "",
+      "periodLength": "dashboardTime"
+     },
+     "height": 0,
+     "tabId": "0e903b81-5596-5367-acd9-4453d8dbe985"
+    }
+   ]
+  }
+ ],
+ "uuid": "1ede420b-fa44-5658-9055-5bc4e3161a84"
+}

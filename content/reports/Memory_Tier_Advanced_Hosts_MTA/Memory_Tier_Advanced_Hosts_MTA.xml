@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Content>
+    <Views>
+        <ViewDef id="54330058-ae23-54ad-bceb-618b0894a114">
+            <Title>Memory Tier Advanced Hosts [MTA]</Title>
+            <Description />
+            <SubjectType adapterKind="VMWARE" resourceKind="HostSystem" type="descendant" />
+            <SubjectType adapterKind="VMWARE" resourceKind="HostSystem" type="self" />
+            <Usage>dashboard</Usage>
+            <Usage>report</Usage>
+            <Usage>content</Usage>
+            <Controls>
+                <Control id="time-interval-selector_id_720" type="time-interval-selector" visible="false">
+                    <Property name="advancedTimeMode" value="false" />
+                    <Property name="unit" value="DAYS" />
+                    <Property name="count" value="7" />
+                </Control>
+                <Control id="attributes-selector_id_721" type="attributes-selector" visible="false">
+                    <Property name="attributeInfos">
+                        <List>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="config|name" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="HostSystem" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="CURRENT" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="true" />
+                                    <Property name="isProperty" value="true" />
+                                    <Property name="displayName" value="Host" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="mem|host_provisioned" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="HostSystem" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="CURRENT" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="Presented memory" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="mem|consumed_average" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="HostSystem" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="MAX" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="Consumed (max)" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="mem|active_average" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="HostSystem" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="MAX" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="Active (max)" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="mem|usage_average" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="HostSystem" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="MAX" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="Memory usage % (max)" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="cpu|usage_average" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="HostSystem" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="MAX" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="CPU util % (max)" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="cpu|usagemhz_average" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="HostSystem" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="MAX" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="CPU used MHz (max)" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="cpu|ready_summation" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="HostSystem" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="MAX" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="CPU ready ms (max)" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="cpu|iowait" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="HostSystem" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="MAX" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="CPU io wait (max)" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                        </List>
+                    </Property>
+                </Control>
+                <Control id="pagination-control_id_722" type="pagination-control" visible="true">
+                    <Property name="start" value="0" />
+                    <Property name="size" value="50" />
+                </Control>
+                <Control id="metadata_id_723" type="metadata" visible="false">
+                    <Property name="maxPointsCount" value="5000" />
+                    <Property name="hideObjectNameColumn" value="false" />
+                    <Property name="listTopResultSize" value="-1" />
+                </Control>
+            </Controls>
+            <DataProviders>
+                <DataProvider dataType="list-view" id="list-view_id_724" />
+            </DataProviders>
+            <Presentation type="list" />
+        </ViewDef>
+    </Views>
+</Content>

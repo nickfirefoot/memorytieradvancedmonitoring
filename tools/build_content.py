@@ -30,10 +30,22 @@ import zipfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "build")
 
-PREFIX = "Sizing"   # separator is a SPACE: a super metric name may not contain | or :
+PREFIX = "MemTier"   # separator is a SPACE: a super metric name may not contain | or :
 CONSERVATIVE_FACTOR = float(os.environ.get("MEMTIER_CONSERVATIVE_FACTOR", "4"))
 ADAPTER = "VMWARE"
 CLUSTER, HOST, VM, WORLD = "ClusterComputeResource", "HostSystem", "VirtualMachine", "vSphere World"
+DATACENTER = "Datacenter"
+# Our own adapter's kinds -- see adapter/app/adapter.py. They hang off the vCenter objects, so a
+# rollup reaches them from the cluster without caring which adapter produced them.
+MTA_ADAPTER, MTA_VM = "MemTierAdvanced", "MemTierAdvancedVM"
+
+# Clusters OPT IN to the fleet projection by carrying a vSphere tag. Opt-in rather than opt-out
+# is deliberate: nothing is projected that somebody did not choose, so a SQL cluster being
+# deferred is simply absent from the total while still visible in the per-cluster table.
+# `summary|tag` is collected per cluster by the vCenter adapter (verified on a live instance).
+OPT_IN_TAG = os.environ.get("MEMTIER_OPT_IN_TAG", "memtier-include")
+GROUP_NAME = "Memory Tier Advanced Candidates"
+GROUP_KIND, GROUP_ADAPTER = "Environment", "Container"
 
 # Resource kinds referenced by the dashboard, in the order their placeholder ids are assigned.
 KINDS = [CLUSTER, HOST, VM]
@@ -80,11 +92,11 @@ METRICS = {
 def sm_uuid(name):
     """Deterministic id from the metric name, so re-importing updates in place instead of
     leaving a second copy behind."""
-    return str(uuid.uuid5(uuid.NAMESPACE_URL, f"memtier-sizing/{name}"))
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, f"memtier-advanced/{name}"))
 
 
 def widget(wtype, title, y, x=1, w=12, h=6, config=None):
-    wid = str(uuid.uuid5(uuid.NAMESPACE_URL, f"memtier-sizing/widget/{title}"))
+    wid = str(uuid.uuid5(uuid.NAMESPACE_URL, f"memtier-advanced/widget/{title}"))
     cfg = {"refreshInterval": 300, "widgetId": wid, "description": "", "title": title,
            "refreshContent": {"refreshContent": True},
            "customFilter": {"filter": [], "excludedResources": None, "includedResources": None},
@@ -369,6 +381,20 @@ def view_receiver(title, view_guid, y, x=1, w=12, h=9):
         "selfProvider": {"selfProvider": False}, "periodLength": "dashboardTime"})
 
 
+def _interactions(widgets):
+    """One entry per receiver, from the one self-provider on the dashboard."""
+    def sp(w):
+        return w["config"].get("selfProvider", {}).get("selfProvider") is True
+    providers = [w for w in widgets if w["type"] == "View" and sp(w)]
+    receivers = [w for w in widgets if w["type"] == "View" and not sp(w)]
+    if not providers or not receivers:
+        return []
+    if len(providers) > 1:
+        raise ValueError(f"{len(providers)} self-providers on one dashboard; wiring is ambiguous")
+    return [{"widgetIdProvider": providers[0]["id"], "type": "resourceId",
+             "widgetIdReceiver": r["id"]} for r in receivers]
+
+
 def _wid(widgets, title):
     """Widget id by title. Raises rather than returning None, because a missing provider wires
     an interaction to nothing and the dashboard still imports cleanly."""
@@ -380,7 +406,7 @@ def _wid(widgets, title):
 
 def build_dashboard():
     bv, guids = _view_guids()
-    dash_id = str(uuid.uuid5(uuid.NAMESPACE_URL, "memtier-sizing/dashboard"))
+    dash_id = str(uuid.uuid5(uuid.NAMESPACE_URL, "memtier-advanced/dashboard"))
     widgets = [
         widget("TextDisplay", "How to read this", y=1, h=5, config={
             "editorData": HELP, "locationFile": "", "locationUrl": "",
@@ -407,6 +433,61 @@ def build_dashboard():
     ]
     for w in widgets:
         w["tabId"] = dash_id
+    return _envelope(dash_id, widgets, "Memory Tier Advanced - Clusters")
+
+
+REFRESH_HELP = f"""<h3 {_H}>Hardware refresh &mdash; sizing new hosts</h3>
+
+<p {_P}>This screen answers <b {_B}>how much RAM do we actually need to buy</b>. Installed DRAM
+is an <i>output</i> here: size presented memory to the workload, then split it DRAM/NVMe by the
+ratio the workload can carry. The companion screen,
+<b {_B}>Memory Tier Advanced &mdash; Clusters</b>, answers the other case: keeping the hosts you
+own and adding NVMe.</p>
+
+<p {_P}><b {_B}>Read these columns, in this order.</b>
+<b {_B}>Allocated (powered on)</b> is what the new hosts must present &mdash; not the raw
+allocated figure, which counts powered-off VMs and templates. &middot;
+<b {_B}>DRAM floor</b> is peak active: the least DRAM that holds the working set. &middot;
+<b {_B}>DRAM conservative</b> is the planning number. &middot;
+<b {_B}>RAM saved</b> is what you do not buy, versus an untiered refresh where every presented
+GB must be DRAM.</p>
+
+<p {_P}><b {_W}>Subtract pinned memory before quoting anything.</b> <b {_B}>Pinned GB</b> is
+memory belonging to VMs that cannot be tiered at all &mdash; 1 GB pages, latency-sensitive,
+locked reservations, PCI passthrough or vGPU, or fully reserved. That memory must be DRAM in
+any design, so the real saving is the saving column <i>less</i> the pinned column.
+<b {_B}>Tierable GB</b> does that subtraction for you.</p>
+
+<p {_P}><b {_W}>And check CPU before believing the memory answer.</b> New hosts sized on memory
+alone will be wrong if CPU binds first &mdash; compare <b {_B}>CPU headroom %</b> against
+<b {_B}>Active of host RAM %</b>. Ready time that is fixable by rightsizing frees CPU and moves
+the constraint back to memory, which is where tiering pays.</p>
+
+<p {_P}>Everything here reads the <b {_B}>Maximum</b> over the dashboard time range, so set it
+to a full business cycle. A 24-hour window sizes a purchase off a quiet Tuesday.</p>"""
+
+
+def build_refresh_dashboard():
+    """Same three views, different framing. The views carry every column both cases need; what
+    differs is which columns matter and what the reader is being asked to decide."""
+    bv, guids = _view_guids()
+    dash_id = str(uuid.uuid5(uuid.NAMESPACE_URL, "memtier-advanced/dashboard-refresh"))
+    widgets = [
+        widget("TextDisplay", "Sizing new hardware", y=1, h=7, config={
+            "editorData": REFRESH_HELP, "locationFile": "", "locationUrl": "",
+            "refreshContent": {"refreshContent": False}, "viewModeHTML": True}),
+        view_provider("Clusters to refresh", guids[bv.SIZING], y=8, x=1, w=12, h=11),
+        view_receiver("VMs in the selected cluster", guids[bv.VMS], y=19, x=1, w=12, h=11),
+        view_receiver("Hosts in the selected cluster", guids[bv.HOSTS], y=30, x=1, w=12, h=9),
+    ]
+    for w in widgets:
+        w["tabId"] = dash_id
+    return _envelope(dash_id, widgets, "Memory Tier Advanced - Hardware Refresh",
+                     "Sizes replacement hosts: how much DRAM and NVMe to buy, and what "
+                     "tiering saves against an untiered refresh.")
+
+
+def _envelope(dash_id, widgets, name, description=None):
     return {
         "entries": {
             "resourceKind": [{"resourceKindKey": k, "internalId": KIND_ID[k],
@@ -415,9 +496,10 @@ def build_dashboard():
         },
         "dashboards": [{
             "id": dash_id,
-            "name": "Memory Tiering Sizing - Clusters",
-            "description": "Sizing a vSphere estate for NVMe memory tiering, from metrics the "
-                           "vCenter adapter already collects.",
+            "name": name,
+            "description": description or ("Sizing a vSphere estate for NVMe memory tiering, "
+                                           "from metrics the "
+                           "vCenter adapter already collects."),
             "userId": "00000000-0000-0000-0000-000000000000",
             "lastUpdateUserId": "00000000-0000-0000-0000-000000000000",
             "shared": True, "hidden": False, "disabled": False, "locked": False,
@@ -426,17 +508,14 @@ def build_dashboard():
             "importAttempts": 0, "importComplete": True, "autoswitchEnabled": False,
             "columnCount": 0, "columnProportion": "1", "gridsterMaxColumns": 12,
             "states": [], "dashboardNavigations": {},
-            # Resolve by title, never by list index: an index silently rewires itself the
-            # moment a widget is added or removed above it, and the wrong provider still
-            # produces a valid-looking dashboard.
-            "widgetInteractions": [
-                {"widgetIdProvider": _wid(widgets, "Memory tiering sizing by cluster"), "type": "resourceId",
-                 "widgetIdReceiver": _wid(widgets, t)}
-                for t in ("Hosts in the selected cluster", "VMs in the selected cluster")
-            ],
+            # Derive the wiring from the widgets themselves: the single self-provider
+            # drives every receiver. Resolving by hardcoded title broke the moment a second
+            # dashboard named its provider differently, and resolving by list index silently
+            # rewires itself when a widget is added above.
+            "widgetInteractions": _interactions(widgets),
             "widgets": widgets,
         }],
-        "uuid": str(uuid.uuid5(uuid.NAMESPACE_URL, "memtier-sizing/export")),
+        "uuid": str(uuid.uuid5(uuid.NAMESPACE_URL, "memtier-advanced/export")),
     }
 
 
@@ -543,6 +622,59 @@ def build_supermetrics():
            "overcommit typically sit 5-10% over, so 100-110% is mild and only past 110% is "
            "worth flagging -- judged on typical allocation, not on a peak, because allocation "
            "is a configuration fact that drifts slowly rather than a spiky metric."),
+        # --- pinned VMs: what the cluster CANNOT tier, however cold it looks ------------
+        # Our adapter publishes `pinned` (1/0) and `pinnedMemoryKB` per VM, set by any of: 1GB
+        # pages, latencySensitivity high, memoryReservationLockedToMax, PCI passthrough or
+        # vGPU, or a full reservation. Rolled up here so a cluster that cannot be tiered is
+        # visible without reading the VM list. depth=3: cluster -> host -> VM -> our object.
+        sm(f"{PREFIX} Pinned VMs",
+           f"sum(${{adaptertype={MTA_ADAPTER}, objecttype={MTA_VM}, metric=pinned, depth=3}})",
+           CLUSTER, "",
+           "Count of VMs pinned to DRAM and therefore untierable, for any reason the adapter "
+           "can see. Zero is the expected answer; a non-zero count caps what tiering can "
+           "achieve here no matter how cold the cluster looks."),
+        sm(f"{PREFIX} Pinned Memory (GB)",
+           f"sum(${{adaptertype={MTA_ADAPTER}, objecttype={MTA_VM}, metric=pinnedMemoryKB, "
+           f"depth=3}}) / {KB_PER_GB}", CLUSTER, "gb",
+           "Configured memory belonging to pinned VMs. This much of the cluster must be DRAM "
+           "regardless of the sizing model -- subtract it before believing any saving."),
+        sm(f"{PREFIX} Tierable Memory (GB)",
+           f"({vm_alloc} / {KB_PER_GB}) - (sum(${{adaptertype={MTA_ADAPTER}, "
+           f"objecttype={MTA_VM}, metric=pinnedMemoryKB, depth=3}}) / {KB_PER_GB})",
+           CLUSTER, "gb",
+           "Allocated memory minus memory pinned to DRAM: the honest ceiling on what tiering "
+           "can address in this cluster."),
+
+        # --- the saving: the number this whole pack exists to produce --------------------
+        # Without tiering every presented GB must be DRAM, so DRAM = allocated. With tiering at
+        # the floor, DRAM = peak active. The difference is what tiering saves. Guarded, because
+        # a missing active metric would otherwise report a saving equal to the whole estate.
+        sm(f"{PREFIX} RAM Saved at Floor (GB)",
+           f"(({vm_alloc} - {host_active}) * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
+           "allocated - peak active. RAM you would NOT have to buy if this cluster were tiered "
+           "and DRAM sized to the working set. Read with the Maximum transformation over a full "
+           "business cycle; blank means the active metric is missing."),
+        sm(f"{PREFIX} RAM Saved Conservative (GB)",
+           f"(({vm_alloc} - ({host_active} * {CONSERVATIVE_FACTOR})) * {guard}) / {KB_PER_GB}",
+           CLUSTER, "gb",
+           f"allocated - ({CONSERVATIVE_FACTOR:g} x peak active). The saving with the planning "
+           "factor applied rather than the floor. Negative means the conservative DRAM figure "
+           "exceeds what is allocated today, i.e. tiering saves nothing at this factor."),
+
+        # --- retrofit: existing hardware, add NVMe --------------------------------------
+        # The replacement case treats DRAM as an output. Retrofit inverts it: installed DRAM is
+        # a CONSTRAINT, and the question is whether the working set already fits it.
+        sm(f"{PREFIX} Retrofit Headroom (GB)",
+           f"(({host_avail} - {host_active}) * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
+           "Installed DRAM minus peak active. POSITIVE means the working set already fits the "
+           "DRAM you own, so this cluster can be tiered by adding NVMe alone, with no DRAM "
+           "purchase. Negative means it cannot, whatever NVMe is added."),
+        sm(f"{PREFIX} Retrofit NVMe to Add (GB)",
+           f"(({vm_alloc} - {host_avail}) / {KB_PER_GB})", CLUSTER, "gb",
+           "Allocated minus installed DRAM: the NVMe needed to present today's allocated memory "
+           "on today's hosts. Zero or negative means installed DRAM already covers allocation "
+           "and tiering would buy capacity you are not yet using."),
+
         # --- consolidation: CPU is the other constraint ---------------------------------
         # Memory tiering buys consolidation headroom, and consolidation is gated by whichever
         # resource binds FIRST. Read this against Active of Host RAM: if CPU headroom is the
@@ -584,6 +716,31 @@ def build_supermetrics():
            "DRAM as a share of presented memory at the floor. Compare against the supported "
            "ratios: 50% is 1:1, 33% is 1:2, 20% is 1:4. Below 20% the workload is cold enough "
            "that the platform's maximum ratio, not the workload, is the limit."),
+        # --- fleet projection over the OPTED-IN clusters only ----------------------------
+        # Assigned to the custom group, not to Datacenter or vSphere World, so the total covers
+        # exactly the clusters someone tagged. depth=1: group -> member cluster.
+        sm(f"{PREFIX} Fleet RAM Saved at Floor (GB)",
+           f"sum(${{adaptertype={ADAPTER}, objecttype={CLUSTER}, attribute=Super Metric|"
+           f"sm_{sm_uuid(f'{PREFIX} RAM Saved at Floor (GB)')}, depth=1}})",
+           GROUP_KIND, "gb",
+           "Total RAM not purchased across every cluster tagged into this group. The headline "
+           "number, and it only counts clusters someone opted in."),
+        sm(f"{PREFIX} Fleet RAM Saved Conservative (GB)",
+           f"sum(${{adaptertype={ADAPTER}, objecttype={CLUSTER}, attribute=Super Metric|"
+           f"sm_{sm_uuid(f'{PREFIX} RAM Saved Conservative (GB)')}, depth=1}})",
+           GROUP_KIND, "gb",
+           "The same total with the planning factor applied rather than the floor."),
+        sm(f"{PREFIX} Fleet Allocated Powered On (GB)",
+           f"sum(${{adaptertype={ADAPTER}, objecttype={CLUSTER}, attribute=Super Metric|"
+           f"sm_{sm_uuid(f'{PREFIX} Allocated Powered On (GB)')}, depth=1}})",
+           GROUP_KIND, "gb",
+           "Allocated memory across the opted-in clusters, running VMs only."),
+        sm(f"{PREFIX} Fleet Pinned Memory (GB)",
+           f"sum(${{adaptertype={ADAPTER}, objecttype={CLUSTER}, attribute=Super Metric|"
+           f"sm_{sm_uuid(f'{PREFIX} Pinned Memory (GB)')}, depth=1}})",
+           GROUP_KIND, "gb",
+           "Memory across the opted-in clusters that is pinned to DRAM and cannot be tiered. "
+           "Subtract it from the saving before quoting a number."),
         # --- A/B test, remove once settled: which depth reaches hosts from vSphere World? ---
         sm(f"{PREFIX} TEST Fleet Active depth3 (GB)",
            f"{roll(HOST, 'mem|active_average', 3)} / {KB_PER_GB}", WORLD, "gb",
@@ -679,6 +836,7 @@ def main():
     args = ap.parse_args()
 
     dash = build_dashboard()
+    refresh = build_refresh_dashboard()
     sms = build_supermetrics()
 
     for v in sms.values():
@@ -688,7 +846,7 @@ def main():
                   f"and reports imported=0 with NO error -- a silent total failure.",
                   file=sys.stderr)
             return 1
-    problems = self_check(dash)
+    problems = self_check(dash) + self_check(refresh)
     if problems:
         for p in problems:
             print("SELF-CHECK FAILED:", p, file=sys.stderr)
@@ -700,12 +858,37 @@ def main():
     dj = os.path.join(OUT, "dashboard.json")
     with open(dj, "w") as f:
         json.dump(dash, f, indent=1)
+    rj = os.path.join(OUT, "dashboard-refresh.json")
+    with open(rj, "w") as f:
+        json.dump(refresh, f, indent=1)
     # A dashboard export is a zip with dashboard/dashboard.json at that exact path; the UI
     # import dialog does not accept a bare .json.
     with zipfile.ZipFile(os.path.join(OUT, "Dashboard.zip"), "w", zipfile.ZIP_DEFLATED) as z:
         z.write(dj, "dashboard/dashboard.json")
     with open(os.path.join(OUT, "supermetric.json"), "w") as f:
         json.dump(sms, f, indent=1)
+    # Shape taken from a live group read back over the API, not invented.
+    group = {
+        "resourceKey": {"name": GROUP_NAME, "adapterKindKey": GROUP_ADAPTER,
+                        "resourceKindKey": GROUP_KIND, "resourceIdentifiers": []},
+        "autoResolveMembership": True,
+        "membershipDefinition": {
+            "includedResources": [], "excludedResources": [], "custom-group-properties": [],
+            "rules": [{
+                "resourceKindKey": {"resourceKind": CLUSTER, "adapterKind": ADAPTER},
+                "statConditionRules": [],
+                "propertyConditionRules": [
+                    {"key": "summary|tag", "stringValue": OPT_IN_TAG, "compareOperator": "CONTAINS"}],
+                "resourceNameConditionRules": [], "relationshipConditionRules": [],
+                "resourceTagConditionRules": [],
+            }],
+        },
+    }
+    gdir = os.path.join(OUT, "customgroups")
+    os.makedirs(gdir, exist_ok=True)
+    with open(os.path.join(gdir, "MemoryTierAdvancedCandidates.json"), "w") as f:
+        json.dump(group, f, indent=1)
+    print(f"   opt-in group: clusters tagged {OPT_IN_TAG!r} join {GROUP_NAME!r}")
     print(f"wrote {OUT}/dashboard.json, Dashboard.zip, supermetric.json "
           f"({len(sms)} super metrics)")
 

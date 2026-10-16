@@ -36,7 +36,7 @@ OUT = os.environ.get("MEMTIER_VIEWS") or os.path.join(HERE, "build", "reports")
 NAMESPACE = uuid.UUID("6f1a2b3c-4d5e-4a7b-8c9d-0e1f2a3b4c5d")
 ADAPTER = "VMWARE"
 CLUSTER, HOST, VM = "ClusterComputeResource", "HostSystem", "VirtualMachine"
-SUFFIX = "[MTS]"          # so these are distinguishable from stock views in the picker
+SUFFIX = "[MTA]"          # so these are distinguishable from stock views in the picker
 
 
 def sm_guid(name):
@@ -144,10 +144,10 @@ def view(title, kind, columns, seed, page=50, days=7):
 # performance columns, so a row shows the worst the VM reached in the window rather than
 # whatever it happened to be doing at refresh. Clicking a row's object name opens that VM's
 # summary, which is the route into its trend charts.
-VMS = f"Memory Tiering VMs in Cluster {SUFFIX}"
+VMS = f"Memory Tier Advanced VMs {SUFFIX}"
 
 # Receiver: per-host detail for the selected cluster, for spotting imbalance between hosts.
-HOSTS = f"Memory Tiering Hosts in Cluster {SUFFIX}"
+HOSTS = f"Memory Tier Advanced Hosts {SUFFIX}"
 
 # The headline table. It REPLACES the scoreboard: a scoreboard renders at most 100 cells
 # (metrics x objects), shows present value only, and cannot carry dashboardTime -- so the one
@@ -158,29 +158,39 @@ HOSTS = f"Memory Tiering Hosts in Cluster {SUFFIX}"
 #
 # This table is ALSO the provider: clicking a cluster row drives the host and VM lists below,
 # which removes a separate selector widget.
-SIZING = f"Memory Tiering Sizing by Cluster {SUFFIX}"
+SIZING = f"Memory Tier Advanced Clusters {SUFFIX}"
 
 VIEWS = [
     (SIZING, CLUSTER, 760, [
         column("config|name", "Cluster", CLUSTER, is_property=True, sort=True),
         column("mem|host_provisioned", "Presented", CLUSTER),
-        sm_column("Sizing Allocated (GB)", "Allocated GB (all VMs)", CLUSTER),
-        sm_column("Sizing Allocated Powered On (GB)", "Allocated GB (powered on)", CLUSTER),
-        sm_column("Sizing Allocated Powered Off (GB)", "Allocated GB (powered off)", CLUSTER),
+        sm_column("MemTier Allocated (GB)", "Allocated GB (all VMs)", CLUSTER),
+        sm_column("MemTier Allocated Powered On (GB)", "Allocated GB (powered on)", CLUSTER),
+        sm_column("MemTier Allocated Powered Off (GB)", "Allocated GB (powered off)", CLUSTER),
         column("mem|consumed_average", "Consumed (max)", CLUSTER, transform="MAX"),
         column("mem|active_average", "Active (max)", CLUSTER, transform="MAX"),
-        sm_column("Sizing Active of Consumed (%)", "Active of consumed %", CLUSTER, transform="MAX"),
-        sm_column("Sizing DRAM Required Floor (GB)", "DRAM floor GB (peak)", CLUSTER, transform="MAX"),
-        sm_column("Sizing DRAM Required Conservative (GB)", "DRAM conservative GB (peak)", CLUSTER, transform="MAX"),
-        sm_column("Sizing Implied DRAM Share at Floor (%)", "Implied DRAM share %", CLUSTER, transform="MAX"),
-        sm_column("Sizing Tierable of Used (GB)", "Tierable GB", CLUSTER, transform="MAX"),
-        sm_column("Sizing Unused (GB)", "Unused GB", CLUSTER, transform="MAX"),
-        sm_column("Sizing Unallocated (GB)", "Unallocated GB", CLUSTER),
-        sm_column("Sizing Active of Host RAM (%)", "Active of host RAM %", CLUSTER, transform="MAX"),
-        sm_column("Sizing Overcommit (%)", "Overcommit %", CLUSTER),
+        sm_column("MemTier Active of Consumed (%)", "Active of consumed %", CLUSTER, transform="MAX"),
+        sm_column("MemTier DRAM Required Floor (GB)", "DRAM floor GB (peak)", CLUSTER, transform="MAX"),
+        sm_column("MemTier DRAM Required Conservative (GB)", "DRAM conservative GB (peak)", CLUSTER, transform="MAX"),
+        sm_column("MemTier Implied DRAM Share at Floor (%)", "Implied DRAM share %", CLUSTER, transform="MAX"),
+        sm_column("MemTier Tierable of Used (GB)", "Tierable GB", CLUSTER, transform="MAX"),
+        sm_column("MemTier Unused (GB)", "Unused GB", CLUSTER, transform="MAX"),
+        sm_column("MemTier Unallocated (GB)", "Unallocated GB", CLUSTER),
+        sm_column("MemTier Active of Host RAM (%)", "Active of host RAM %", CLUSTER, transform="MAX"),
+        sm_column("MemTier Overcommit (%)", "Overcommit %", CLUSTER),
+        # the saving -- the number the pack exists to produce
+        sm_column("MemTier RAM Saved at Floor (GB)", "RAM saved GB (floor)", CLUSTER, transform="MAX"),
+        sm_column("MemTier RAM Saved Conservative (GB)", "RAM saved GB (conservative)", CLUSTER, transform="MAX"),
+        # what cannot be tiered whatever the numbers say
+        sm_column("MemTier Pinned VMs", "Pinned VMs", CLUSTER),
+        sm_column("MemTier Pinned Memory (GB)", "Pinned GB", CLUSTER),
+        sm_column("MemTier Tierable Memory (GB)", "Tierable GB (less pinned)", CLUSTER),
+        # retrofit: can this cluster be tiered on the DRAM it already owns?
+        sm_column("MemTier Retrofit Headroom (GB)", "Retrofit headroom GB", CLUSTER, transform="MAX"),
+        sm_column("MemTier Retrofit NVMe to Add (GB)", "NVMe to add GB", CLUSTER),
         # CPU: consolidation is gated by whichever resource binds first.
         column("cpu|capacity_usagepct_average", "CPU util % (max)", CLUSTER, transform="MAX"),
-        sm_column("Sizing CPU Headroom (%)", "CPU headroom %", CLUSTER),
+        sm_column("MemTier CPU Headroom (%)", "CPU headroom %", CLUSTER),
         column("cpu|usagemhz_average", "CPU used MHz (max)", CLUSTER, transform="MAX"),
         column("cpu|demandmhz", "CPU demand MHz (max)", CLUSTER, transform="MAX"),
         column("cpu|max_cpu_ready", "Worst VM ready % (max)", CLUSTER, transform="MAX"),

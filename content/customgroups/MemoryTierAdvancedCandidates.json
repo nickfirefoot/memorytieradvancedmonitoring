@@ -1,0 +1,33 @@
+{
+ "resourceKey": {
+  "name": "Memory Tier Advanced Candidates",
+  "adapterKindKey": "Container",
+  "resourceKindKey": "Environment",
+  "resourceIdentifiers": []
+ },
+ "autoResolveMembership": true,
+ "membershipDefinition": {
+  "includedResources": [],
+  "excludedResources": [],
+  "custom-group-properties": [],
+  "rules": [
+   {
+    "resourceKindKey": {
+     "resourceKind": "ClusterComputeResource",
+     "adapterKind": "VMWARE"
+    },
+    "statConditionRules": [],
+    "propertyConditionRules": [
+     {
+      "key": "summary|tag",
+      "stringValue": "memtier-include",
+      "compareOperator": "CONTAINS"
+     }
+    ],
+    "resourceNameConditionRules": [],
+    "relationshipConditionRules": [],
+    "resourceTagConditionRules": []
+   }
+  ]
+ }
+}

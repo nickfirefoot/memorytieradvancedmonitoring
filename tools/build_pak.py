@@ -32,18 +32,19 @@ import zlib
 HERE = os.path.dirname(os.path.abspath(__file__))
 BUILD = os.path.join(HERE, "build")
 
-VERSION = "1.4.1"
+VERSION = "2.0.0"      # 2.0.0: real collector, two dashboards, opt-in group
 IMAGE_REGISTRY = "ghcr.io"
 IMAGE_REPOSITORY = "/nickfirefoot/memorytieradvancedmonitoring"
-IMAGE_DIGEST = "sha256:156894ed43475c4281938f23cb4511ea04db6c7599cfce1f53f61b901e458103"      # 1.4.0: finding C -- allocated split by power state
-PAK_NAME = "MemoryTieringSizing"           # manifest "name"; also injected as adapterName
-KIND_KEY = "MemTierSizing"                 # schema-only adapter kind: declared so content imports, never instantiated
-DISPLAY_NAME = "Memory Tiering Sizing"
+IMAGE_DIGEST = "sha256:4f21624a7a57d06cb23801b77e422784cf2723cff580ddbe166d02653200c643"
+PAK_NAME = "MemoryTierAdvanced"           # manifest "name"; also injected as adapterName
+KIND_KEY = "MemTierAdvanced"                 # a REAL adapter now: collects the tiering disqualifiers
+DISPLAY_NAME = "Memory Tier Advanced"
 VENDOR = "Nick Wilson"
 DESCRIPTION = ("Sizes a vSphere estate for VCF 9 NVMe memory tiering from metrics the vCenter "
                "adapter already collects. Content only: dashboards and super metrics, no "
                "adapter, no image, no registry. Target: Operations 8.18 and later.")
-DASH_DIR = "Memory_Tiering_Sizing_Clusters"   # pre-created so mp_build-style lowercasing never applies
+DASH_DIR = "Memory_Tier_Advanced_Clusters"
+REFRESH_DIR = "Memory_Tier_Advanced_Hardware_Refresh"   # pre-created so mp_build-style lowercasing never applies
 
 # Mirrors manifest.txt of the real pak on this host; only the adapter fields change.
 MANIFEST = {
@@ -127,12 +128,13 @@ def main():
             return 1
 
     dash = json.load(open(dash_src))
+    refresh = json.load(open(os.path.join(BUILD, "dashboard-refresh.json")))
     # In-pak dashboards use the CONTENT-EXPORT shape, not the UI-export shape. Every dashboard
     # in the vCommunity pak (SDK-built, installed widely) carries adapterName, namePath,
     # docCenterKey, temporary, widgetInteractions, columnCount 1 and columnProportion "1-1" --
     # the exact fields the vSAN pack found absent from UI exports. Both observations are right;
     # they are two formats. The UI-import zip from build_content.py stays in the UI shape.
-    for d in dash["dashboards"]:
+    for d in dash["dashboards"] + refresh["dashboards"]:
         d["adapterName"] = PAK_NAME
         d["namePath"] = DISPLAY_NAME                       # groups the dashboard under a folder
         short = d["name"].replace(f"{DISPLAY_NAME} - ", "")  # "… - Clusters" -> "Clusters"
@@ -156,14 +158,65 @@ def main():
     # reaches content/. This is how pre-SDK community content paks were distributed.
     # adapter.zip mirrors the real VsanHostMetrics pak member for member, minus <Kind>.conf.
     import io
+    # The adapter COLLECTS now, so describe.xml declares what it publishes: an adapter
+    # instance kind (type 7) carrying the connection parameters, a credential kind, and the two
+    # object kinds that hold the disqualifiers. nameKey values index resources.properties.
     describe = f"""<?xml version='1.0' encoding='UTF-8'?>
 <AdapterKind xmlns="http://schemas.vmware.com/vcops/schema" key="{KIND_KEY}" nameKey="1" version="1">
+  <CredentialKinds>
+    <CredentialKind key="memtier_vc_credential" nameKey="20">
+      <CredentialField key="vcenter_password" nameKey="21" required="true" dispOrder="0" password="true" enum="false" type="string"/>
+    </CredentialKind>
+  </CredentialKinds>
   <ResourceKinds>
-    <ResourceKind key="{KIND_KEY}_adapter_instance" nameKey="2" type="7"/>
+    <ResourceKind key="{KIND_KEY}_adapter_instance" nameKey="2" type="7" credentialKind="memtier_vc_credential">
+      <ResourceIdentifier default="" key="vcenter_host" nameKey="3" required="true" dispOrder="0" enum="false" type="string" identType="1"/>
+      <ResourceIdentifier default="" key="vcenter_user" nameKey="4" required="true" dispOrder="1" enum="false" type="string" identType="1"/>
+      <ResourceIdentifier default="false" key="verify_certs" nameKey="5" required="true" dispOrder="2" enum="true" type="string" identType="1">
+        <enum value="true" nameKey="6" default="false"/>
+        <enum value="false" nameKey="7" default="true"/>
+      </ResourceIdentifier>
+    </ResourceKind>
+    <ResourceKind key="MemTierAdvancedVM" nameKey="8" type="1">
+      <ResourceIdentifier default="" key="vm_moref" nameKey="9" required="true" dispOrder="0" enum="false" type="string" identType="1"/>
+      <ResourceIdentifier default="" key="vc_uuid" nameKey="10" required="true" dispOrder="1" enum="false" type="string" identType="1"/>
+      <ResourceAttribute key="pinned" nameKey="11" unit="" dashboardOrder="0" dataType="float" isProperty="false" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="true"/>
+      <ResourceAttribute key="pinnedMemoryKB" nameKey="12" unit="kilobytes" dashboardOrder="1" dataType="float" isProperty="false" isRate="false" isDiscrete="false" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
+      <ResourceAttribute key="lpage1GB" nameKey="13" unit="" dashboardOrder="2" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
+      <ResourceAttribute key="lpageEnabled" nameKey="14" unit="" dashboardOrder="3" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
+      <ResourceAttribute key="mmuLargePagesDisabled" nameKey="15" unit="" dashboardOrder="4" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
+      <ResourceAttribute key="latencySensitivity" nameKey="16" unit="" dashboardOrder="5" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
+      <ResourceAttribute key="memoryReservationLockedToMax" nameKey="17" unit="" dashboardOrder="6" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
+      <ResourceAttribute key="passthroughDevices" nameKey="18" unit="" dashboardOrder="7" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
+      <ResourceAttribute key="numaNodeAffinity" nameKey="19" unit="" dashboardOrder="8" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
+    </ResourceKind>
+    <ResourceKind key="MemTierAdvancedHost" nameKey="22" type="1">
+      <ResourceIdentifier default="" key="host_moref" nameKey="23" required="true" dispOrder="0" enum="false" type="string" identType="1"/>
+      <ResourceIdentifier default="" key="vc_uuid" nameKey="24" required="true" dispOrder="1" enum="false" type="string" identType="1"/>
+      <ResourceAttribute key="Mem_AllocGuestLargePage" nameKey="25" unit="" dashboardOrder="0" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
+      <ResourceAttribute key="LPage_LPageAlwaysTryForNPT" nameKey="26" unit="" dashboardOrder="1" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
+      <ResourceAttribute key="LPage_LPageDefragEnable" nameKey="27" unit="" dashboardOrder="2" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
+      <ResourceAttribute key="LPage_MaxSharedPages" nameKey="28" unit="" dashboardOrder="3" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
+    </ResourceKind>
   </ResourceKinds>
 </AdapterKind>
 """
-    inner_props = f"1 = {DISPLAY_NAME}\n2 = {DISPLAY_NAME} (content only, no adapter instance needed)\n"
+    inner_props = "\n".join([
+        f"1 = {DISPLAY_NAME}", f"2 = {DISPLAY_NAME} Adapter Instance",
+        "3 = vCenter Server",
+        "3.description = FQDN of the vCenter Server. An IP works only with certificate verification off.",
+        "4 = vCenter username",
+        "4.description = Must include the domain, e.g. user@vsphere.local. READ-ONLY is sufficient: this adapter only reads configuration and never writes.",
+        "5 = Verify vCenter certificate", "6 = true", "7 = false",
+        "8 = Memory Tier VM Configuration", "9 = VM MoRef", "10 = vCenter UUID",
+        "11 = Pinned to DRAM", "11.description = 1 when the VM cannot be tiered: 1GB pages, latency sensitivity high, locked reservation, PCI passthrough or vGPU, or a full reservation.",
+        "12 = Pinned memory", "13 = 1GB pages", "14 = Large pages enabled",
+        "15 = MMU large pages disabled", "16 = Latency sensitivity",
+        "17 = Reservation locked to max", "18 = Passthrough devices", "19 = NUMA node affinity",
+        "20 = vCenter credential", "21 = vCenter password",
+        "22 = Memory Tier Host Configuration", "23 = Host MoRef", "24 = vCenter UUID",
+        "25 = Mem.AllocGuestLargePage", "26 = LPage.LPageAlwaysTryForNPT",
+        "27 = LPage.LPageDefragEnable", "28 = LPage.MaxSharedPages", ""])
     major, minor, impl = VERSION.split(".")
     version_txt = f"Major-Version={major}\nMinor-Version={minor}\nImplementation-Version={impl}\n"
     xsd_src = os.path.join(HERE, "describeSchema.xsd")
@@ -215,6 +268,9 @@ def main():
         "pak_icon.png": icon,
         "resources/resources.properties": RESOURCES.encode(),
         f"content/dashboards/{DASH_DIR}/{DASH_DIR}.json": json.dumps(dash, indent=1).encode(),
+        f"content/dashboards/{REFRESH_DIR}/{REFRESH_DIR}.json": json.dumps(refresh, indent=1).encode(),
+        **{f"content/customgroups/{f}": open(os.path.join(BUILD, "customgroups", f), "rb").read()
+           for f in sorted(os.listdir(os.path.join(BUILD, "customgroups")))},
         # one file per super metric, each a single-entry {uuid: definition} map -- the shape
         # the vCommunity pack (SDK-built, 37 super metrics, vcops_minimum_version 8.18.0) ships
         **{f"content/supermetrics/{v['name'].replace('|', ' ').replace('/', ' ')}.json":
@@ -265,7 +321,7 @@ def main():
     for name, data in list(members.items()):
         if name.startswith("content/reports/") and name.endswith(".xml"):
             shipped_guids |= set(_re.findall(r'<ViewDef id="([^"]+)"', data.decode()))
-    named = set(_re.findall(r'"viewDefinitionId": "([^"]+)"', json.dumps(dash)))
+    named = set(_re.findall(r'"viewDefinitionId": "([^"]+)"', json.dumps(dash) + json.dumps(refresh)))
     if named - shipped_guids:
         problems.append(f"dashboard names view GUIDs the pak does not ship: {sorted(named - shipped_guids)}")
     if shipped_guids - named:
@@ -277,7 +333,7 @@ def main():
             problems.append(f"super metric name may not contain '|' or ':': {v['name']!r} "
                             f"-- the importer would silently create nothing")
     refs = {f"Super Metric|sm_{k}" for k in sms}
-    used = set(re.findall(r"Super Metric\|sm_[0-9a-f-]+", json.dumps(dash)))
+    used = set(re.findall(r"Super Metric\|sm_[0-9a-f-]+", json.dumps(dash) + json.dumps(refresh)))
     if used - refs:
         problems.append(f"dashboard references super metrics not in the pak: {sorted(used - refs)}")
     if problems:

@@ -21,8 +21,8 @@
  },
  "dashboards": [
   {
-   "id": "089a4b09-27fb-5213-9836-e9dd8f0e2639",
-   "name": "Memory Tiering Sizing - Clusters",
+   "id": "da9260bc-9f85-5e48-9dbe-34302798d6c2",
+   "name": "Memory Tier Advanced - Clusters",
    "description": "Sizing a vSphere estate for NVMe memory tiering, from metrics the vCenter adapter already collects.",
    "userId": "00000000-0000-0000-0000-000000000000",
    "lastUpdateUserId": "00000000-0000-0000-0000-000000000000",
@@ -45,20 +45,20 @@
    "dashboardNavigations": {},
    "widgetInteractions": [
     {
-     "widgetIdProvider": "4d68c4e3-dca0-59ca-b0a7-c47c6f33b9ce",
+     "widgetIdProvider": "389c1c7c-2de0-5300-a0b5-73033a854fb9",
      "type": "resourceId",
-     "widgetIdReceiver": "84112ce1-9295-5e99-b78f-81a3ff0d8d45"
+     "widgetIdReceiver": "af265b25-a92a-5853-a07c-d0cf9a8d2289"
     },
     {
-     "widgetIdProvider": "4d68c4e3-dca0-59ca-b0a7-c47c6f33b9ce",
+     "widgetIdProvider": "389c1c7c-2de0-5300-a0b5-73033a854fb9",
      "type": "resourceId",
-     "widgetIdReceiver": "e8bb63e9-2e5b-5082-8e73-95e472760878"
+     "widgetIdReceiver": "d8ec1029-57fd-5616-b087-86186fcea768"
     }
    ],
    "widgets": [
     {
      "collapsed": false,
-     "id": "9f484e8b-405c-5198-873f-75e1c890c196",
+     "id": "15b442d3-4235-5e28-a047-bfb882d368ae",
      "gridsterCoords": {
       "w": 12,
       "x": 1,
@@ -70,7 +70,7 @@
      "title": "How to read this",
      "config": {
       "refreshInterval": 300,
-      "widgetId": "9f484e8b-405c-5198-873f-75e1c890c196",
+      "widgetId": "15b442d3-4235-5e28-a047-bfb882d368ae",
       "description": "",
       "title": "How to read this",
       "refreshContent": {
@@ -90,11 +90,11 @@
       "viewModeHTML": true
      },
      "height": 0,
-     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+     "tabId": "da9260bc-9f85-5e48-9dbe-34302798d6c2"
     },
     {
      "collapsed": false,
-     "id": "4d68c4e3-dca0-59ca-b0a7-c47c6f33b9ce",
+     "id": "389c1c7c-2de0-5300-a0b5-73033a854fb9",
      "gridsterCoords": {
       "w": 12,
       "x": 1,
@@ -106,7 +106,7 @@
      "title": "Memory tiering sizing by cluster",
      "config": {
       "refreshInterval": 400,
-      "widgetId": "4d68c4e3-dca0-59ca-b0a7-c47c6f33b9ce",
+      "widgetId": "389c1c7c-2de0-5300-a0b5-73033a854fb9",
       "description": "",
       "title": "Memory tiering sizing by cluster",
       "refreshContent": {
@@ -128,7 +128,7 @@
       },
       "traversalSpecId": null,
       "isUpdatedView": true,
-      "viewDefinitionId": "2a6e2a92-a56d-57a3-91e4-a8fcdefdf6b3",
+      "viewDefinitionId": "662da61f-58e3-5ca2-8424-80b8fae3a9f3",
       "titleLocalized": "Memory tiering sizing by cluster",
       "chartViewItems": [],
       "selectFirstRow": {
@@ -137,11 +137,11 @@
       "viewDetails": ""
      },
      "height": 0,
-     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+     "tabId": "da9260bc-9f85-5e48-9dbe-34302798d6c2"
     },
     {
      "collapsed": false,
-     "id": "84112ce1-9295-5e99-b78f-81a3ff0d8d45",
+     "id": "af265b25-a92a-5853-a07c-d0cf9a8d2289",
      "gridsterCoords": {
       "w": 12,
       "x": 1,
@@ -153,7 +153,7 @@
      "title": "Hosts in the selected cluster",
      "config": {
       "refreshInterval": 300,
-      "widgetId": "84112ce1-9295-5e99-b78f-81a3ff0d8d45",
+      "widgetId": "af265b25-a92a-5853-a07c-d0cf9a8d2289",
       "description": "",
       "title": "Hosts in the selected cluster",
       "refreshContent": {
@@ -170,7 +170,7 @@
       "resource": null,
       "traversalSpecId": "",
       "isUpdatedView": true,
-      "viewDefinitionId": "ade0b1d6-e236-5a6f-b6eb-ee09b5ae5974",
+      "viewDefinitionId": "54330058-ae23-54ad-bceb-618b0894a114",
       "titleLocalized": "Hosts in the selected cluster",
       "viewType": "LIST",
       "chartViewItems": [],
@@ -181,11 +181,11 @@
       "periodLength": "dashboardTime"
      },
      "height": 0,
-     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+     "tabId": "da9260bc-9f85-5e48-9dbe-34302798d6c2"
     },
     {
      "collapsed": false,
-     "id": "e8bb63e9-2e5b-5082-8e73-95e472760878",
+     "id": "d8ec1029-57fd-5616-b087-86186fcea768",
      "gridsterCoords": {
       "w": 12,
       "x": 1,
@@ -197,7 +197,7 @@
      "title": "VMs in the selected cluster",
      "config": {
       "refreshInterval": 300,
-      "widgetId": "e8bb63e9-2e5b-5082-8e73-95e472760878",
+      "widgetId": "d8ec1029-57fd-5616-b087-86186fcea768",
       "description": "",
       "title": "VMs in the selected cluster",
       "refreshContent": {
@@ -214,7 +214,7 @@
       "resource": null,
       "traversalSpecId": "",
       "isUpdatedView": true,
-      "viewDefinitionId": "6da8f8c0-ebb0-5745-8b46-e15c89d7809b",
+      "viewDefinitionId": "91c85969-77f1-5f84-a26b-5f96c34afa00",
       "titleLocalized": "VMs in the selected cluster",
       "viewType": "LIST",
       "chartViewItems": [],
@@ -225,11 +225,11 @@
       "periodLength": "dashboardTime"
      },
      "height": 0,
-     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+     "tabId": "da9260bc-9f85-5e48-9dbe-34302798d6c2"
     },
     {
      "collapsed": false,
-     "id": "4bb14fb6-d90a-51b1-b6d5-970797a28463",
+     "id": "b60f2841-6917-5909-8ae1-b5bf5967de6c",
      "gridsterCoords": {
       "w": 12,
       "x": 1,
@@ -241,7 +241,7 @@
      "title": "Hosts: memory usage (%), sized by presented memory, grouped by cluster",
      "config": {
       "refreshInterval": 300,
-      "widgetId": "4bb14fb6-d90a-51b1-b6d5-970797a28463",
+      "widgetId": "b60f2841-6917-5909-8ae1-b5bf5967de6c",
       "description": "",
       "title": "Hosts: memory usage (%), sized by presented memory, grouped by cluster",
       "refreshContent": {
@@ -335,11 +335,11 @@
       ]
      },
      "height": 0,
-     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+     "tabId": "da9260bc-9f85-5e48-9dbe-34302798d6c2"
     },
     {
      "collapsed": false,
-     "id": "66947226-6bf5-5875-92b5-1e6f551c2d81",
+     "id": "3e21f9fe-7b83-5d5e-ac1f-cae112064d7c",
      "gridsterCoords": {
       "w": 12,
       "x": 1,
@@ -351,7 +351,7 @@
      "title": "Field reference",
      "config": {
       "refreshInterval": 300,
-      "widgetId": "66947226-6bf5-5875-92b5-1e6f551c2d81",
+      "widgetId": "3e21f9fe-7b83-5d5e-ac1f-cae112064d7c",
       "description": "",
       "title": "Field reference",
       "refreshContent": {
@@ -371,10 +371,10 @@
       "viewModeHTML": true
      },
      "height": 0,
-     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+     "tabId": "da9260bc-9f85-5e48-9dbe-34302798d6c2"
     }
    ]
   }
  ],
- "uuid": "6494a68a-fda1-5d8d-9527-e199f7aa1e79"
+ "uuid": "1ede420b-fa44-5658-9055-5bc4e3161a84"
 }
