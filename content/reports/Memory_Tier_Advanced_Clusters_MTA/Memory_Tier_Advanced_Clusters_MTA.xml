@@ -175,6 +175,28 @@
                             <Item>
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="mem|active_average" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="ClusterComputeResource" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="AVG" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="Active (avg)" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_79b34dab-c8de-569e-8ea5-4e61f24a11a2" />
                                     <Property name="preferredUnitId" value="" />
                                     <Property name="isStringAttribute" value="false" />
@@ -373,6 +395,160 @@
                             <Item>
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="Super Metric|sm_374b9a22-2ab1-5275-8638-3ecc2df62629" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="ClusterComputeResource" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="MAX" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="RAM saved GB (floor)" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="Super Metric|sm_3222e9d7-fdfa-5723-b6a3-5b84cafb0cdf" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="ClusterComputeResource" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="MAX" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="RAM saved GB (conservative)" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="Super Metric|sm_074f9e28-fb57-5bfa-841b-4244a6ba3fa3" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="ClusterComputeResource" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="CURRENT" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="Pinned VMs" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="Super Metric|sm_1cbdf1c7-87e7-575a-a35d-c39c8604f3c6" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="ClusterComputeResource" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="CURRENT" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="Pinned GB" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="Super Metric|sm_4e1bb9de-0b09-526d-90f2-fa9437828e9b" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="ClusterComputeResource" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="CURRENT" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="Tierable GB (less pinned)" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="Super Metric|sm_0f9d8553-db55-5dad-85d3-398ddc38807a" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="ClusterComputeResource" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="MAX" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="Retrofit headroom GB" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="Super Metric|sm_b9d812e3-0d77-501e-a8fd-356dc98ba743" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="ClusterComputeResource" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="CURRENT" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="NVMe to add GB" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="cpu|capacity_usagepct_average" />
                                     <Property name="preferredUnitId" value="" />
                                     <Property name="isStringAttribute" value="false" />
@@ -498,6 +674,72 @@
                                     <Property name="sortCriteria" value="false" />
                                     <Property name="isProperty" value="false" />
                                     <Property name="displayName" value="VMs facing ready % (max)" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="summary|total_number_hosts" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="ClusterComputeResource" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="CURRENT" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="Hosts" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="summary|total_number_mt_hosts" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="ClusterComputeResource" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="CURRENT" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="Hosts already tiered" />
+                                    <Property name="addTimestampAsColumn" value="false" />
+                                    <Property name="isShowRelativeTimestamp" value="false" />
+                                </Value>
+                            </Item>
+                            <Item>
+                                <Value>
+                                    <Property name="objectType" value="RESOURCE" />
+                                    <Property name="attributeKey" value="Super Metric|sm_725d2aa5-8113-5cd0-a446-e488a842e6d2" />
+                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="isStringAttribute" value="false" />
+                                    <Property name="adapterKind" value="VMWARE" />
+                                    <Property name="resourceKind" value="ClusterComputeResource" />
+                                    <Property name="rollUpType" value="NONE" />
+                                    <Property name="rollUpCount" value="0" />
+                                    <Property name="transformations">
+                                        <List>
+                                            <Item value="MAX" />
+                                        </List>
+                                    </Property>
+                                    <Property name="sortCriteria" value="false" />
+                                    <Property name="isProperty" value="false" />
+                                    <Property name="displayName" value="NVMe per host GB (cap 4096)" />
                                     <Property name="addTimestampAsColumn" value="false" />
                                     <Property name="isShowRelativeTimestamp" value="false" />
                                 </Value>

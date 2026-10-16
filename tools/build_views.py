@@ -169,6 +169,9 @@ VIEWS = [
         sm_column("MemTier Allocated Powered Off (GB)", "Allocated GB (powered off)", CLUSTER),
         column("mem|consumed_average", "Consumed (max)", CLUSTER, transform="MAX"),
         column("mem|active_average", "Active (max)", CLUSTER, transform="MAX"),
+        # Peak beside average IS the burstiness check: peak >= 2x average with a wide gap
+        # signals a spiky workload worth understanding before sizing around it.
+        column("mem|active_average", "Active (avg)", CLUSTER, transform="AVG"),
         sm_column("MemTier Active of Consumed (%)", "Active of consumed %", CLUSTER, transform="MAX"),
         sm_column("MemTier DRAM Required Floor (GB)", "DRAM floor GB (peak)", CLUSTER, transform="MAX"),
         sm_column("MemTier DRAM Required Conservative (GB)", "DRAM conservative GB (peak)", CLUSTER, transform="MAX"),
@@ -195,6 +198,9 @@ VIEWS = [
         column("cpu|demandmhz", "CPU demand MHz (max)", CLUSTER, transform="MAX"),
         column("cpu|max_cpu_ready", "Worst VM ready % (max)", CLUSTER, transform="MAX"),
         column("cpu|percentage_of_vms_facing_cpu_ready", "VMs facing ready % (max)", CLUSTER, transform="MAX"),
+        column("summary|total_number_hosts", "Hosts", CLUSTER),
+        column("summary|total_number_mt_hosts", "Hosts already tiered", CLUSTER),
+        sm_column("MemTier NVMe per Host (GB)", "NVMe per host GB (cap 4096)", CLUSTER, transform="MAX"),
     ]),
     (HOSTS, HOST, 720, [
         column("config|name", "Host", HOST, is_property=True, sort=True),

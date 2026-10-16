@@ -244,9 +244,33 @@ def do_import(ops, blob, label):
         time.sleep(3)
 
 
-def enable_supermetrics(ops, names):
-    """Two steps, both required. Resource-kind assignment alone makes a super metric visible
-    but not calculated; policy enablement alone does nothing for content-zip imports."""
+def verify_supermetrics(ops, names, sms):
+    """Super metrics imported from a content zip -- or shipped in a pak -- arrive DISABLED, and
+    enabling them is a MANUAL step in Policy. That is not a gap in this harness; it is how
+    Operations works, and it was established by measurement rather than assumption:
+
+      * All 19 policies on the lab were exported and scanned. The union of element names across
+        every one of them is Policy/PackageSettings/Metrics/Metric plus the alert and symptom
+        tree -- there is no ``<SuperMetrics>`` or ``<SuperMetric>`` element anywhere in the
+        schema, so an earlier version of this function was writing an element Operations has
+        never defined.
+      * Adding ``<Metric enabled="true" id="Super Metric|sm_<uuid>"/>`` to a real
+        ``<Metrics adapterKind=.. resourceKind=..>`` block and POSTing it to
+        ``/api/policies/import?forceImport=true`` returns 200 with
+        ``updatedPolicies:[Default Policy]`` -- and changes nothing. Re-exporting gives back a
+        byte-identical policy. The entry is accepted and silently discarded.
+      * ``forceImport=true`` is nonetheless required: without it the policy is reported under
+        ``skippedPolicies`` instead.
+      * The ``/internal/supermetrics/*`` endpoints answer 403 to a suite-api token, so the
+        association cannot be driven from there either.
+
+    What DOES work, and is worth verifying, is the resource-kind association: the content
+    import honours each definition's ``resourceKinds`` even though ``GET /api/supermetrics``
+    does not echo the field back. The association is observable as a registered attribute on
+    the kind, which is what this checks. The vCommunity pak reaches the same conclusion from
+    the other direction: it ships 37 super metrics and tells the reader to bulk enable them in
+    Policy after installing the pack.
+    """
     ids = {}
     for n in names:
         body = ops.req("GET", "/api/supermetrics?name=" + urllib.parse.quote(n)) or {}
@@ -256,38 +280,46 @@ def enable_supermetrics(ops, names):
                 ids[n] = sm.get("id")
     missing = [n for n in names if n not in ids]
     if missing:
-        print(f"   WARNING: not found after import, cannot enable: {missing}")
+        print(f"   WARNING: not found after import: {missing}")
+
+    # Which (adapterKind, resourceKind) each definition claims, so the association can be
+    # checked against what the kind actually exposes.
+    by_name = {v["name"]: v for v in sms.values()}
+    want = {}                                    # (adapterKind, resourceKind) -> {name: statkey}
     for n, sid in ids.items():
+        for rk in by_name.get(n, {}).get("resourceKinds", []) or []:
+            key = (rk.get("adapterKindKey", "VMWARE"), rk.get("resourceKindKey"))
+            want.setdefault(key, {})[n] = f"Super Metric|sm_{sid}"
+
+    unregistered, unverified = [], []
+    for (ak, rk), mapping in sorted(want.items()):
         try:
-            ops.req("PUT", "/internal/supermetrics/assign",
-                    body={"superMetricId": sid, "resourceKindKeys": []})
+            d = ops.req("GET", f"/api/adapterkinds/{urllib.parse.quote(ak)}/resourcekinds/"
+                               f"{urllib.parse.quote(rk)}/statkeys?pageSize=5000") or {}
         except urllib.error.HTTPError as e:
-            print(f"   assign {n}: HTTP {e.code} (continuing to policy step)")
-    blob = ops.req("GET", "/api/policies/export", accept="application/zip")
-    with zipfile.ZipFile(io.BytesIO(blob)) as z:
-        xml_name = next(n for n in z.namelist() if n.endswith(".xml"))
-        xml = z.read(xml_name).decode()
-    root = ET.fromstring(xml)
-    ns = {"d": root.tag.split("}")[0].strip("{")} if "}" in root.tag else {}
-    def find(parent, tag):
-        return parent.findall(f"{{*}}{tag}") or parent.findall(tag)
-    added = 0
-    for pkg in root.iter():
-        if not pkg.tag.endswith("PackageSettings"):
+            # A 404 here usually means the pair is wrong, not that the check is unavailable:
+            # a resource kind does not exist under an adapter that does not define it.
+            print(f"   {ak}/{rk}: statkeys HTTP {e.code} -- cannot verify. If 404, suspect the "
+                  f"kind is bound to the wrong adapter.")
+            unverified += list(mapping)
             continue
-        blocks = find(pkg, "SuperMetrics")
-        block = blocks[0] if blocks else ET.SubElement(pkg, "SuperMetrics")
-        have = {e.get("id") for e in list(block)}
-        for n, sid in ids.items():
-            if sid not in have:
-                ET.SubElement(block, "SuperMetric", {"enabled": "true", "id": sid})
-                added += 1
-    out = io.BytesIO()
-    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr(xml_name, ET.tostring(root, encoding="unicode"))
-    ops.multipart("/api/policies/import", "policy", "exportedPolicies.zip", out.getvalue(),
-                  params="?forceImport=true")
-    print(f"   enabled {len(ids)} super metric(s) in policy ({added} entries added)")
+        keys = {k.get("key", "") for k in
+                d.get("resourceTypeAttributes", d.get("stat-key", [])) or []}
+        ok = [n for n, sk in mapping.items() if sk in keys]
+        bad = [n for n, sk in mapping.items() if sk not in keys]
+        unregistered += bad
+        print(f"   {ak}/{rk}: {len(ok)}/{len(mapping)} registered as attributes on the kind")
+        if bad:
+            print(f"      NOT registered: {sorted(bad)[:6]}")
+    if unregistered or unverified:
+        print(f"   {len(ids) - len(unregistered) - len(unverified)}/{len(ids)} confirmed "
+              f"associated; {len(unregistered)} not registered, {len(unverified)} unverifiable")
+    else:
+        print(f"   all {len(ids)} super metric(s) are associated with their resource kinds")
+    print("   NEXT STEP, manual and unavoidable: Configure > Policies > the active policy >"
+          " Metrics and Properties, filter on 'MemTier', enable all. Until then they are"
+          " defined but not calculated, and every widget reads blank.")
+    return sorted(set(unregistered))
 
 
 def main():
@@ -344,9 +376,17 @@ def main():
         do_import(ops, vz, "views")
     print("### importing dashboard")
     do_import(ops, dbz, "dashboard")
+    # every other dashboard the build produced, each its own content-zip
+    for extra in sorted(glob.glob(os.path.join(BUILD, "dashboard-*.json"))):
+        d = json.load(open(extra))
+        for dd in d.get("dashboards", []):
+            dd["userId"] = owner; dd["lastUpdateUserId"] = owner; dd["shared"] = True
+        name = os.path.basename(extra)
+        print(f"### importing {name}")
+        do_import(ops, dashboard_zip(d, marker, owner, username), name)
     if not args.no_enable:
-        print("### enabling super metrics in the active policy")
-        enable_supermetrics(ops, names)
+        print("### verifying super metric associations")
+        verify_supermetrics(ops, names, sms)
     print("\ndone. verify with: python3 ../probes/p27_pak_install_check.py")
     return 0
 

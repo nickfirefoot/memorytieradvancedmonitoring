@@ -215,6 +215,30 @@
    }
   ]
  },
+ "725d2aa5-8113-5cd0-a446-e488a842e6d2": {
+  "name": "MemTier NVMe per Host (GB)",
+  "formula": "(((sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) - sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1})) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576) / sum(${adaptertype=VMWARE, objecttype=ClusterComputeResource, metric=summary|total_number_hosts, depth=0})",
+  "description": "NVMe tier each host would carry at the DRAM floor. COMPARE AGAINST 4096 GB: above that the tier exceeds the per-host kernel and partition limit and the design is not buildable, whatever the cluster total says. Reduce the ratio or add hosts.",
+  "unitId": "gb",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "3801c6bc-164f-531d-90bd-5955463a9779": {
+  "name": "MemTier Active of Allocated at Peak (%)",
+  "formula": "((sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2})) * 100) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))",
+  "description": "Peak working set as a share of allocated. The 50% line is the safety limit: above it active memory, not the chosen ratio, is what binds the DRAM size. Below 20% the platform's maximum 1:4 ratio binds instead -- the workload is colder than the platform can exploit.",
+  "unitId": "percent",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
  "037a52aa-e1a1-5154-9b74-765c931bf975": {
   "name": "MemTier CPU Headroom (%)",
   "formula": "100 - sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=cpu|usage_average, depth=1}) / (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=cpu|usage_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=cpu|usage_average, depth=1}))",
@@ -283,7 +307,7 @@
   "resourceKinds": [
    {
     "resourceKindKey": "Environment",
-    "adapterKindKey": "VMWARE"
+    "adapterKindKey": "Container"
    }
   ]
  },
@@ -295,7 +319,7 @@
   "resourceKinds": [
    {
     "resourceKindKey": "Environment",
-    "adapterKindKey": "VMWARE"
+    "adapterKindKey": "Container"
    }
   ]
  },
@@ -307,7 +331,7 @@
   "resourceKinds": [
    {
     "resourceKindKey": "Environment",
-    "adapterKindKey": "VMWARE"
+    "adapterKindKey": "Container"
    }
   ]
  },
@@ -319,7 +343,7 @@
   "resourceKinds": [
    {
     "resourceKindKey": "Environment",
-    "adapterKindKey": "VMWARE"
+    "adapterKindKey": "Container"
    }
   ]
  },

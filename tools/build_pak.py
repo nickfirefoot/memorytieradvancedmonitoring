@@ -341,8 +341,32 @@ def main():
             print("SELF-CHECK FAILED:", p, file=sys.stderr)
         return 1
 
+    # Directory entries, and the full set of content subdirectories an SDK-built pak carries
+    # even when empty. Matched against iSDK_VsanHostMetrics 1.4.6, which is installed and
+    # running on the lab instance -- the only pak structure here proven to survive an install.
+    # The empty ones are inert scaffolding, but shipping the same shape as a pak known to
+    # install removes a variable from the first attempt rather than betting on it.
+    dirs = [
+        "content/", "content/alertdefs/", "content/customgroups/", "content/dashboards/",
+        "content/files/", "content/files/reskndmetric/", "content/files/solutionconfig/",
+        "content/files/topowidget/", "content/files/txtwidget/", "content/policies/",
+        "content/recommendations/", "content/reports/", "content/resources/",
+        "content/supermetrics/", "content/symptomdefs/", "content/traversalspecs/",
+        "resources/",
+    ]
+    # Dashboards and reports each live in their own subdirectory. Derive those from the members
+    # so a new dashboard cannot ship without its directory entry.
+    for name in sorted(members):
+        parts = name.split("/")
+        if len(parts) == 4 and parts[0] == "content":
+            d = f"{parts[0]}/{parts[1]}/{parts[2]}/"
+            if d not in dirs:
+                dirs.append(d)
+
     out = os.path.join(BUILD, f"{PAK_NAME}_{VERSION}.pak")
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+        for d in dirs:
+            z.writestr(zipfile.ZipInfo(d), b"")
         for name, data in members.items():
             z.writestr(name, data)
     print(f"wrote {out}  ({os.path.getsize(out)} bytes)")

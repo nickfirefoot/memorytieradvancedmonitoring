@@ -74,6 +74,8 @@ METRICS = {
     (CLUSTER, "cpu|max_cpu_ready"):             "Worst VM CPU ready (%)",
     (CLUSTER, "cpu|percentage_of_vms_facing_cpu_ready"): "VMs facing CPU ready (%)",
     (CLUSTER, "cpu|workload"):                  "CPU workload (%)",
+    (CLUSTER, "summary|total_number_hosts"):    "Hosts",
+    (CLUSTER, "summary|total_number_mt_hosts"): "Hosts already tiered",
     (HOST,    "cpu|usage_average"):             "CPU utilisation (%)",
     (HOST,    "cpu|usagemhz_average"):          "CPU used (MHz)",
     (HOST,    "cpu|ready_summation"):           "CPU ready (ms)",
@@ -283,36 +285,50 @@ limit rather than the workload &mdash; worth saying out loud in front of a custo
 suspect the metric rather than the workload &mdash; a cluster reading 1% active is a collection
 problem, and it would otherwise look like the best tiering candidate you own.</p>
 
-<p {_P}><b {_W}>Large pages are invisible here, and that is permanent.</b> No performance
-counter in vCenter reports guest page size or large-page backing &mdash; every counter
-mentioning "page" concerns zero pages, compression, swap or page-fault latency. Operations
-exposes only three VM advanced settings, none of them the relevant ones, and the guest
-huge-page counters are declared in the schema but never populated. <b {_B}>1 GB pages, locked
-memory reservations and latency-sensitive VMs all disqualify a workload from tiering and none
-of them can be detected from this dashboard.</b> They need a one-off read-only vSphere API
-sweep. 2 MB pages are not a disqualifier &mdash; they are broken down under pressure.</p>
-
+<p {_P}><b {_W}>vCenter cannot see large pages &mdash; this pack collects them itself.</b>
+No performance counter in vCenter reports guest page size or large-page backing &mdash; every
+counter mentioning "page" concerns zero pages, compression, swap or page-fault latency, and the
+vCenter adapter exposes only three VM advanced settings, none of them the relevant ones
+(measured across 208 VM properties). That is why this pack ships <b {_B}>its own collector</b>:
+the <i {_C}>MemTierAdvanced</i> adapter reads the settings straight from vSphere and publishes
+them as properties on every powered-on VM and host. 2 MB pages are not a disqualifier &mdash;
+they are broken down under pressure &mdash; so only the 1 GB opt-in counts.</p>
 <p {_P}><b {_B}>Reserved memory is visible and IS a disqualifier:</b> a VM whose reservation
 equals its configured memory is pinned to DRAM and cannot be tiered however cold it looks. Both
 halves are columns on the VM list &mdash; <i {_C}>Reserved (configured)</i> against the VM's
 configured memory. A memory <i {_C}>limit</i> is shown beside it for the same reason.</p>
 
-<p {_P}><b {_W}>SIX disqualifiers are invisible to this dashboard and it cannot warn you about
-any of them.</b> A VM pinned by any of these cannot be tiered, and will look like a perfectly
-good candidate here:</p>
+<h3 {_H}>Disqualifiers: what cannot be tiered, and how this pack finds it</h3>
+
+<p {_P}>A pinned VM cannot be tiered however cold it looks. <b {_W}>Five disqualifiers are
+collected and counted as pinned:</b></p>
 <p {_P}><b {_B}>PCI passthrough or vGPU</b> &mdash; forces a <b {_W}>100% memory
 reservation</b>. A GPU host full of vGPU VMs has every byte pinned and cannot be tiered at all.
 This is the one most likely to catch you out. &middot;
 <b {_B}>Latency sensitivity = High</b> &mdash; forces full reservation and CPU pinning. &middot;
 <b {_B}>memoryReservationLockedToMax</b> &mdash; reservation tracks configured memory forever.
 &middot; <b {_B}>1 GB pages</b> &mdash; explicit per-VM opt-in, stays pinned. &middot;
-<b {_B}>NUMA node affinity and vNUMA</b> &mdash; the DRAM tier is per-NUMA-node, and
-<i {_C}>VM % remote memory</i> does not exist in Operations at any version. &middot;
-<b {_B}>Fault Tolerance</b> &mdash; FT VMs are fully reserved.</p>
-<p {_P}>None of the six is exposed by the vCenter adapter &mdash; measured across 208 VM
-properties. They need a one-off read-only vSphere API sweep, and until that exists
-<b {_B}>treat every figure on this screen as an upper bound on what can actually be
-tiered.</b></p>
+<b {_B}>Full memory reservation</b> &mdash; reservation equal to configured memory. This also
+covers <b {_B}>Fault Tolerance</b>, since FT VMs are fully reserved.</p>
+
+<p {_P}><b {_B}>NUMA node affinity</b> is collected and shown per VM but deliberately
+<i>not</i> counted as pinned: it does not stop a VM being tiered, it constrains which node's
+DRAM it can use. The DRAM tier is per-NUMA-node, so pinned-to-a-node VMs size against that
+node rather than the host. <i {_C}>VM % remote memory</i> does not exist in Operations at any
+version, so affinity is the only signal available.</p>
+
+<p {_P}><b {_W}>The two RAM-saved figures are gross, not net of pinned memory</b> &mdash;
+deliberately. They are built only from vCenter metrics, so they still compute on an estate
+where this pack's collector has not been configured. <b {_B}>Pinned memory (GB)</b> and
+<b {_B}>pinned VMs</b> sit beside them as their own columns, and
+<b {_B}>tierable memory (GB)</b> is allocated already net of pinned. To get net savings,
+subtract pinned memory from the saved figure yourself &mdash; or read tierable memory, which
+has done it for you.</p>
+
+<p {_P}><b {_W}>The pinned columns are only meaningful once the MemTierAdvanced adapter instance
+is configured.</b> Until it collects they read blank or zero, which looks identical to a clean
+estate. Confirm the pinned VM count on the VM list before quoting anything &mdash; a blank
+there means "not measured", not "none".</p>
 
 <h3 {_H}>CPU: the other half of consolidation</h3>
 
@@ -479,6 +495,12 @@ def build_refresh_dashboard():
         view_provider("Clusters to refresh", guids[bv.SIZING], y=8, x=1, w=12, h=11),
         view_receiver("VMs in the selected cluster", guids[bv.VMS], y=19, x=1, w=12, h=11),
         view_receiver("Hosts in the selected cluster", guids[bv.HOSTS], y=30, x=1, w=12, h=9),
+        # Same three views means the same columns, so the same field reference applies verbatim.
+        # Parity with the as-is dashboard is the point: a reader who starts on either screen
+        # gets the definitions without having to know the other one exists.
+        widget("TextDisplay", "Field reference", y=39, h=14, config={
+            "editorData": FIELDS, "locationFile": "", "locationUrl": "",
+            "refreshContent": {"refreshContent": False}, "viewModeHTML": True}),
     ]
     for w in widgets:
         w["tabId"] = dash_id
@@ -519,10 +541,20 @@ def _envelope(dash_id, widgets, name, description=None):
     }
 
 
+# A resource kind only exists under the adapter that defines it, and binding one to the wrong
+# adapter is accepted silently: the super metric imports, reports no error, and is simply never
+# attached to anything. Group kinds (Environment, Department, ...) come from the Container
+# adapter -- not VMWARE -- so the pairing is derived here rather than passed in, because it was
+# passed in once and the four fleet rollups spent their life bound to a VMWARE/Environment kind
+# that does not exist.
+KIND_ADAPTER = {GROUP_KIND: GROUP_ADAPTER}
+
+
 def sm(name, formula, kind, unit, description):
+    adapter = KIND_ADAPTER.get(kind, ADAPTER)
     return sm_uuid(name), {
         "name": name, "formula": formula, "description": description, "unitId": unit,
-        "resourceKinds": [{"resourceKindKey": kind, "adapterKindKey": ADAPTER}]}
+        "resourceKinds": [{"resourceKindKey": kind, "adapterKindKey": adapter}]}
 
 
 def roll(kind, key, depth):
@@ -675,6 +707,24 @@ def build_supermetrics():
            "on today's hosts. Zero or negative means installed DRAM already covers allocation "
            "and tiering would buy capacity you are not yet using."),
 
+        # --- platform limits MTAT models and this did not ------------------------------
+        # NVMe tier size is capped per host by the kernel/partition limit. A cluster whose
+        # per-host NVMe requirement exceeds it cannot be built as designed, however good the
+        # cluster-level arithmetic looks -- MTAT clamps at 4096 GB/host and this had no notion
+        # of it at all.
+        sm(f"{PREFIX} NVMe per Host (GB)",
+           f"((({vm_alloc} - {host_active}) * {guard}) / {KB_PER_GB}) / "
+           f"{roll(CLUSTER, 'summary|total_number_hosts', 0)}",
+           CLUSTER, "gb",
+           "NVMe tier each host would carry at the DRAM floor. COMPARE AGAINST 4096 GB: above "
+           "that the tier exceeds the per-host kernel and partition limit and the design is not "
+           "buildable, whatever the cluster total says. Reduce the ratio or add hosts."),
+        sm(f"{PREFIX} Active of Allocated at Peak (%)",
+           f"(({host_active} / {vm_alloc}) * 100) * {guard}", CLUSTER, "percent",
+           "Peak working set as a share of allocated. The 50% line is the safety limit: above "
+           "it active memory, not the chosen ratio, is what binds the DRAM size. Below 20% the "
+           "platform's maximum 1:4 ratio binds instead -- the workload is colder than the "
+           "platform can exploit."),
         # --- consolidation: CPU is the other constraint ---------------------------------
         # Memory tiering buys consolidation headroom, and consolidation is gated by whichever
         # resource binds FIRST. Read this against Active of Host RAM: if CPU headroom is the
@@ -822,6 +872,14 @@ def verify_live(dash, sms):
     kinds_declared |= {r["resourceKindKey"] for v in sms.values() for r in v["resourceKinds"]}
     all_kinds = {k["key"] for k in req(f"/adapterkinds/{ADAPTER}/resourcekinds?limit=500",
                                        token=tok)["resource-kind"]}
+    # Group kinds (Environment, Department, ...) belong to the Container adapter, and our own
+    # object kinds to our adapter -- a VMWARE-only check wrongly fails both.
+    for extra in (GROUP_ADAPTER, MTA_ADAPTER):
+        try:
+            all_kinds |= {k["key"] for k in req(
+                f"/adapterkinds/{extra}/resourcekinds?limit=500", token=tok)["resource-kind"]}
+        except Exception:
+            pass   # our own adapter is absent until the pak is installed; expected
     for k in sorted(kinds_declared):
         hit = k in all_kinds
         ok &= hit
@@ -839,6 +897,16 @@ def main():
     refresh = build_refresh_dashboard()
     sms = build_supermetrics()
 
+    legal = {(ADAPTER, CLUSTER), (ADAPTER, HOST), (ADAPTER, VM), (ADAPTER, WORLD),
+             (GROUP_ADAPTER, GROUP_KIND), (MTA_ADAPTER, MTA_VM)}
+    for v in sms.values():
+        for rk in v.get("resourceKinds", []):
+            pair = (rk.get("adapterKindKey"), rk.get("resourceKindKey"))
+            if pair not in legal:
+                print(f"SELF-CHECK FAILED: {v['name']!r} binds {pair[1]!r} to adapter "
+                      f"{pair[0]!r}. A resource kind belongs to exactly one adapter; the wrong "
+                      f"pairing imports cleanly and then attaches to nothing.", file=sys.stderr)
+                return 1
     for v in sms.values():
         if "|" in v["name"] or ":" in v["name"]:
             print(f"SELF-CHECK FAILED: super metric name may not contain '|' or ':': "
