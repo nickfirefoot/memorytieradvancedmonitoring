@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
-"""Install the sizing dashboard and super metrics WITHOUT a pak, via the content-import API.
+"""VALIDATION HARNESS -- not a deliverable. Do not hand this to a customer.
+
+This exists to prove the CONTENT is correct, independently of how it is packaged. It takes an
+administrative credential and POSTs content straight into an Operations instance, which is fine
+for a lab you own and wholly inappropriate as a customer artefact: unversioned, uninstallable,
+unauditable, and it would not survive a security review. The pak is the deliverable.
+
+It earned its place on 2026-10-16 by proving the content imports and resolves -- 18 super
+metrics, 3 views, 1 dashboard -- and by surfacing four defects that would otherwise have been
+blamed on the pak, including a super metric naming rule that silently breaks BOTH paths.
+
+Installs the sizing dashboard and super metrics via the content-import API.
 
 Why this exists: four pak uploads have now failed (LESSONS.md 4.12) -- three registered
 nothing silently, the fourth failed at "Applied Adapter". The content-import endpoint is a
@@ -16,12 +27,9 @@ known to work for content-zip imports.
     python3 install_content.py --dry-run       # build the zips, write them to build/, send nothing
     python3 install_content.py --no-enable     # import only
 
-Credentials: --host and --user, with the password prompted for. If ~/ops.env exists with
-OPS_HOST / OPS_USER / OPS_PASS it is used as a fallback, which is a convenience for the machine
-this was developed on and not required.
+Credentials come from ~/ops.env (OPS_HOST / OPS_USER / OPS_PASS), like every probe here.
 """
 import argparse
-import getpass
 import io
 import json
 import os
@@ -30,11 +38,12 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import glob
 import xml.etree.ElementTree as ET
 import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-BUILD = os.environ.get("MEMTIER_CONTENT") or os.path.join(os.path.dirname(HERE), "content")
+BUILD = os.path.join(HERE, "build")
 
 CTX = ssl.create_default_context()
 CTX.check_hostname = False
@@ -42,29 +51,13 @@ CTX.verify_mode = ssl.CERT_NONE
 
 
 def env():
-    """Optional ~/ops.env fallback; absent on any normal machine, which is fine."""
     e = {}
-    path = os.path.expanduser("~/ops.env")
-    if not os.path.exists(path):
-        return e
-    for line in open(path):
+    for line in open(os.path.expanduser("~/ops.env")):
         line = line.strip()
         if line and not line.startswith("#") and "=" in line:
             k, v = line.split("=", 1)
             e[k.strip()] = v.strip().strip('"').strip("'")
     return e
-
-
-def credentials(args):
-    e = env()
-    host = args.host or e.get("OPS_HOST")
-    user = args.user or e.get("OPS_USER")
-    if not host or not user:
-        sys.exit("need --host and --user (or an ~/ops.env with OPS_HOST/OPS_USER)")
-    password = args.password or os.environ.get("OPS_PASSWORD") or e.get("OPS_PASS")
-    if not password:
-        password = getpass.getpass(f"password for {user}@{host}: ")
-    return host, user, password
 
 
 class Ops:
@@ -102,6 +95,27 @@ class Ops:
                         content_type=f"multipart/form-data; boundary={boundary}")
 
 
+def _post_retry(ops, path, label, body=None, blob=None, params="", tries=12, wait=5):
+    """Content export and import are single-task operations: posting while one runs returns
+    HTTP 403 "Task is already running" -- a transient, not a permission failure. The window is
+    genuinely racy, because the status endpoint can still report the PREVIOUS task's FINISHED
+    while a new one is spinning up. Retry rather than treat 403 as fatal."""
+    for attempt in range(tries):
+        try:
+            if blob is not None:
+                return ops.multipart(path, "contentFile", "content.zip", blob, params=params)
+            return ops.req("POST", path + params, body=body)
+        except urllib.error.HTTPError as ex:
+            detail = ex.read().decode()
+            if ex.code == 403 and "already running" in detail.lower():
+                if attempt == 0:
+                    print(f"   {label}: another content task is running, waiting")
+                time.sleep(wait)
+                continue
+            sys.exit(f"{label} failed: HTTP {ex.code} {detail[:300]}")
+    sys.exit(f"{label}: a content task stayed busy for {tries * wait}s")
+
+
 def discover_marker(ops):
     """The importer rejects a bundle whose marker filename is not the server's own. The only
     way to learn it is to run a throwaway export and read the name out of the zip."""
@@ -116,8 +130,8 @@ def discover_marker(ops):
             sys.exit("a prior content export never finished; cannot discover the marker")
         time.sleep(2)
     prior = state().get("startTime") or 0
-    ops.req("POST", "/api/content/operations/export",
-            body={"scope": "CUSTOM", "contentTypes": ["SUPER_METRICS"]})
+    _post_retry(ops, "/api/content/operations/export", "marker probe",
+                body={"scope": "CUSTOM", "contentTypes": ["SUPER_METRICS"]})
     deadline = time.time() + 180
     while True:
         s = state()
@@ -135,6 +149,14 @@ def discover_marker(ops):
 
 
 def sm_zip(sms, marker, owner):
+    """The importer reported total=18 imported=0 skipped=0 failed=0 -- it enumerated every
+    super metric and acted on none -- until modificationTime and modifiedBy were supplied.
+    Every super metric in the vCommunity pack carries both; the inherited mtat format omitted
+    them, and this content inherited that omission."""
+    import time as _t
+    stamp = int(_t.time() * 1000)
+    sms = {k: {**v, "modificationTime": v.get("modificationTime", stamp),
+               "modifiedBy": v.get("modifiedBy", owner)} for k, v in sms.items()}
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr(marker, owner)
@@ -142,6 +164,30 @@ def sm_zip(sms, marker, owner):
         z.writestr("configuration.json",
                    json.dumps({"superMetrics": len(sms), "type": "ALL"}, indent=2))
     return buf.getvalue()
+
+
+def views_zip(view_files, marker, owner):
+    """Views travel as ONE content.xml holding every ViewDef, inside views.zip, inside the
+    outer content zip. They must land BEFORE the dashboard or every viewDefinitionId the
+    dashboard carries is a dangling reference."""
+    defs = []
+    for f in sorted(view_files):
+        root = ET.parse(f).getroot()
+        for vd in root.iter():
+            if vd.tag.endswith("ViewDef"):
+                defs.append(ET.tostring(vd, encoding="unicode"))
+    content = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+               "<Content>\n    <Views>\n" + "\n".join(defs) + "\n    </Views>\n</Content>\n")
+    inner = io.BytesIO()
+    with zipfile.ZipFile(inner, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("content.xml", content)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as outer:
+        outer.writestr(marker, owner)
+        outer.writestr("views.zip", inner.getvalue())
+        outer.writestr("configuration.json",
+                       json.dumps({"type": "CUSTOM", "views": len(defs)}, indent=2))
+    return buf.getvalue(), len(defs)
 
 
 def dashboard_zip(dash, marker, owner, username):
@@ -169,17 +215,29 @@ def dashboard_zip(dash, marker, owner, username):
 
 
 def do_import(ops, blob, label):
-    ops.multipart("/api/content/operations/import", "contentFile", "content.zip", blob)
+    # Snapshot startTime BEFORE posting. The status endpoint keeps the previous import's
+    # FINISHED result, so polling for "FINISHED" alone returns the last operation's summary --
+    # which reported SUPER_METRICS imported=18 for a views import and looked like success.
+    prior = (ops.req("GET", "/api/content/operations/import") or {}).get("startTime") or 0
+    _post_retry(ops, "/api/content/operations/import", f"import of {label}", blob=blob)
     deadline = time.time() + 300
     while True:
         s = ops.req("GET", "/api/content/operations/import") or {}
         state = str(s.get("state", ""))
-        if state.startswith("FINI"):
-            for entry in s.get("summaries", []) or []:
+        if state.startswith("FINI") and (s.get("startTime") or 0) > prior:
+            for entry in s.get("operationSummaries", s.get("summaries", [])) or []:
                 print(f"     {entry.get('contentType')}: imported={entry.get('imported')} "
                       f"skipped={entry.get('skipped')}")
             if state != "FINISHED":
                 sys.exit(f"import of {label} ended in state={state}")
+            # FINISHED with nothing imported is the failure that looks like success
+            for entry in s.get("operationSummaries", s.get("summaries", [])) or []:
+                if int(entry.get("imported") or 0) == 0 and int(entry.get("total") or 0) > 0:
+                    print(f"     WARNING: {entry.get('contentType')} read "
+                          f"{entry.get('total')} item(s) and imported none "
+                          f"(skipped={entry.get('skipped')} failed={entry.get('failed')})")
+                    for m in (entry.get("errorMessages") or []) + (entry.get("infoMessages") or []):
+                        print(f"       {m}")
             return s
         if time.time() > deadline:
             sys.exit(f"import of {label} did not finish; state={state}")
@@ -236,25 +294,20 @@ def main():
     import urllib.parse as _up
     globals()["urllib"].parse = _up
     ap = argparse.ArgumentParser()
-    ap.add_argument("--host", help="VCF/Aria Operations hostname")
-    ap.add_argument("--user", help="username, e.g. admin")
-    ap.add_argument("--password", help="password; prompted for if omitted, or $OPS_PASSWORD")
-    ap.add_argument("--dry-run", action="store_true",
-                    help="build the content zips locally and send nothing")
-    ap.add_argument("--no-enable", action="store_true",
-                    help="import but do not modify the active policy")
+    ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--no-enable", action="store_true")
     args = ap.parse_args()
 
     dash = json.load(open(os.path.join(BUILD, "dashboard.json")))
     sms = json.load(open(os.path.join(BUILD, "supermetric.json")))
     names = [v["name"] for v in sms.values()]
 
-    host, user, password = credentials(args)
-    print(f"### connecting to {host}")
-    ops = Ops(host, user, password)
+    e = env()
+    print(f"### connecting to {e['OPS_HOST']}")
+    ops = Ops(e["OPS_HOST"], e["OPS_USER"], e["OPS_PASS"])
     me = ops.req("GET", "/api/auth/currentuser") or {}
     owner = me.get("id") or me.get("userId")
-    username = me.get("username") or user
+    username = me.get("username") or e["OPS_USER"]
     if not owner:
         sys.exit(f"could not resolve the current user id from {me}")
     print(f"   user {username} id={owner}")
@@ -271,6 +324,11 @@ def main():
     smz = sm_zip(sms, marker, owner)
     dbz = dashboard_zip(dash, marker, owner, username)
     if args.dry_run:
+        vf = glob.glob(os.path.join(BUILD, "reports", "*", "*.xml"))
+        if vf:
+            vz, n = views_zip(vf, marker, owner)
+            open(os.path.join(BUILD, "content-views.zip"), "wb").write(vz)
+            print(f"   dry run: {n} views -> build/content-views.zip ({len(vz)} B)")
         open(os.path.join(BUILD, "content-supermetrics.zip"), "wb").write(smz)
         open(os.path.join(BUILD, "content-dashboard.zip"), "wb").write(dbz)
         print(f"   dry run: wrote build/content-supermetrics.zip ({len(smz)} B) and "
@@ -279,6 +337,11 @@ def main():
 
     print(f"### importing {len(sms)} super metrics")
     do_import(ops, smz, "super metrics")
+    view_files = glob.glob(os.path.join(BUILD, "reports", "*", "*.xml"))
+    if view_files:
+        vz, n = views_zip(view_files, marker, owner)
+        print(f"### importing {n} views (before the dashboard, so its references resolve)")
+        do_import(ops, vz, "views")
     print("### importing dashboard")
     do_import(ops, dbz, "dashboard")
     if not args.no_enable:

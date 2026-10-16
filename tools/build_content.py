@@ -28,9 +28,10 @@ import uuid
 import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.environ.get("MEMTIER_CONTENT") or os.path.join(os.path.dirname(HERE), "content")
+OUT = os.path.join(HERE, "build")
 
-PREFIX = "Sizing"
+PREFIX = "Sizing"   # separator is a SPACE: a super metric name may not contain | or :
+CONSERVATIVE_FACTOR = float(os.environ.get("MEMTIER_CONSERVATIVE_FACTOR", "4"))
 ADAPTER = "VMWARE"
 CLUSTER, HOST, VM, WORLD = "ClusterComputeResource", "HostSystem", "VirtualMachine", "vSphere World"
 
@@ -50,6 +51,26 @@ METRICS = {
     (HOST,    "mem|consumed_average"):  "Consumed",
     (HOST,    "mem|active_average"):    "Active",
     (HOST,    "mem|usage_average"):     "Memory usage (%)",
+    # CPU, added to scope 2026-10-15. Tiering raises consolidation only if CPU can absorb the
+    # extra VMs; ready time that is fixable by rightsizing is what frees that headroom. Note
+    # the key differs by kind: the cluster has NO cpu|usage_average -- it is
+    # cpu|capacity_usagepct_average there -- and io wait is cpu|iowait on a host but
+    # cpu|iowaitPct on a VM.
+    (CLUSTER, "cpu|capacity_usagepct_average"): "CPU utilisation (%)",
+    (CLUSTER, "cpu|usagemhz_average"):          "CPU used (MHz)",
+    (CLUSTER, "cpu|demandmhz"):                 "CPU demand (MHz)",
+    (CLUSTER, "cpu|max_cpu_ready"):             "Worst VM CPU ready (%)",
+    (CLUSTER, "cpu|percentage_of_vms_facing_cpu_ready"): "VMs facing CPU ready (%)",
+    (CLUSTER, "cpu|workload"):                  "CPU workload (%)",
+    (HOST,    "cpu|usage_average"):             "CPU utilisation (%)",
+    (HOST,    "cpu|usagemhz_average"):          "CPU used (MHz)",
+    (HOST,    "cpu|ready_summation"):           "CPU ready (ms)",
+    (HOST,    "cpu|iowait"):                    "CPU io wait",
+    (VM,      "cpu|usage_average"):             "CPU utilisation (%)",
+    (VM,      "cpu|readyPct"):                  "CPU ready (%)",
+    (VM,      "cpu|20_sec_peak_readyPct"):      "CPU ready, 20s peak (%)",
+    (VM,      "cpu|iowaitPct"):                 "CPU io wait (%)",
+    (VM,      "cpu|costopPct"):                 "CPU co-stop (%)",
     (VM,      "mem|guest_provisioned"): "Configured",
     (VM,      "mem|active_average"):    "Active",
     (VM,      "mem|reservation_used"):  "Reserved",
@@ -178,25 +199,211 @@ which need a View transformation rather than a dashboard tile. Treat these value
 check, not as the number on the quote.</p>"""
 
 
+# Field reference, modelled on the vSAN pack's help panel. Inline style on every element --
+# the rich-text editor discards <style> blocks and keeps only inline attributes, and unstyled
+# text renders black on a dark theme (LESSONS.md 1.2).
+_H = 'style="color:#e8eaed;font-size:15px;margin:0 0 8px"'
+_P = 'style="color:#9aa4b0;margin:0 0 9px;line-height:1.5"'
+_B = 'style="color:#e8eaed"'
+_C = 'style="background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px"'
+_W = 'style="color:#e8b84b"'
+
+FIELDS = f"""<h3 {_H}>What each figure means</h3>
+
+<p {_P}><b {_B}>Available</b> &mdash; <code {_C}>mem|host_provisioned</code>, summed over the
+cluster's hosts. The memory the hypervisor presents. <b {_W}>On an untiered vSphere 8 host this
+is installed DRAM; on a host that already has tiering it is DRAM <i>plus</i> the NVMe tier</b>,
+which is why it is labelled <i>presented</i> throughout.</p>
+
+<p {_P}><b {_B}>Allocated</b> &mdash; <code {_C}>mem|guest_provisioned</code>, summed over the
+cluster's VMs. Memory configured to guests whether or not they ever touch it, and the figure a
+tiered host must <i>present</i>. It appears <b {_B}>three times</b> on the cluster table, and
+the comparison is the point.</p>
+<p {_P}><b {_B}>Allocated (all VMs)</b> is the raw rollup and an <i>upper bound</i>: powered-off
+VMs and templates keep reporting configured memory. &middot;
+<b {_B}>Allocated (powered on)</b> counts only running VMs &mdash; <b {_W}>size against this
+one</b>. &middot; <b {_B}>Allocated (powered off)</b> is the gap between them, measured at
+<b {_W}>20.3%</b> of allocated on one estate. A large value is both a reclamation opportunity
+and a warning that anything derived from the raw figure is overstated by that much.</p>
+
+<p {_P}><b {_B}>Consumed</b> &mdash; <code {_C}>mem|consumed_average</code>. Host physical
+memory actually backing guest pages, plus hypervisor overhead. Always less than or equal to
+allocated, and usually well below it.</p>
+
+<p {_P}><b {_B}>Active</b> &mdash; <code {_C}>mem|active_average</code>. The working set: pages
+the guests are reading or writing. <b {_B}>This is the number tiering turns on</b>, because the
+working set is what must stay in DRAM. It is an ESXi <i>estimate</i> from sampling, not a
+measurement, and it is the reason both DRAM figures below carry margin.</p>
+
+<p {_P}><b {_B}>Tierable of used</b> &mdash; <code {_C}>(consumed &minus; active) / 2</code>.
+Cold memory: backed in DRAM today but outside the working set, so a candidate for NVMe. Halved
+deliberately, because claiming all of it assumes the working set never moves.</p>
+
+<h3 {_H}>The two DRAM numbers, and why there are two</h3>
+
+<p {_P}><b {_B}>DRAM required &mdash; floor</b> is <code {_C}>peak active</code>. The aggressive
+number: at peak, every page the guests touch fits in DRAM and everything else lives on NVMe.
+<b {_W}>It is a floor, not a recommendation.</b> No margin for growth, none for the working set
+shifting, and none for active being an estimate.</p>
+
+<p {_P}><b {_B}>DRAM required &mdash; conservative</b> is
+<code {_C}>peak active &times; {{factor}}</code>. The planning number: the working set with
+{{factor}}&times; headroom. The factor is a starting point and is meant to be tuned once real
+peaks from a full business cycle are in hand.</p>
+
+<p {_P}><b {_W}>Both are only as good as the word "peak".</b> A super metric cannot compute a
+maximum over a window &mdash; it produces one value per collection. Because both formulas are
+<i>linear</i> in active, <code {_C}>max(k &times; active)</code> equals
+<code {_C}>k &times; max(active)</code>, so setting a widget or View to the <b {_B}>Maximum</b>
+transformation over 30 days turns either into a genuine peak-based figure. Read straight off a
+scoreboard tile they are the <i>latest sample</i>, which on a quiet Sunday sizes the purchase
+off a trough.</p>
+
+<p {_P}><b {_B}>Implied DRAM share at floor</b> tells you which supported ratio the workload
+could carry: <b {_B}>50%</b> is 1:1, <b {_B}>33%</b> is 1:2, <b {_B}>20%</b> is 1:4. Below 20%
+the workload is colder than the platform's maximum ratio allows, so the <i>ratio</i> is the
+limit rather than the workload &mdash; worth saying out loud in front of a customer.</p>
+
+<h3 {_H}>Sanity check, and what this screen cannot see</h3>
+
+<p {_P}><b {_B}>Active of consumed</b> is the check on the whole exercise. Typical estates run
+<b {_B}>8&ndash;12%</b>, nearer 15% where databases dominate. Outside roughly 5&ndash;20%,
+suspect the metric rather than the workload &mdash; a cluster reading 1% active is a collection
+problem, and it would otherwise look like the best tiering candidate you own.</p>
+
+<p {_P}><b {_W}>Large pages are invisible here, and that is permanent.</b> No performance
+counter in vCenter reports guest page size or large-page backing &mdash; every counter
+mentioning "page" concerns zero pages, compression, swap or page-fault latency. Operations
+exposes only three VM advanced settings, none of them the relevant ones, and the guest
+huge-page counters are declared in the schema but never populated. <b {_B}>1 GB pages, locked
+memory reservations and latency-sensitive VMs all disqualify a workload from tiering and none
+of them can be detected from this dashboard.</b> They need a one-off read-only vSphere API
+sweep. 2 MB pages are not a disqualifier &mdash; they are broken down under pressure.</p>
+
+<p {_P}><b {_B}>Reserved memory is visible and IS a disqualifier:</b> a VM whose reservation
+equals its configured memory is pinned to DRAM and cannot be tiered however cold it looks. Both
+halves are columns on the VM list &mdash; <i {_C}>Reserved (configured)</i> against the VM's
+configured memory. A memory <i {_C}>limit</i> is shown beside it for the same reason.</p>
+
+<p {_P}><b {_W}>SIX disqualifiers are invisible to this dashboard and it cannot warn you about
+any of them.</b> A VM pinned by any of these cannot be tiered, and will look like a perfectly
+good candidate here:</p>
+<p {_P}><b {_B}>PCI passthrough or vGPU</b> &mdash; forces a <b {_W}>100% memory
+reservation</b>. A GPU host full of vGPU VMs has every byte pinned and cannot be tiered at all.
+This is the one most likely to catch you out. &middot;
+<b {_B}>Latency sensitivity = High</b> &mdash; forces full reservation and CPU pinning. &middot;
+<b {_B}>memoryReservationLockedToMax</b> &mdash; reservation tracks configured memory forever.
+&middot; <b {_B}>1 GB pages</b> &mdash; explicit per-VM opt-in, stays pinned. &middot;
+<b {_B}>NUMA node affinity and vNUMA</b> &mdash; the DRAM tier is per-NUMA-node, and
+<i {_C}>VM % remote memory</i> does not exist in Operations at any version. &middot;
+<b {_B}>Fault Tolerance</b> &mdash; FT VMs are fully reserved.</p>
+<p {_P}>None of the six is exposed by the vCenter adapter &mdash; measured across 208 VM
+properties. They need a one-off read-only vSphere API sweep, and until that exists
+<b {_B}>treat every figure on this screen as an upper bound on what can actually be
+tiered.</b></p>
+
+<h3 {_H}>CPU: the other half of consolidation</h3>
+
+<p {_P}>Memory tiering buys <b {_B}>consolidation</b> &mdash; more VMs per host, because each
+host presents more memory. Consolidation is gated by whichever resource runs out
+<i {_C}>first</i>, so a cluster already short of CPU gains nothing from extra presented memory.
+Read <b {_B}>CPU headroom %</b> against <b {_B}>Active of host RAM %</b>: the smaller number is
+the binding constraint. Tiering pays where <i {_C}>memory</i> binds first.</p>
+
+<p {_P}><b {_B}>Worst VM ready %</b> and <b {_B}>VMs facing ready %</b> are the ones to act on,
+and they often change the answer. Ready time means vCPUs waiting for a physical core &mdash;
+and it is frequently caused by <i {_C}>oversized</i> VMs, where a VM with far more vCPUs than it
+uses must wait for all of them to be schedulable at once. Right-size those and CPU utilisation
+<b {_B}>falls</b>, headroom appears, and memory becomes the binding constraint. A cluster that
+looks CPU-bound today can be a good tiering candidate after rightsizing, which is why the
+<i {_C}>Oversized by</i> column sits on the VM list beside ready.</p>
+
+<p {_P}><b {_B}>CPU io wait</b> is a different bottleneck again &mdash; cores idle waiting on
+storage, not on each other. High io wait with low utilisation means the fix is in the storage
+path, and neither rightsizing nor tiering will touch it.</p>
+
+<p {_P}><b {_W}>If a cluster shows a DRAM requirement of zero, do not believe it.</b> Both DRAM
+figures are derived from active memory, so a cluster whose active metric is missing or reads
+zero produces a DRAM requirement of zero &mdash; which presents as "this cluster needs no DRAM"
+rather than as a collection failure. Check <b {_B}>Active of consumed</b> first: a plausible
+cluster sits in the 5&ndash;20% band, and anything reading near zero is a broken metric, not a
+cold workload.</p>"""
+
+
+def _view_guids():
+    """GUIDs come from build_views.py, never a second hand-kept table -- a duplicated list is
+    how the vSAN pack's dashboards ended up pointing at stale view ids (LESSONS.md 8)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("bv", os.path.join(HERE, "build_views.py"))
+    bv = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bv)
+    return bv, {t: bv.guid_for(t) for t, _, _, _ in bv.VIEWS}
+
+
+def view_provider(title, view_guid, y, x=1, w=2, h=9):
+    """Self-provider rooted at vSphere World -- a singleton that exists on every instance, which
+    is what makes it portable. An Object List pinned to a named cluster resolves only on the
+    system it was exported from (BACKLOG sect 9). selectFirstRow MUST be true: with it off
+    nothing is selected at load, no interaction fires, and every receiver renders empty."""
+    return widget("View", title, y, x=x, w=w, h=h, config={
+        "refreshInterval": 400,
+        "resource": {"resourceId": "resource:id:0_::_", "traversalSpecId": "",
+                     "resourceName": "vSphere World",
+                     "resourceKindId": f"002006{ADAPTER}vSphere World"},
+        "traversalSpecId": None, "isUpdatedView": True,
+        "viewDefinitionId": view_guid, "titleLocalized": title,
+        "chartViewItems": [], "selectFirstRow": {"selectFirstRow": True},
+        "viewDetails": "", "selfProvider": {"selfProvider": True}})
+
+
+def view_receiver(title, view_guid, y, x=1, w=12, h=9):
+    """Driven by the provider through one widgetInteractions entry. No depth and no traversal
+    spec: the view's own SubjectType type="descendant" does the traversal, which is the part
+    that takes longest to find. periodLength dashboardTime is what puts the 1H/6H/24H selector
+    on the dashboard -- without it on at least one widget the control greys out."""
+    return widget("View", title, y, x=x, w=w, h=h, config={
+        "refreshInterval": 300, "resource": None, "traversalSpecId": "",
+        "isUpdatedView": True, "viewDefinitionId": view_guid, "titleLocalized": title,
+        "viewType": "LIST", "chartViewItems": [],
+        "selectFirstRow": {"selectFirstRow": False}, "viewDetails": "",
+        "selfProvider": {"selfProvider": False}, "periodLength": "dashboardTime"})
+
+
+def _wid(widgets, title):
+    """Widget id by title. Raises rather than returning None, because a missing provider wires
+    an interaction to nothing and the dashboard still imports cleanly."""
+    for w in widgets:
+        if w["title"] == title:
+            return w["id"]
+    raise KeyError(f"no widget titled {title!r} to wire an interaction to")
+
+
 def build_dashboard():
+    bv, guids = _view_guids()
     dash_id = str(uuid.uuid5(uuid.NAMESPACE_URL, "memtier-sizing/dashboard"))
     widgets = [
         widget("TextDisplay", "How to read this", y=1, h=5, config={
             "editorData": HELP, "locationFile": "", "locationUrl": "",
             "refreshContent": {"refreshContent": False}, "viewModeHTML": True}),
-        scoreboard("Cluster memory", CLUSTER, [
-            ("mem|host_provisioned", "Presented memory (KB)"),
-            ("mem|consumed_average", "Consumed (KB)"),
-            ("mem|active_average", "Active (KB)")], y=6),
-        # Colour MUST be a percentage: the threshold block [0, 50, 100] is a percent scale, and
-        # colouring by a KB metric against it paints every host red (caught 2026-10-02).
+        # The sizing table is the headline AND the provider: click a cluster row and the host
+        # and VM lists below follow it. A Scoreboard held these numbers and was replaced -- it
+        # caps at 100 cells (metrics x objects), shows present value only, and cannot carry
+        # dashboardTime, so the one panel with the sizing figures was the one panel that could
+        # not honour the time range the whole peak-based model depends on. The vSAN pack's
+        # seven shipped dashboards use zero Scoreboards for the same reasons.
+        view_provider("Memory tiering sizing by cluster", guids[bv.SIZING], y=6, x=1, w=12, h=11),
+        view_receiver("Hosts in the selected cluster", guids[bv.HOSTS], y=17, x=1, w=12, h=9),
+        view_receiver("VMs in the selected cluster", guids[bv.VMS], y=26, x=1, w=12, h=11),
+        # Heat map stays. Present-value-only is acceptable in the capacity genre and it is the
+        # right widget for many objects at a glance (practitioner guide p50). Colour MUST be a
+        # percentage: the [0, 50, 100] threshold block is a percent scale, and colouring a KB
+        # metric against it paints every host red (caught 2026-10-02).
         heatmap("Hosts: memory usage (%), sized by presented memory, grouped by cluster",
-                HOST, "mem|usage_average", "mem|host_provisioned", CLUSTER, y=10),
-        pareto("Hosts by consumed memory", HOST, "mem|consumed_average", y=17, x=1),
-        pareto("Hosts by active memory", HOST, "mem|active_average", y=17, x=7),
-        pareto("VMs by configured memory (allocated)", VM, "mem|guest_provisioned", y=24, x=1, bars=25),
-        pareto("VMs by active memory", VM, "mem|active_average", y=24, x=7, bars=25),
-        pareto("VMs by reserved memory (cannot be tiered)", VM, "mem|reservation_used", y=31, x=1, bars=25),
+                HOST, "mem|usage_average", "mem|host_provisioned", CLUSTER, y=37),
+        widget("TextDisplay", "Field reference", y=44, h=14, config={
+            "editorData": FIELDS.replace("{factor}", f"{CONSERVATIVE_FACTOR:g}"),
+            "locationFile": "", "locationUrl": "",
+            "refreshContent": {"refreshContent": False}, "viewModeHTML": True}),
     ]
     for w in widgets:
         w["tabId"] = dash_id
@@ -219,6 +426,14 @@ def build_dashboard():
             "importAttempts": 0, "importComplete": True, "autoswitchEnabled": False,
             "columnCount": 0, "columnProportion": "1", "gridsterMaxColumns": 12,
             "states": [], "dashboardNavigations": {},
+            # Resolve by title, never by list index: an index silently rewires itself the
+            # moment a widget is added or removed above it, and the wrong provider still
+            # produces a valid-looking dashboard.
+            "widgetInteractions": [
+                {"widgetIdProvider": _wid(widgets, "Memory tiering sizing by cluster"), "type": "resourceId",
+                 "widgetIdReceiver": _wid(widgets, t)}
+                for t in ("Hosts in the selected cluster", "VMs in the selected cluster")
+            ],
             "widgets": widgets,
         }],
         "uuid": str(uuid.uuid5(uuid.NAMESPACE_URL, "memtier-sizing/export")),
@@ -237,32 +452,143 @@ def roll(kind, key, depth):
 
 def build_supermetrics():
     KB_PER_GB = 1048576
+    host_avail = roll(HOST, "mem|host_provisioned", 1)
     host_active = roll(HOST, "mem|active_average", 1)
+    # --- finding E: a zero or missing `active` must not produce a confident wrong answer ------
+    # Every sizing output below is derived from active, so a cluster whose active metric is
+    # absent or reads zero yields "this cluster needs no DRAM" -- the cheapest possible buy,
+    # presented as a result rather than as a collection failure.
+    #
+    # The guard is `* (active / active)`, NOT a ternary. When active > 0 that factor is exactly
+    # 1 and the value is untouched; when active is 0 it is 0/0, which the engine renders as
+    # BLANK rather than zero (practitioner guide p106: "the maths of 0 / 0 = undefined", shown
+    # as an empty cell). So the panel goes empty, which reads as "no answer" instead of "no
+    # DRAM needed". Arithmetic only -- no reliance on ternary support, which is documented for
+    # 8.18 but unverified there, and a formula the importer rejects would be worse than the bug.
+    guard = f"({host_active} / {host_active})"
+
     host_consumed = roll(HOST, "mem|consumed_average", 1)
     vm_alloc = roll(VM, "mem|guest_provisioned", 2)
     out = {}
     for k, v in [
-        sm(f"{PREFIX}|Allocated (GB)", f"{vm_alloc} / {KB_PER_GB}", CLUSTER, "gb",
+        # --- finding C: allocated, with and without powered-off VMs ---------------------
+        # Powered-off VMs and templates keep reporting configured memory -- 20.3% of allocated
+        # measured on this estate -- and every sizing figure scales with it. A rollup aggregates
+        # ONE metric and cannot filter, so the gate happens per VM and a second super metric
+        # rolls it up. Proven syntax, not a guess: the vCommunity pack (SDK-built,
+        # vcops_minimum_version 8.18.0) does this in 15 of its own super metrics. Rollups of a
+        # super metric use attribute= rather than metric= (9 uses to 2 in theirs);
+        # ${this, metric=...} is the self-reference form.
+        #
+        # The gate is a plain multiply by sys|poweredOn, which is 1 or 0 -- no division, no
+        # 0/0, because a powered-off VM contributes genuine zero rather than "unknown". A
+        # template with no power state yields blank and drops out of the sum, also correct.
+        sm(f"{PREFIX} VM Allocated if Powered On (KB)",
+           "${this, metric=mem|guest_provisioned} * ${this, metric=sys|poweredOn}",
+           VM, "kb",
+           "Per VM: configured memory if running, zero if not. Exists to be rolled up; it is "
+           "not interesting on a single VM."),
+        sm(f"{PREFIX} Allocated Powered On (GB)",
+           f"sum(${{adaptertype={ADAPTER}, objecttype={VM}, attribute=Super Metric|"
+           f"sm_{sm_uuid(f'{PREFIX} VM Allocated if Powered On (KB)')}, depth=2}}) / {KB_PER_GB}",
+           CLUSTER, "gb",
+           "Allocated counting only powered-on VMs. THIS is the figure to size against. The "
+           "plain Allocated beside it includes powered-off VMs and templates, which still "
+           "report configured memory and are reclamation candidates, not demand."),
+        sm(f"{PREFIX} Allocated Powered Off (GB)",
+           f"({vm_alloc} / {KB_PER_GB}) - (sum(${{adaptertype={ADAPTER}, objecttype={VM}, "
+           f"attribute=Super Metric|sm_{sm_uuid(f'{PREFIX} VM Allocated if Powered On (KB)')}, "
+           f"depth=2}}) / {KB_PER_GB})", CLUSTER, "gb",
+           "The gap between the two: memory configured to VMs that are not running, measured "
+           "at 20.3% of allocated on one estate. A reclamation opportunity, and a warning that "
+           "anything derived from plain Allocated is overstated by this much."),
+        sm(f"{PREFIX} Allocated (GB)", f"{vm_alloc} / {KB_PER_GB}", CLUSTER, "gb",
            "Sum of configured memory across the cluster's VMs. The one base figure with no "
-           "native cluster metric. Note: powered-off VMs and templates still report "
-           "configured memory, so treat this as an upper bound on what is really running."),
-        sm(f"{PREFIX}|Tierable of Used (GB)",
-           f"(({host_consumed} - {host_active}) / 2) / {KB_PER_GB}", CLUSTER, "gb",
-           "Cold memory currently backed in DRAM, halved for conservatism. Consumed minus "
+           "native cluster metric. INCLUDES powered-off VMs and templates, so it is an upper "
+           "bound -- compare it against Allocated Powered On, which does not."),
+        sm(f"{PREFIX} Tierable of Used (GB)",
+           f"((({host_consumed} - {host_active}) / 2) * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
+           "Cold memory currently backed in DRAM, halved for conservatism. Blank means the "
+           "active metric is missing, not that everything is cold. Consumed minus "
            "active, in that order -- active is the working set within consumed."),
-        sm(f"{PREFIX}|Active of Allocated (%)",
+        sm(f"{PREFIX} Active of Allocated (%)",
            f"({host_active} / {vm_alloc}) * 100", CLUSTER, "percent",
            "Raw active as a share of allocated, with NO headroom factor applied, so the number "
            "means what its name says. Apply headroom in the classification, not here."),
-        sm(f"{PREFIX}|Active of Consumed (%)",
+        sm(f"{PREFIX} Active of Consumed (%)",
            f"({host_active} / {host_consumed}) * 100", CLUSTER, "percent",
            "Plausibility check on the whole exercise. Typical estates sit at 8-12%, nearer 15% "
            "where databases dominate. Outside 5-20% suspect the metric, not the workload."),
+        # --- the originally specified base set ------------------------------------------
+        # These four were in the brief verbatim and three of them were never built: the model
+        # drifted into its own derivations (Active of Allocated / of Consumed) and left the
+        # asked-for figures out. Restored 2026-10-07.
+        sm(f"{PREFIX} Unused (GB)",
+           f"({vm_alloc} - {host_consumed}) / {KB_PER_GB}", CLUSTER, "gb",
+           "allocated - consumed. Memory configured to guests that the host has never had to "
+           "back. Overcommit you are already harvesting, and the cheapest headroom there is."),
+        sm(f"{PREFIX} Unallocated (GB)",
+           f"({host_avail} - {vm_alloc}) / {KB_PER_GB}", CLUSTER, "gb",
+           "available - allocated. Installed memory handed to no VM. NEGATIVE MEANS THE CLUSTER "
+           "IS OVERCOMMITTED, which is a useful signal in itself -- it is deliberately not "
+           "clamped at zero."),
+        sm(f"{PREFIX} Active of Host RAM (%)",
+           f"({host_active} / {host_avail}) * 100", CLUSTER, "percent",
+           "active / available. The working set against the memory actually installed. This is "
+           "the one that says whether a DRAM tier sized at today's hardware would hold the "
+           "workload at all."),
+        sm(f"{PREFIX} Overcommit (%)",
+           f"({vm_alloc} / {host_avail}) * 100", CLUSTER, "percent",
+           "allocated / available. Under 100% the cluster is not overcommitted. Estates that do "
+           "overcommit typically sit 5-10% over, so 100-110% is mild and only past 110% is "
+           "worth flagging -- judged on typical allocation, not on a peak, because allocation "
+           "is a configuration fact that drifts slowly rather than a spiky metric."),
+        # --- consolidation: CPU is the other constraint ---------------------------------
+        # Memory tiering buys consolidation headroom, and consolidation is gated by whichever
+        # resource binds FIRST. Read this against Active of Host RAM: if CPU headroom is the
+        # smaller number, extra presented memory buys nothing until CPU is addressed. If
+        # memory is the smaller number, tiering is pointed at the real constraint.
+        sm(f"{PREFIX} CPU Headroom (%)",
+           f"100 - {roll(HOST, 'cpu|usage_average', 1)} / "
+           f"({roll(HOST, 'cpu|usage_average', 1)} / {roll(HOST, 'cpu|usage_average', 1)})",
+           CLUSTER, "percent",
+           "100 - CPU utilisation, as a cluster rollup. Compare against Active of Host RAM: "
+           "the SMALLER headroom is the constraint that binds consolidation first. Tiering only "
+           "pays where memory binds before CPU. Blank means the CPU metric is missing."),
+        # --- DRAM sizing: a floor and a conservative number -----------------------------
+        # Both are LINEAR in active, which is what makes peak-based sizing possible at all:
+        # a super metric cannot compute a maximum over a window, but max(k * active) equals
+        # k * max(active), so a widget or View with the Maximum transformation over 30 days
+        # yields a true peak-based figure from an instantaneous formula. Use it that way.
+        sm(f"{PREFIX} DRAM Required Floor (GB)",
+           f"({host_active} * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
+           "AGGRESSIVE. DRAM sized to the working set and nothing more: at peak, every page "
+           "the guests are actually touching fits in DRAM and all cold memory lives on NVMe. "
+           "Blank means the active metric is missing, NOT that no DRAM is needed. "
+           "This is a floor, not a recommendation -- there is no margin for growth, for a "
+           "working set that moves, or for active memory being an ESXi estimate rather than a "
+           "measurement. Read it with the Maximum transformation over 30 days."),
+        sm(f"{PREFIX} DRAM Required Conservative (GB)",
+           f"({host_active} * {CONSERVATIVE_FACTOR} * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
+           f"CONSERVATIVE. {CONSERVATIVE_FACTOR:g}x the working set, so DRAM holds the active "
+           f"set with {CONSERVATIVE_FACTOR:g}x headroom for growth and for the working set "
+           "shifting. Starting point for planning, not a final answer -- tune the factor once "
+           "real peaks are in hand. Read it with the Maximum transformation over 30 days."),
+        sm(f"{PREFIX} NVMe Required at Floor (GB)",
+           f"(({vm_alloc} - {host_active}) * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
+           "Allocated memory that would sit on NVMe if DRAM were sized to the floor. Negative "
+           "means the working set already exceeds what is allocated -- investigate before "
+           "sizing anything on it."),
+        sm(f"{PREFIX} Implied DRAM Share at Floor (%)",
+           f"({host_active} / {vm_alloc}) * 100 * {guard}", CLUSTER, "percent",
+           "DRAM as a share of presented memory at the floor. Compare against the supported "
+           "ratios: 50% is 1:1, 33% is 1:2, 20% is 1:4. Below 20% the workload is cold enough "
+           "that the platform's maximum ratio, not the workload, is the limit."),
         # --- A/B test, remove once settled: which depth reaches hosts from vSphere World? ---
-        sm(f"{PREFIX}|TEST Fleet Active depth3 (GB)",
+        sm(f"{PREFIX} TEST Fleet Active depth3 (GB)",
            f"{roll(HOST, 'mem|active_average', 3)} / {KB_PER_GB}", WORLD, "gb",
            "A/B TEST ONLY. Measured tree depth from vSphere World to HostSystem is 3."),
-        sm(f"{PREFIX}|TEST Fleet Active depth10 (GB)",
+        sm(f"{PREFIX} TEST Fleet Active depth10 (GB)",
            f"{roll(HOST, 'mem|active_average', 10)} / {KB_PER_GB}", WORLD, "gb",
            "A/B TEST ONLY. The inherited content uses depth=10. If this one reports data and "
            "depth3 does not, depth means 'up to N'; if the reverse, it means 'exactly N'."),
@@ -293,50 +619,53 @@ def self_check(dash):
     for bad in ("includedResources\": [", "excludedResources\": ["):
         if bad in blob:
             problems.append("a widget pins resources -- forbidden by BACKLOG §9")
+    ids = {w["id"]: w for w in widgets}
+    for i in dash["dashboards"][0].get("widgetInteractions", []):
+        for role in ("widgetIdProvider", "widgetIdReceiver"):
+            if i[role] not in ids:
+                problems.append(f"interaction {role} names no widget on this dashboard")
+        prov = ids.get(i["widgetIdProvider"], {}).get("config", {})
+        if prov and not prov.get("selfProvider", {}).get("selfProvider"):
+            problems.append(f"interaction provider {ids[i['widgetIdProvider']]['title']!r} "
+                            f"is not a self-provider")
+        recv = ids.get(i["widgetIdReceiver"], {}).get("config", {})
+        if recv and recv.get("selfProvider", {}).get("selfProvider"):
+            problems.append(f"interaction receiver {ids[i['widgetIdReceiver']]['title']!r} "
+                            f"is a self-provider; it will ignore the provider")
+    refs = {w["config"]["viewDefinitionId"] for w in widgets if "viewDefinitionId" in w["config"]}
+    bv, guids = _view_guids()
+    missing = refs - set(guids.values())
+    if missing:
+        problems.append(f"dashboard references view GUIDs no view defines: {sorted(missing)}")
+    if refs and not any(w["config"].get("periodLength") == "dashboardTime" for w in widgets):
+        problems.append("no widget set to dashboardTime -- the 1H/6H/24H selector will grey out")
     if dash["entries"]["resource"]:
         problems.append("entries.resource is not empty -- forbidden by BACKLOG §9")
     return problems
 
 
-def verify_live(dash, sms, host, user, password):
-    """Check every metric key the dashboard uses is observed on a real object of that kind.
-    Self-contained: no dependency on anything outside this file."""
-    import base64, json as _json, ssl, urllib.request, urllib.parse as _up
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-    base = f"https://{host}/suite-api/api"
-
-    def req(path, body=None, token=None):
-        data = _json.dumps(body).encode() if body is not None else None
-        r = urllib.request.Request(base + path, data=data,
-                                   method="POST" if data else "GET")
-        r.add_header("Accept", "application/json")
-        if data:
-            r.add_header("Content-Type", "application/json")
-        if token:
-            r.add_header("Authorization", f"vRealizeOpsToken {token}")
-        with urllib.request.urlopen(r, context=ctx, timeout=90) as resp:
-            return _json.loads(resp.read().decode())
-
-    tok = req("/auth/token/acquire", {"username": user, "password": password})["token"]
+def verify_live(dash, sms):
+    """Check every metric key the dashboard uses is observed on a real object of that kind."""
+    sys.path.insert(0, os.path.join(os.path.dirname(HERE), "probes"))
+    from _opslib import req, token, statkeys      # noqa: E402
+    tok = token()
     ok = True
     for kind in KINDS:
-        rl = req(f"/resources?adapterKind={ADAPTER}&resourceKind={_up.quote(kind)}&pageSize=1000",
+        rl = req(f"/resources?adapterKind={ADAPTER}&resourceKind={kind}&pageSize=1000",
                  token=tok)["resourceList"]
         observed = set()
         for r in rl[:12]:
-            sk = req(f"/resources/{r['identifier']}/statkeys", token=tok)
-            observed |= {s["key"] for s in sk.get("stat-key", [])}
-        for k in sorted({k for (kk, k) in METRICS if kk == kind}):
+            observed |= statkeys(r["identifier"], tok)
+        wanted = {k for (kk, k) in METRICS if kk == kind}
+        for k in sorted(wanted):
             hit = k in observed
             ok &= hit
             print(f"   {'OK  ' if hit else 'MISS'}  {kind:<24} {k}")
-    declared = {rk["resourceKindKey"] for rk in dash["entries"]["resourceKind"]}
-    declared |= {r["resourceKindKey"] for v in sms.values() for r in v["resourceKinds"]}
-    all_kinds = {k["key"] for k in
-                 req(f"/adapterkinds/{ADAPTER}/resourcekinds?limit=500", token=tok)["resource-kind"]}
-    for k in sorted(declared):
+    kinds_declared = {rk["resourceKindKey"] for d in [dash] for rk in d["entries"]["resourceKind"]}
+    kinds_declared |= {r["resourceKindKey"] for v in sms.values() for r in v["resourceKinds"]}
+    all_kinds = {k["key"] for k in req(f"/adapterkinds/{ADAPTER}/resourcekinds?limit=500",
+                                       token=tok)["resource-kind"]}
+    for k in sorted(kinds_declared):
         hit = k in all_kinds
         ok &= hit
         print(f"   {'OK  ' if hit else 'MISS'}  resource kind exists: {k}")
@@ -346,15 +675,19 @@ def verify_live(dash, sms, host, user, password):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--verify", action="store_true",
-                    help="check every metric key against a live instance before writing")
-    ap.add_argument("--host", help="Operations host, for --verify")
-    ap.add_argument("--user", help="username, for --verify")
-    ap.add_argument("--password", help="password, for --verify; prompted if omitted")
+                    help="check metric keys against the live instance in ~/ops.env")
     args = ap.parse_args()
 
     dash = build_dashboard()
     sms = build_supermetrics()
 
+    for v in sms.values():
+        if "|" in v["name"] or ":" in v["name"]:
+            print(f"SELF-CHECK FAILED: super metric name may not contain '|' or ':': "
+                  f"{v['name']!r}. The content importer reads such a name, creates nothing, "
+                  f"and reports imported=0 with NO error -- a silent total failure.",
+                  file=sys.stderr)
+            return 1
     problems = self_check(dash)
     if problems:
         for p in problems:
@@ -377,28 +710,8 @@ def main():
           f"({len(sms)} super metrics)")
 
     if args.verify:
-        import getpass
-        host, user = args.host, args.user
-        if not host or not user:
-            envf = os.path.expanduser("~/ops.env")
-            if os.path.exists(envf):
-                e = dict(l.strip().split("=", 1) for l in open(envf)
-                         if "=" in l and not l.strip().startswith("#"))
-                host = host or e.get("OPS_HOST", "").strip("'\"")
-                user = user or e.get("OPS_USER", "").strip("'\"")
-        if not host or not user:
-            print("--verify needs --host and --user", file=sys.stderr)
-            return 1
-        pw = args.password or os.environ.get("OPS_PASSWORD")
-        if not pw:
-            envf = os.path.expanduser("~/ops.env")
-            if os.path.exists(envf):
-                e = dict(l.strip().split("=", 1) for l in open(envf)
-                         if "=" in l and not l.strip().startswith("#"))
-                pw = e.get("OPS_PASS", "").strip("'\"") or None
-        pw = pw or getpass.getpass(f"password for {user}@{host}: ")
         print("\nverifying every metric key against the live instance:")
-        if not verify_live(dash, sms, host, user, pw):
+        if not verify_live(dash, sms):
             print("\nVERIFY FAILED: at least one key or kind is missing", file=sys.stderr)
             return 1
         print("\nverify passed: every metric key is observed and every resource kind exists")

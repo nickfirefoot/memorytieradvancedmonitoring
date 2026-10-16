@@ -1,21 +1,17 @@
-> ## ⚠️ NOT RELEASED — nothing here has been through a successful install
+> ## Released: [v1.4.1](../../releases/tag/v1.4.1)
 >
-> There are **no releases**, and there will not be one until a pak installs on an
-> instance that is not the author's own lab. Specifically, as of 2026-10-07:
+> `MemoryTieringSizing_1.4.1.pak` — 18 super metrics, 3 views, 1 dashboard.
+> Install through **Administration → Integrations → Repository → Add**, ticking both
+> *Install even if already installed* and *Ignore signature checking*. Unsigned installs must
+> be enabled once per instance under `https://<ops>/admin` → Administrator Settings →
+> Security Settings → **Activate Unsigned PAK Installation**.
 >
-> - **The `.pak` does not install.** Five builds. A pak without `<Kind>.conf` installs with a
->   clean log and registers nothing; a pak with the `.conf` but no container image reference
->   fails at *Applied Adapter*. See [Status](#status).
-> - **`install_content.py` has never been run end to end against a live instance.** Its wire
->   format is verified offline against real artefacts, which is not the same thing.
-> - **The dashboard and super metrics are real** — every metric key was verified present and
->   populated on a live 9.1.1 instance — but they have not been imported and looked at.
+> **Then enable the super metrics in the active policy** — they arrive disabled however they
+> are imported, and until they are enabled every derived column reads no data.
 >
-> Nothing in this repository is signed, attested, or built in public CI. The only assurance
-> offered is that you can read the source and regenerate the content yourself.
->
-> Watch the [Releases](../../releases) page. An empty one is the honest signal that this is not
-> ready.
+> **Verified on VCF Operations 9.1.1**, where all 18 super metrics, 3 views and the dashboard
+> import and resolve, with every metric key confirmed present on live objects.
+> **Not yet verified on 8.18.** The pak is unsigned and is not built in public CI.
 
 # Memory Tiering Sizing for VCF Operations
 

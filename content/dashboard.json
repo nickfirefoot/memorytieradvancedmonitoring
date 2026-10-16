@@ -43,6 +43,18 @@
    "gridsterMaxColumns": 12,
    "states": [],
    "dashboardNavigations": {},
+   "widgetInteractions": [
+    {
+     "widgetIdProvider": "4d68c4e3-dca0-59ca-b0a7-c47c6f33b9ce",
+     "type": "resourceId",
+     "widgetIdReceiver": "84112ce1-9295-5e99-b78f-81a3ff0d8d45"
+    },
+    {
+     "widgetIdProvider": "4d68c4e3-dca0-59ca-b0a7-c47c6f33b9ce",
+     "type": "resourceId",
+     "widgetIdReceiver": "e8bb63e9-2e5b-5082-8e73-95e472760878"
+    }
+   ],
    "widgets": [
     {
      "collapsed": false,
@@ -82,21 +94,21 @@
     },
     {
      "collapsed": false,
-     "id": "12e91473-e871-5c56-8fb8-e34d6a511bfa",
+     "id": "4d68c4e3-dca0-59ca-b0a7-c47c6f33b9ce",
      "gridsterCoords": {
       "w": 12,
       "x": 1,
-      "h": 4,
+      "h": 11,
       "y": 6
      },
      "state": "",
-     "type": "Scoreboard",
-     "title": "Cluster memory",
+     "type": "View",
+     "title": "Memory tiering sizing by cluster",
      "config": {
-      "refreshInterval": 300,
-      "widgetId": "12e91473-e871-5c56-8fb8-e34d6a511bfa",
+      "refreshInterval": 400,
+      "widgetId": "4d68c4e3-dca0-59ca-b0a7-c47c6f33b9ce",
       "description": "",
-      "title": "Cluster memory",
+      "title": "Memory tiering sizing by cluster",
       "refreshContent": {
        "refreshContent": true
       },
@@ -108,91 +120,109 @@
       "selfProvider": {
        "selfProvider": true
       },
-      "metric": {
-       "mode": "resourceKind",
-       "resourceMetrics": [],
-       "resourceKindMetrics": [
-        {
-         "metricKey": "mem|host_provisioned",
-         "metricName": "Presented memory",
-         "isStringMetric": false,
-         "resourceKindId": "resourceKind:id:0_::_",
-         "resourceKindName": "ClusterComputeResource",
-         "colorMethod": 1,
-         "handleOldColoring": false,
-         "id": "extModel1-1",
-         "label": "Presented memory (KB)",
-         "yellowBound": null,
-         "orangeBound": null,
-         "redBound": null
-        },
-        {
-         "metricKey": "mem|consumed_average",
-         "metricName": "Consumed",
-         "isStringMetric": false,
-         "resourceKindId": "resourceKind:id:0_::_",
-         "resourceKindName": "ClusterComputeResource",
-         "colorMethod": 1,
-         "handleOldColoring": false,
-         "id": "extModel2-1",
-         "label": "Consumed (KB)",
-         "yellowBound": null,
-         "orangeBound": null,
-         "redBound": null
-        },
-        {
-         "metricKey": "mem|active_average",
-         "metricName": "Active",
-         "isStringMetric": false,
-         "resourceKindId": "resourceKind:id:0_::_",
-         "resourceKindName": "ClusterComputeResource",
-         "colorMethod": 1,
-         "handleOldColoring": false,
-         "id": "extModel3-1",
-         "label": "Active (KB)",
-         "yellowBound": null,
-         "orangeBound": null,
-         "redBound": null
-        }
-       ]
+      "resource": {
+       "resourceId": "resource:id:0_::_",
+       "traversalSpecId": "",
+       "resourceName": "vSphere World",
+       "resourceKindId": "002006VMWAREvSphere World"
       },
-      "resource": [],
-      "relationshipMode": {
-       "relationshipMode": 0
+      "traversalSpecId": null,
+      "isUpdatedView": true,
+      "viewDefinitionId": "2a6e2a92-a56d-57a3-91e4-a8fcdefdf6b3",
+      "titleLocalized": "Memory tiering sizing by cluster",
+      "chartViewItems": [],
+      "selectFirstRow": {
+       "selectFirstRow": true
       },
-      "depth": 1,
-      "resInteractionMode": null,
-      "visualTheme": 8,
-      "mode": {
-       "layoutMode": "fixedView"
-      },
-      "showResourceName": {
-       "showResourceName": true
-      },
-      "showMetricName": {
-       "showMetricName": true
-      },
-      "showMetricUnit": {
-       "showMetricUnit": true
-      },
-      "showDT": {
-       "showDT": false
-      },
-      "showSparkline": {
-       "showSparkline": true
-      },
-      "periodLength": null,
-      "maxCellCount": 100,
-      "oldMetricValues": false,
-      "roundDecimals": 1,
-      "valueSize": 24,
-      "labelSize": 12,
-      "boxHeight": null,
-      "boxColumns": 1,
-      "focusOnPercent": false,
-      "showPercentText": false,
-      "showRemaining": false,
       "viewDetails": ""
+     },
+     "height": 0,
+     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+    },
+    {
+     "collapsed": false,
+     "id": "84112ce1-9295-5e99-b78f-81a3ff0d8d45",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 9,
+      "y": 17
+     },
+     "state": "",
+     "type": "View",
+     "title": "Hosts in the selected cluster",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "84112ce1-9295-5e99-b78f-81a3ff0d8d45",
+      "description": "",
+      "title": "Hosts in the selected cluster",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": false
+      },
+      "resource": null,
+      "traversalSpecId": "",
+      "isUpdatedView": true,
+      "viewDefinitionId": "ade0b1d6-e236-5a6f-b6eb-ee09b5ae5974",
+      "titleLocalized": "Hosts in the selected cluster",
+      "viewType": "LIST",
+      "chartViewItems": [],
+      "selectFirstRow": {
+       "selectFirstRow": false
+      },
+      "viewDetails": "",
+      "periodLength": "dashboardTime"
+     },
+     "height": 0,
+     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
+    },
+    {
+     "collapsed": false,
+     "id": "e8bb63e9-2e5b-5082-8e73-95e472760878",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 11,
+      "y": 26
+     },
+     "state": "",
+     "type": "View",
+     "title": "VMs in the selected cluster",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "e8bb63e9-2e5b-5082-8e73-95e472760878",
+      "description": "",
+      "title": "VMs in the selected cluster",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": false
+      },
+      "resource": null,
+      "traversalSpecId": "",
+      "isUpdatedView": true,
+      "viewDefinitionId": "6da8f8c0-ebb0-5745-8b46-e15c89d7809b",
+      "titleLocalized": "VMs in the selected cluster",
+      "viewType": "LIST",
+      "chartViewItems": [],
+      "selectFirstRow": {
+       "selectFirstRow": false
+      },
+      "viewDetails": "",
+      "periodLength": "dashboardTime"
      },
      "height": 0,
      "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
@@ -204,7 +234,7 @@
       "w": 12,
       "x": 1,
       "h": 7,
-      "y": 10
+      "y": 37
      },
      "state": "",
      "type": "Heatmap",
@@ -309,23 +339,23 @@
     },
     {
      "collapsed": false,
-     "id": "5a6e2eaf-ddd0-511e-b58b-9d76e46e270d",
+     "id": "66947226-6bf5-5875-92b5-1e6f551c2d81",
      "gridsterCoords": {
-      "w": 6,
+      "w": 12,
       "x": 1,
-      "h": 7,
-      "y": 17
+      "h": 14,
+      "y": 44
      },
      "state": "",
-     "type": "ParetoAnalysis",
-     "title": "Hosts by consumed memory",
+     "type": "TextDisplay",
+     "title": "Field reference",
      "config": {
       "refreshInterval": 300,
-      "widgetId": "5a6e2eaf-ddd0-511e-b58b-9d76e46e270d",
+      "widgetId": "66947226-6bf5-5875-92b5-1e6f551c2d81",
       "description": "",
-      "title": "Hosts by consumed memory",
+      "title": "Field reference",
       "refreshContent": {
-       "refreshContent": true
+       "refreshContent": false
       },
       "customFilter": {
        "filter": [],
@@ -335,304 +365,10 @@
       "selfProvider": {
        "selfProvider": true
       },
-      "resource": [],
-      "relationshipMode": {
-       "relationshipMode": [
-        -1,
-        0
-       ]
-      },
-      "mode": "all",
-      "filterMode": "tagPicker",
-      "tagFilter": null,
-      "depth": 10,
-      "filterOldMetrics": {
-       "filterOldMetrics": false
-      },
-      "topOption": "metricsHighestUtilization",
-      "barsCount": 15,
-      "roundDecimals": 1.0,
-      "regenerationTime": 15,
-      "percentileValue": null,
-      "metricName": "Consumed",
-      "metricUnit": {
-       "metricUnitId": -1,
-       "metricUnitName": "Auto"
-      },
-      "additionalColumns": [],
-      "metric": {
-       "metricKey": "mem|consumed_average",
-       "name": "Consumed"
-      },
-      "resourceKind": [
-       {
-        "id": "resourceKind:id:1_::_"
-       }
-      ]
-     },
-     "height": 0,
-     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
-    },
-    {
-     "collapsed": false,
-     "id": "9024b22a-170e-5183-a415-17c5c90b4a20",
-     "gridsterCoords": {
-      "w": 6,
-      "x": 7,
-      "h": 7,
-      "y": 17
-     },
-     "state": "",
-     "type": "ParetoAnalysis",
-     "title": "Hosts by active memory",
-     "config": {
-      "refreshInterval": 300,
-      "widgetId": "9024b22a-170e-5183-a415-17c5c90b4a20",
-      "description": "",
-      "title": "Hosts by active memory",
-      "refreshContent": {
-       "refreshContent": true
-      },
-      "customFilter": {
-       "filter": [],
-       "excludedResources": null,
-       "includedResources": null
-      },
-      "selfProvider": {
-       "selfProvider": true
-      },
-      "resource": [],
-      "relationshipMode": {
-       "relationshipMode": [
-        -1,
-        0
-       ]
-      },
-      "mode": "all",
-      "filterMode": "tagPicker",
-      "tagFilter": null,
-      "depth": 10,
-      "filterOldMetrics": {
-       "filterOldMetrics": false
-      },
-      "topOption": "metricsHighestUtilization",
-      "barsCount": 15,
-      "roundDecimals": 1.0,
-      "regenerationTime": 15,
-      "percentileValue": null,
-      "metricName": "Active",
-      "metricUnit": {
-       "metricUnitId": -1,
-       "metricUnitName": "Auto"
-      },
-      "additionalColumns": [],
-      "metric": {
-       "metricKey": "mem|active_average",
-       "name": "Active"
-      },
-      "resourceKind": [
-       {
-        "id": "resourceKind:id:1_::_"
-       }
-      ]
-     },
-     "height": 0,
-     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
-    },
-    {
-     "collapsed": false,
-     "id": "d0ca3b81-719f-52ac-94f7-13f3e25ef015",
-     "gridsterCoords": {
-      "w": 6,
-      "x": 1,
-      "h": 7,
-      "y": 24
-     },
-     "state": "",
-     "type": "ParetoAnalysis",
-     "title": "VMs by configured memory (allocated)",
-     "config": {
-      "refreshInterval": 300,
-      "widgetId": "d0ca3b81-719f-52ac-94f7-13f3e25ef015",
-      "description": "",
-      "title": "VMs by configured memory (allocated)",
-      "refreshContent": {
-       "refreshContent": true
-      },
-      "customFilter": {
-       "filter": [],
-       "excludedResources": null,
-       "includedResources": null
-      },
-      "selfProvider": {
-       "selfProvider": true
-      },
-      "resource": [],
-      "relationshipMode": {
-       "relationshipMode": [
-        -1,
-        0
-       ]
-      },
-      "mode": "all",
-      "filterMode": "tagPicker",
-      "tagFilter": null,
-      "depth": 10,
-      "filterOldMetrics": {
-       "filterOldMetrics": false
-      },
-      "topOption": "metricsHighestUtilization",
-      "barsCount": 25,
-      "roundDecimals": 1.0,
-      "regenerationTime": 15,
-      "percentileValue": null,
-      "metricName": "Configured",
-      "metricUnit": {
-       "metricUnitId": -1,
-       "metricUnitName": "Auto"
-      },
-      "additionalColumns": [],
-      "metric": {
-       "metricKey": "mem|guest_provisioned",
-       "name": "Configured"
-      },
-      "resourceKind": [
-       {
-        "id": "resourceKind:id:2_::_"
-       }
-      ]
-     },
-     "height": 0,
-     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
-    },
-    {
-     "collapsed": false,
-     "id": "6ab63e5a-6b97-5ea4-90c0-ed5e6f063e77",
-     "gridsterCoords": {
-      "w": 6,
-      "x": 7,
-      "h": 7,
-      "y": 24
-     },
-     "state": "",
-     "type": "ParetoAnalysis",
-     "title": "VMs by active memory",
-     "config": {
-      "refreshInterval": 300,
-      "widgetId": "6ab63e5a-6b97-5ea4-90c0-ed5e6f063e77",
-      "description": "",
-      "title": "VMs by active memory",
-      "refreshContent": {
-       "refreshContent": true
-      },
-      "customFilter": {
-       "filter": [],
-       "excludedResources": null,
-       "includedResources": null
-      },
-      "selfProvider": {
-       "selfProvider": true
-      },
-      "resource": [],
-      "relationshipMode": {
-       "relationshipMode": [
-        -1,
-        0
-       ]
-      },
-      "mode": "all",
-      "filterMode": "tagPicker",
-      "tagFilter": null,
-      "depth": 10,
-      "filterOldMetrics": {
-       "filterOldMetrics": false
-      },
-      "topOption": "metricsHighestUtilization",
-      "barsCount": 25,
-      "roundDecimals": 1.0,
-      "regenerationTime": 15,
-      "percentileValue": null,
-      "metricName": "Active",
-      "metricUnit": {
-       "metricUnitId": -1,
-       "metricUnitName": "Auto"
-      },
-      "additionalColumns": [],
-      "metric": {
-       "metricKey": "mem|active_average",
-       "name": "Active"
-      },
-      "resourceKind": [
-       {
-        "id": "resourceKind:id:2_::_"
-       }
-      ]
-     },
-     "height": 0,
-     "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"
-    },
-    {
-     "collapsed": false,
-     "id": "8b03a2aa-b78e-566d-a899-9f56757d04b9",
-     "gridsterCoords": {
-      "w": 6,
-      "x": 1,
-      "h": 7,
-      "y": 31
-     },
-     "state": "",
-     "type": "ParetoAnalysis",
-     "title": "VMs by reserved memory (cannot be tiered)",
-     "config": {
-      "refreshInterval": 300,
-      "widgetId": "8b03a2aa-b78e-566d-a899-9f56757d04b9",
-      "description": "",
-      "title": "VMs by reserved memory (cannot be tiered)",
-      "refreshContent": {
-       "refreshContent": true
-      },
-      "customFilter": {
-       "filter": [],
-       "excludedResources": null,
-       "includedResources": null
-      },
-      "selfProvider": {
-       "selfProvider": true
-      },
-      "resource": [],
-      "relationshipMode": {
-       "relationshipMode": [
-        -1,
-        0
-       ]
-      },
-      "mode": "all",
-      "filterMode": "tagPicker",
-      "tagFilter": null,
-      "depth": 10,
-      "filterOldMetrics": {
-       "filterOldMetrics": false
-      },
-      "topOption": "metricsHighestUtilization",
-      "barsCount": 25,
-      "roundDecimals": 1.0,
-      "regenerationTime": 15,
-      "percentileValue": null,
-      "metricName": "Reserved",
-      "metricUnit": {
-       "metricUnitId": -1,
-       "metricUnitName": "Auto"
-      },
-      "additionalColumns": [],
-      "metric": {
-       "metricKey": "mem|reservation_used",
-       "name": "Reserved"
-      },
-      "resourceKind": [
-       {
-        "id": "resourceKind:id:2_::_"
-       }
-      ]
+      "editorData": "<h3 style=\"color:#e8eaed;font-size:15px;margin:0 0 8px\">What each figure means</h3>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">Available</b> &mdash; <code style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">mem|host_provisioned</code>, summed over the\ncluster's hosts. The memory the hypervisor presents. <b style=\"color:#e8b84b\">On an untiered vSphere 8 host this\nis installed DRAM; on a host that already has tiering it is DRAM <i>plus</i> the NVMe tier</b>,\nwhich is why it is labelled <i>presented</i> throughout.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">Allocated</b> &mdash; <code style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">mem|guest_provisioned</code>, summed over the\ncluster's VMs. Memory configured to guests whether or not they ever touch it, and the figure a\ntiered host must <i>present</i>. It appears <b style=\"color:#e8eaed\">three times</b> on the cluster table, and\nthe comparison is the point.</p>\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">Allocated (all VMs)</b> is the raw rollup and an <i>upper bound</i>: powered-off\nVMs and templates keep reporting configured memory. &middot;\n<b style=\"color:#e8eaed\">Allocated (powered on)</b> counts only running VMs &mdash; <b style=\"color:#e8b84b\">size against this\none</b>. &middot; <b style=\"color:#e8eaed\">Allocated (powered off)</b> is the gap between them, measured at\n<b style=\"color:#e8b84b\">20.3%</b> of allocated on one estate. A large value is both a reclamation opportunity\nand a warning that anything derived from the raw figure is overstated by that much.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">Consumed</b> &mdash; <code style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">mem|consumed_average</code>. Host physical\nmemory actually backing guest pages, plus hypervisor overhead. Always less than or equal to\nallocated, and usually well below it.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">Active</b> &mdash; <code style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">mem|active_average</code>. The working set: pages\nthe guests are reading or writing. <b style=\"color:#e8eaed\">This is the number tiering turns on</b>, because the\nworking set is what must stay in DRAM. It is an ESXi <i>estimate</i> from sampling, not a\nmeasurement, and it is the reason both DRAM figures below carry margin.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">Tierable of used</b> &mdash; <code style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">(consumed &minus; active) / 2</code>.\nCold memory: backed in DRAM today but outside the working set, so a candidate for NVMe. Halved\ndeliberately, because claiming all of it assumes the working set never moves.</p>\n\n<h3 style=\"color:#e8eaed;font-size:15px;margin:0 0 8px\">The two DRAM numbers, and why there are two</h3>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">DRAM required &mdash; floor</b> is <code style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">peak active</code>. The aggressive\nnumber: at peak, every page the guests touch fits in DRAM and everything else lives on NVMe.\n<b style=\"color:#e8b84b\">It is a floor, not a recommendation.</b> No margin for growth, none for the working set\nshifting, and none for active being an estimate.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">DRAM required &mdash; conservative</b> is\n<code style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">peak active &times; 4</code>. The planning number: the working set with\n4&times; headroom. The factor is a starting point and is meant to be tuned once real\npeaks from a full business cycle are in hand.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8b84b\">Both are only as good as the word \"peak\".</b> A super metric cannot compute a\nmaximum over a window &mdash; it produces one value per collection. Because both formulas are\n<i>linear</i> in active, <code style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">max(k &times; active)</code> equals\n<code style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">k &times; max(active)</code>, so setting a widget or View to the <b style=\"color:#e8eaed\">Maximum</b>\ntransformation over 30 days turns either into a genuine peak-based figure. Read straight off a\nscoreboard tile they are the <i>latest sample</i>, which on a quiet Sunday sizes the purchase\noff a trough.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">Implied DRAM share at floor</b> tells you which supported ratio the workload\ncould carry: <b style=\"color:#e8eaed\">50%</b> is 1:1, <b style=\"color:#e8eaed\">33%</b> is 1:2, <b style=\"color:#e8eaed\">20%</b> is 1:4. Below 20%\nthe workload is colder than the platform's maximum ratio allows, so the <i>ratio</i> is the\nlimit rather than the workload &mdash; worth saying out loud in front of a customer.</p>\n\n<h3 style=\"color:#e8eaed;font-size:15px;margin:0 0 8px\">Sanity check, and what this screen cannot see</h3>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">Active of consumed</b> is the check on the whole exercise. Typical estates run\n<b style=\"color:#e8eaed\">8&ndash;12%</b>, nearer 15% where databases dominate. Outside roughly 5&ndash;20%,\nsuspect the metric rather than the workload &mdash; a cluster reading 1% active is a collection\nproblem, and it would otherwise look like the best tiering candidate you own.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8b84b\">Large pages are invisible here, and that is permanent.</b> No performance\ncounter in vCenter reports guest page size or large-page backing &mdash; every counter\nmentioning \"page\" concerns zero pages, compression, swap or page-fault latency. Operations\nexposes only three VM advanced settings, none of them the relevant ones, and the guest\nhuge-page counters are declared in the schema but never populated. <b style=\"color:#e8eaed\">1 GB pages, locked\nmemory reservations and latency-sensitive VMs all disqualify a workload from tiering and none\nof them can be detected from this dashboard.</b> They need a one-off read-only vSphere API\nsweep. 2 MB pages are not a disqualifier &mdash; they are broken down under pressure.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">Reserved memory is visible and IS a disqualifier:</b> a VM whose reservation\nequals its configured memory is pinned to DRAM and cannot be tiered however cold it looks. Both\nhalves are columns on the VM list &mdash; <i style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">Reserved (configured)</i> against the VM's\nconfigured memory. A memory <i style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">limit</i> is shown beside it for the same reason.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8b84b\">SIX disqualifiers are invisible to this dashboard and it cannot warn you about\nany of them.</b> A VM pinned by any of these cannot be tiered, and will look like a perfectly\ngood candidate here:</p>\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">PCI passthrough or vGPU</b> &mdash; forces a <b style=\"color:#e8b84b\">100% memory\nreservation</b>. A GPU host full of vGPU VMs has every byte pinned and cannot be tiered at all.\nThis is the one most likely to catch you out. &middot;\n<b style=\"color:#e8eaed\">Latency sensitivity = High</b> &mdash; forces full reservation and CPU pinning. &middot;\n<b style=\"color:#e8eaed\">memoryReservationLockedToMax</b> &mdash; reservation tracks configured memory forever.\n&middot; <b style=\"color:#e8eaed\">1 GB pages</b> &mdash; explicit per-VM opt-in, stays pinned. &middot;\n<b style=\"color:#e8eaed\">NUMA node affinity and vNUMA</b> &mdash; the DRAM tier is per-NUMA-node, and\n<i style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">VM % remote memory</i> does not exist in Operations at any version. &middot;\n<b style=\"color:#e8eaed\">Fault Tolerance</b> &mdash; FT VMs are fully reserved.</p>\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\">None of the six is exposed by the vCenter adapter &mdash; measured across 208 VM\nproperties. They need a one-off read-only vSphere API sweep, and until that exists\n<b style=\"color:#e8eaed\">treat every figure on this screen as an upper bound on what can actually be\ntiered.</b></p>\n\n<h3 style=\"color:#e8eaed;font-size:15px;margin:0 0 8px\">CPU: the other half of consolidation</h3>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\">Memory tiering buys <b style=\"color:#e8eaed\">consolidation</b> &mdash; more VMs per host, because each\nhost presents more memory. Consolidation is gated by whichever resource runs out\n<i style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">first</i>, so a cluster already short of CPU gains nothing from extra presented memory.\nRead <b style=\"color:#e8eaed\">CPU headroom %</b> against <b style=\"color:#e8eaed\">Active of host RAM %</b>: the smaller number is\nthe binding constraint. Tiering pays where <i style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">memory</i> binds first.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">Worst VM ready %</b> and <b style=\"color:#e8eaed\">VMs facing ready %</b> are the ones to act on,\nand they often change the answer. Ready time means vCPUs waiting for a physical core &mdash;\nand it is frequently caused by <i style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">oversized</i> VMs, where a VM with far more vCPUs than it\nuses must wait for all of them to be schedulable at once. Right-size those and CPU utilisation\n<b style=\"color:#e8eaed\">falls</b>, headroom appears, and memory becomes the binding constraint. A cluster that\nlooks CPU-bound today can be a good tiering candidate after rightsizing, which is why the\n<i style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">Oversized by</i> column sits on the VM list beside ready.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">CPU io wait</b> is a different bottleneck again &mdash; cores idle waiting on\nstorage, not on each other. High io wait with low utilisation means the fix is in the storage\npath, and neither rightsizing nor tiering will touch it.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8b84b\">If a cluster shows a DRAM requirement of zero, do not believe it.</b> Both DRAM\nfigures are derived from active memory, so a cluster whose active metric is missing or reads\nzero produces a DRAM requirement of zero &mdash; which presents as \"this cluster needs no DRAM\"\nrather than as a collection failure. Check <b style=\"color:#e8eaed\">Active of consumed</b> first: a plausible\ncluster sits in the 5&ndash;20% band, and anything reading near zero is a broken metric, not a\ncold workload.</p>",
+      "locationFile": "",
+      "locationUrl": "",
+      "viewModeHTML": true
      },
      "height": 0,
      "tabId": "089a4b09-27fb-5213-9836-e9dd8f0e2639"

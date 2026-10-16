@@ -1,8 +1,44 @@
 {
- "552be560-91ff-558c-a3f1-59113cae57bd": {
-  "name": "Sizing|Allocated (GB)",
+ "d9d68311-b661-5a7f-956f-dce0fe060d04": {
+  "name": "Sizing VM Allocated if Powered On (KB)",
+  "formula": "${this, metric=mem|guest_provisioned} * ${this, metric=sys|poweredOn}",
+  "description": "Per VM: configured memory if running, zero if not. Exists to be rolled up; it is not interesting on a single VM.",
+  "unitId": "kb",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "VirtualMachine",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "c10b268b-c660-5b19-8f2b-88b124bc656b": {
+  "name": "Sizing Allocated Powered On (GB)",
+  "formula": "sum(${adaptertype=VMWARE, objecttype=VirtualMachine, attribute=Super Metric|sm_d9d68311-b661-5a7f-956f-dce0fe060d04, depth=2}) / 1048576",
+  "description": "Allocated counting only powered-on VMs. THIS is the figure to size against. The plain Allocated beside it includes powered-off VMs and templates, which still report configured memory and are reclamation candidates, not demand.",
+  "unitId": "gb",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "12cc4802-3f7c-5913-8af4-d8e944e572e2": {
+  "name": "Sizing Allocated Powered Off (GB)",
+  "formula": "(sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) / 1048576) - (sum(${adaptertype=VMWARE, objecttype=VirtualMachine, attribute=Super Metric|sm_d9d68311-b661-5a7f-956f-dce0fe060d04, depth=2}) / 1048576)",
+  "description": "The gap between the two: memory configured to VMs that are not running, measured at 20.3% of allocated on one estate. A reclamation opportunity, and a warning that anything derived from plain Allocated is overstated by this much.",
+  "unitId": "gb",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "419e1285-0c87-5257-8d0b-02da0c457e04": {
+  "name": "Sizing Allocated (GB)",
   "formula": "sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) / 1048576",
-  "description": "Sum of configured memory across the cluster's VMs. The one base figure with no native cluster metric. Note: powered-off VMs and templates still report configured memory, so treat this as an upper bound on what is really running.",
+  "description": "Sum of configured memory across the cluster's VMs. The one base figure with no native cluster metric. INCLUDES powered-off VMs and templates, so it is an upper bound -- compare it against Allocated Powered On, which does not.",
   "unitId": "gb",
   "resourceKinds": [
    {
@@ -11,10 +47,10 @@
    }
   ]
  },
- "ffe8d4b5-eb3a-5899-9d30-c3f17e06fea5": {
-  "name": "Sizing|Tierable of Used (GB)",
-  "formula": "((sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|consumed_average, depth=1}) - sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1})) / 2) / 1048576",
-  "description": "Cold memory currently backed in DRAM, halved for conservatism. Consumed minus active, in that order -- active is the working set within consumed.",
+ "870345d0-4752-5e86-85ec-e828f707c6dd": {
+  "name": "Sizing Tierable of Used (GB)",
+  "formula": "(((sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|consumed_average, depth=1}) - sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1})) / 2) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
+  "description": "Cold memory currently backed in DRAM, halved for conservatism. Blank means the active metric is missing, not that everything is cold. Consumed minus active, in that order -- active is the working set within consumed.",
   "unitId": "gb",
   "resourceKinds": [
    {
@@ -23,8 +59,8 @@
    }
   ]
  },
- "17140d43-d897-5731-9c5e-03b6e0afb381": {
-  "name": "Sizing|Active of Allocated (%)",
+ "45a6c2c2-9792-5cee-806e-f3657235d72e": {
+  "name": "Sizing Active of Allocated (%)",
   "formula": "(sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2})) * 100",
   "description": "Raw active as a share of allocated, with NO headroom factor applied, so the number means what its name says. Apply headroom in the classification, not here.",
   "unitId": "percent",
@@ -35,8 +71,8 @@
    }
   ]
  },
- "ba1a8cf7-0168-51e1-afbf-e8fcc6af5eb1": {
-  "name": "Sizing|Active of Consumed (%)",
+ "951e8244-040e-598f-83dc-561e472d855d": {
+  "name": "Sizing Active of Consumed (%)",
   "formula": "(sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|consumed_average, depth=1})) * 100",
   "description": "Plausibility check on the whole exercise. Typical estates sit at 8-12%, nearer 15% where databases dominate. Outside 5-20% suspect the metric, not the workload.",
   "unitId": "percent",
@@ -47,8 +83,116 @@
    }
   ]
  },
- "c25ea9ee-44d4-55cf-bed3-8a991542d205": {
-  "name": "Sizing|TEST Fleet Active depth3 (GB)",
+ "3384cb4e-9e95-57b5-a169-6389e38dd446": {
+  "name": "Sizing Unused (GB)",
+  "formula": "(sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) - sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|consumed_average, depth=1})) / 1048576",
+  "description": "allocated - consumed. Memory configured to guests that the host has never had to back. Overcommit you are already harvesting, and the cheapest headroom there is.",
+  "unitId": "gb",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "24ac0c85-a612-533b-92e0-b86e18327f41": {
+  "name": "Sizing Unallocated (GB)",
+  "formula": "(sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|host_provisioned, depth=1}) - sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2})) / 1048576",
+  "description": "available - allocated. Installed memory handed to no VM. NEGATIVE MEANS THE CLUSTER IS OVERCOMMITTED, which is a useful signal in itself -- it is deliberately not clamped at zero.",
+  "unitId": "gb",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "4121bf52-0fda-5c53-a075-0ffe78f99e0f": {
+  "name": "Sizing Active of Host RAM (%)",
+  "formula": "(sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|host_provisioned, depth=1})) * 100",
+  "description": "active / available. The working set against the memory actually installed. This is the one that says whether a DRAM tier sized at today's hardware would hold the workload at all.",
+  "unitId": "percent",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "41afe7c3-8c54-5b70-a8e3-124c2f3655d3": {
+  "name": "Sizing Overcommit (%)",
+  "formula": "(sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|host_provisioned, depth=1})) * 100",
+  "description": "allocated / available. Under 100% the cluster is not overcommitted. Estates that do overcommit typically sit 5-10% over, so 100-110% is mild and only past 110% is worth flagging -- judged on typical allocation, not on a peak, because allocation is a configuration fact that drifts slowly rather than a spiky metric.",
+  "unitId": "percent",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "f98ae111-6c73-5ec9-b0db-e4ce084e5f86": {
+  "name": "Sizing CPU Headroom (%)",
+  "formula": "100 - sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=cpu|usage_average, depth=1}) / (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=cpu|usage_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=cpu|usage_average, depth=1}))",
+  "description": "100 - CPU utilisation, as a cluster rollup. Compare against Active of Host RAM: the SMALLER headroom is the constraint that binds consolidation first. Tiering only pays where memory binds before CPU. Blank means the CPU metric is missing.",
+  "unitId": "percent",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "8e2df9e0-421c-5991-b807-8b5e743bba18": {
+  "name": "Sizing DRAM Required Floor (GB)",
+  "formula": "(sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
+  "description": "AGGRESSIVE. DRAM sized to the working set and nothing more: at peak, every page the guests are actually touching fits in DRAM and all cold memory lives on NVMe. Blank means the active metric is missing, NOT that no DRAM is needed. This is a floor, not a recommendation -- there is no margin for growth, for a working set that moves, or for active memory being an ESXi estimate rather than a measurement. Read it with the Maximum transformation over 30 days.",
+  "unitId": "gb",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "9080ef28-861c-5481-a8ae-c59c0eac5283": {
+  "name": "Sizing DRAM Required Conservative (GB)",
+  "formula": "(sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) * 4.0 * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
+  "description": "CONSERVATIVE. 4x the working set, so DRAM holds the active set with 4x headroom for growth and for the working set shifting. Starting point for planning, not a final answer -- tune the factor once real peaks are in hand. Read it with the Maximum transformation over 30 days.",
+  "unitId": "gb",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "6ed417bf-0d8b-545b-8438-c6032d292f46": {
+  "name": "Sizing NVMe Required at Floor (GB)",
+  "formula": "((sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) - sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1})) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
+  "description": "Allocated memory that would sit on NVMe if DRAM were sized to the floor. Negative means the working set already exceeds what is allocated -- investigate before sizing anything on it.",
+  "unitId": "gb",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "064176b3-e568-550e-9fee-bfa32955099c": {
+  "name": "Sizing Implied DRAM Share at Floor (%)",
+  "formula": "(sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2})) * 100 * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))",
+  "description": "DRAM as a share of presented memory at the floor. Compare against the supported ratios: 50% is 1:1, 33% is 1:2, 20% is 1:4. Below 20% the workload is cold enough that the platform's maximum ratio, not the workload, is the limit.",
+  "unitId": "percent",
+  "resourceKinds": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "adapterKindKey": "VMWARE"
+   }
+  ]
+ },
+ "3d6853ab-d47b-5158-a4a1-c9901ca20fe2": {
+  "name": "Sizing TEST Fleet Active depth3 (GB)",
   "formula": "sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=3}) / 1048576",
   "description": "A/B TEST ONLY. Measured tree depth from vSphere World to HostSystem is 3.",
   "unitId": "gb",
@@ -59,8 +203,8 @@
    }
   ]
  },
- "32111908-6660-5ffe-8d42-1f3ef17b74f8": {
-  "name": "Sizing|TEST Fleet Active depth10 (GB)",
+ "127e7687-09a5-54ee-9e78-ba6ab3534625": {
+  "name": "Sizing TEST Fleet Active depth10 (GB)",
   "formula": "sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=10}) / 1048576",
   "description": "A/B TEST ONLY. The inherited content uses depth=10. If this one reports data and depth3 does not, depth means 'up to N'; if the reverse, it means 'exactly N'.",
   "unitId": "gb",

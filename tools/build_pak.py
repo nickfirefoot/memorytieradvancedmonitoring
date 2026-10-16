@@ -30,9 +30,12 @@ import zipfile
 import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-BUILD = os.environ.get("MEMTIER_CONTENT") or os.path.join(os.path.dirname(HERE), "content")
+BUILD = os.path.join(HERE, "build")
 
-VERSION = "1.1.0"      # 1.1.0: image fields present -- single-variable test of the 1.0.2 failure
+VERSION = "1.4.1"
+IMAGE_REGISTRY = "ghcr.io"
+IMAGE_REPOSITORY = "/nickfirefoot/memorytieradvancedmonitoring"
+IMAGE_DIGEST = "sha256:156894ed43475c4281938f23cb4511ea04db6c7599cfce1f53f61b901e458103"      # 1.4.0: finding C -- allocated split by power state
 PAK_NAME = "MemoryTieringSizing"           # manifest "name"; also injected as adapterName
 KIND_KEY = "MemTierSizing"                 # schema-only adapter kind: declared so content imports, never instantiated
 DISPLAY_NAME = "Memory Tiering Sizing"
@@ -98,18 +101,9 @@ DESCRIPTION={DESCRIPTION}
 VENDOR={VENDOR}
 """
 
-# Generic shapes only. A site-specific term (your domain, a naming prefix) goes in
-# $MEMTIER_AUDIT_EXTRA -- never written down here, because a scanner that hardcodes the string
-# it hunts for publishes that string to everyone who reads the scanner.
-_AUDIT_PATTERNS = [
-    r"esxi[0-9]+", r"\bvc[0-9]+\b", r"\bops[0-9]+\b", r"mgmt[0-9]",
-    r"[a-z0-9-]+\.(?:lab|local|internal|corp)\b",
-    r"\b[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\b",
-    r"\bhost-[0-9]+", r"\bdomain-c[0-9]+", r"\bvm-[0-9]{3,}",
-]
-if os.environ.get("MEMTIER_AUDIT_EXTRA"):
-    _AUDIT_PATTERNS.append(re.escape(os.environ["MEMTIER_AUDIT_EXTRA"]))
-NAME_AUDIT = re.compile("|".join(_AUDIT_PATTERNS), re.I)
+NAME_AUDIT = re.compile(
+    r"esxi[0-9]+|vc[0-9]+\b|ops[0-9]+\b|mgmt[0-9]|denick|[a-z0-9-]+\.lab\b|"
+    r"\b[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\b|\bhost-[0-9]+|domain-c[0-9]+", re.I)
 
 
 def png_icon(size=128, rgb=(0x2E, 0x6F, 0xA7)):
@@ -188,11 +182,16 @@ def main():
     # are the prime suspect. DIAGNOSTIC ONLY: this points at the vSAN pack's real public image
     # purely to satisfy the field. No adapter instance will ever exist, so nothing pulls it.
     # If this installs, the next build subtracts fields to find the minimum that still works.
+    # Our own image, not a borrowed one. It is a schema-only adapter that collects nothing:
+    # every figure the pack shows is computed by Operations from metrics the built-in vCenter
+    # adapter already gathers. It exists because the pak installer discovers content through an
+    # adapter kind, so a pak carrying dashboards, views and super metrics needs one to register.
+    # Pinned by digest, as every working pak does.
     kind_conf = (f"KINDKEY={KIND_KEY}\n"
                  "API_VERSION=1.0.0\nAPI_PROTOCOL=https\nAPI_PORT=443\n"
-                 "REGISTRY=ghcr.io\n"
-                 "REPOSITORY=/nickfirefoot/vsanhostmetrics\n"
-                 "DIGEST=sha256:43d05f578830c90e0c511686a184b2357da88762e3a1f60f82f4c5923189e889\n")
+                 f"REGISTRY={IMAGE_REGISTRY}\n"
+                 f"REPOSITORY={IMAGE_REPOSITORY}\n"
+                 f"DIGEST={IMAGE_DIGEST}\n")
     inner = io.BytesIO()
     with zipfile.ZipFile(inner, "w", zipfile.ZIP_DEFLATED) as a:
         a.writestr(f"{KIND_KEY}.conf", kind_conf)
@@ -221,6 +220,13 @@ def main():
         **{f"content/supermetrics/{v['name'].replace('|', ' ').replace('/', ' ')}.json":
            json.dumps({k: v}, indent=1).encode() for k, v in sms.items()},
         "adapter.zip": inner.getvalue(),
+        # Views live under content/reports/, NOT a views/ directory, and their GUIDs travel in
+        # the XML -- which is why a shipped dashboard can hard-code viewDefinitionId and have it
+        # resolve on every install (LESSONS.md 3.3, 3.5).
+        **{f"content/reports/{d}/{f}": open(os.path.join(BUILD, "reports", d, f), "rb").read()
+           for d in sorted(os.listdir(os.path.join(BUILD, "reports")))
+           if os.path.isdir(os.path.join(BUILD, "reports", d))
+           for f in os.listdir(os.path.join(BUILD, "reports", d))},
         # scaffold schema files every SDK-built pak ships under content/; inert but present
         "content/alertdefs/alertDefinitionSchema.xsd": open(os.path.join(HERE, "alertDefinitionSchema.xsd"), "rb").read(),
         "content/traversalspecs/traversalSpecsSchema.xsd": open(os.path.join(HERE, "traversalSpecsSchema.xsd"), "rb").read(),
@@ -252,6 +258,24 @@ def main():
     img = [f for f in ("REGISTRY=", "REPOSITORY=", "DIGEST=") if f in kind_conf]
     if img and len(img) != 3:
         problems.append(f"image fields must be all present or all absent, got {img}")
+    # no dangling view references: every viewDefinitionId the dashboard names must be defined
+    # by a view the pak actually ships
+    import re as _re
+    shipped_guids = set()
+    for name, data in list(members.items()):
+        if name.startswith("content/reports/") and name.endswith(".xml"):
+            shipped_guids |= set(_re.findall(r'<ViewDef id="([^"]+)"', data.decode()))
+    named = set(_re.findall(r'"viewDefinitionId": "([^"]+)"', json.dumps(dash)))
+    if named - shipped_guids:
+        problems.append(f"dashboard names view GUIDs the pak does not ship: {sorted(named - shipped_guids)}")
+    if shipped_guids - named:
+        problems.append(f"pak ships views nothing references: {sorted(shipped_guids - named)}")
+    # A super metric name containing '|' or ':' is read by the importer, creates nothing, and
+    # reports imported=0 with no error. Measured 2026-10-16: 18 of 18 failed exactly that way.
+    for v in sms.values():
+        if "|" in v["name"] or ":" in v["name"]:
+            problems.append(f"super metric name may not contain '|' or ':': {v['name']!r} "
+                            f"-- the importer would silently create nothing")
     refs = {f"Super Metric|sm_{k}" for k in sms}
     used = set(re.findall(r"Super Metric\|sm_[0-9a-f-]+", json.dumps(dash)))
     if used - refs:
