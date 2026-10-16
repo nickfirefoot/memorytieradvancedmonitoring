@@ -253,6 +253,15 @@ measurement, and it is the reason both DRAM figures below carry margin.</p>
 Cold memory: backed in DRAM today but outside the working set, so a candidate for NVMe. Halved
 deliberately, because claiming all of it assumes the working set never moves.</p>
 
+<p {_P}><b {_W}>It is an upper bound, and on a vSAN or NSX cluster a loose one.</b> Consumed is
+a <i>host</i> figure and includes memory that was never granted to any guest &mdash; vSAN,
+NSX and hypervisor structures &mdash; none of which can be tiered. Measured on a 4-host vSAN
+cluster over a 30-day peak: <b {_B}>consumed 626.4 GB against granted 508.7 GB</b>, so
+<b {_W}>117.8 GB &mdash; 19% of consumed, and about 27% of the tierable figure</b> &mdash; was
+host overhead rather than cold guest memory. Compare
+<i {_C}>mem|granted_average</i> against <i {_C}>mem|consumed_average</i> on the host list to
+size the gap on your own estate before trusting this column.</p>
+
 <h3 {_H}>The two DRAM numbers, and why there are two</h3>
 
 <p {_P}><b {_B}>DRAM required &mdash; floor</b> is <code {_C}>peak active</code>. The aggressive
