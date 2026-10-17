@@ -32,7 +32,7 @@ import zlib
 HERE = os.path.dirname(os.path.abspath(__file__))
 BUILD = os.path.join(HERE, "build")
 
-VERSION = "2.0.0"      # 2.0.0: real collector, two dashboards, opt-in group
+VERSION = "2.1.0"      # 2.1.0: Export for MTAT dashboard, fleet-rollup binding fix. 2.0.0: real collector, two dashboards, opt-in group
 IMAGE_REGISTRY = "ghcr.io"
 IMAGE_REPOSITORY = "/nickfirefoot/memorytieradvancedmonitoring"
 IMAGE_DIGEST = "sha256:4f21624a7a57d06cb23801b77e422784cf2723cff580ddbe166d02653200c643"
