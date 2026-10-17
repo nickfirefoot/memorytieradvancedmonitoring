@@ -1,5 +1,8 @@
 {
  "Memory Tier Advanced Clusters [MTA]": "662da61f-58e3-5ca2-8424-80b8fae3a9f3",
  "Memory Tier Advanced Hosts [MTA]": "54330058-ae23-54ad-bceb-618b0894a114",
- "Memory Tier Advanced VMs [MTA]": "91c85969-77f1-5f84-a26b-5f96c34afa00"
+ "Memory Tier Advanced VMs [MTA]": "91c85969-77f1-5f84-a26b-5f96c34afa00",
+ "Memory Tier Advanced MTAT Clusters [MTA]": "a536a03e-17b2-59c5-9e2f-0fe8d18facf5",
+ "Memory Tier Advanced MTAT Hosts [MTA]": "51ee2d53-643e-5a1a-bc1f-11aa496a9111",
+ "Memory Tier Advanced MTAT VMs [MTA]": "ee3ddcf3-e9ac-5f4b-b7d2-ad9f21240022"
 }

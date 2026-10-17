@@ -49,11 +49,11 @@ def sm_guid(name):
     return bc.sm_uuid(name)
 
 
-def sm_column(sm_name, label, kind, transform="CURRENT", sort=False):
+def sm_column(sm_name, label, kind, transform="CURRENT", sort=False, unit=""):
     """A super metric as a view column. Verified shape: vCommunity's views carry
     attributeKey="Super Metric|sm_<uuid>" exactly like a native key."""
     return column(f"Super Metric|sm_{sm_guid(sm_name)}", label, kind,
-                  transform=transform, sort=sort)
+                  transform=transform, sort=sort, unit=unit)
 
 
 def guid_for(title):
@@ -61,14 +61,18 @@ def guid_for(title):
     return str(uuid.uuid5(NAMESPACE, title))
 
 
-def column(key, label, kind, is_property=False, transform="CURRENT", sort=False):
+def column(key, label, kind, is_property=False, transform="CURRENT", sort=False, unit=""):
     """One attributeInfo entry. transform CURRENT for configuration, MAX for performance --
-    never average, which is a lagging indicator (practitioner guide p52)."""
+    never average, which is a lagging indicator (practitioner guide p52).
+
+    `unit` is preferredUnitId. Empty lets Operations pick; an explicit id ("gb", "percent")
+    converts with NO suffix in a CSV export, while "auto" appends one ("16.76 MBps") -- which
+    matters only where the export is read by another tool (probe p41)."""
     return f"""                            <Item>
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="{sx.escape(key)}" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="{unit}" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="{ADAPTER}" />
                                     <Property name="resourceKind" value="{kind}" />
@@ -88,18 +92,23 @@ def column(key, label, kind, is_property=False, transform="CURRENT", sort=False)
                             </Item>"""
 
 
-def view(title, kind, columns, seed, page=50, days=7):
+def view(title, kind, columns, seed, page=50, days=7, hide_name=False, filter_json=None):
     """One ViewDef. `seed` only namespaces the Control ids within the document; it carries no
-    meaning beyond keeping them unique, which is how the reference views do it."""
+    meaning beyond keeping them unique, which is how the reference views do it.
+
+    `hide_name` drops the object-name column from the widget. A report CSV adds it back
+    regardless (probe p41). `filter_json` is a SubjectType filter, in the shape the OOTB
+    Utilization Report uses."""
     cols = "\n".join(columns)
+    flt = f" filter={sx.quoteattr(filter_json)}" if filter_json else ""
     return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Content>
     <Views>
         <ViewDef id="{guid_for(title)}">
             <Title>{sx.escape(title)}</Title>
             <Description />
-            <SubjectType adapterKind="{ADAPTER}" resourceKind="{kind}" type="descendant" />
-            <SubjectType adapterKind="{ADAPTER}" resourceKind="{kind}" type="self" />
+            <SubjectType adapterKind="{ADAPTER}"{flt} resourceKind="{kind}" type="descendant" />
+            <SubjectType adapterKind="{ADAPTER}"{flt} resourceKind="{kind}" type="self" />
             <Usage>dashboard</Usage>
             <Usage>report</Usage>
             <Usage>content</Usage>
@@ -122,7 +131,7 @@ def view(title, kind, columns, seed, page=50, days=7):
                 </Control>
                 <Control id="metadata_id_{seed + 3}" type="metadata" visible="false">
                     <Property name="maxPointsCount" value="5000" />
-                    <Property name="hideObjectNameColumn" value="false" />
+                    <Property name="hideObjectNameColumn" value="{str(hide_name).lower()}" />
                     <Property name="listTopResultSize" value="-1" />
                 </Control>
             </Controls>
@@ -159,6 +168,32 @@ HOSTS = f"Memory Tier Advanced Hosts {SUFFIX}"
 # This table is ALSO the provider: clicking a cluster row drives the host and VM lists below,
 # which removes a separate selector widget.
 SIZING = f"Memory Tier Advanced Clusters {SUFFIX}"
+
+# --- Export for MTAT ----------------------------------------------------------------------
+# MTAT (vmware/MTAT v3.1) cannot read Operations, but its "MTAT Export" import accepts its own
+# Hosts and VMs CSVs, checking only for exact column names. These two views ARE those files:
+# each displayName is the MTAT header verbatim, so the View widget's CSV export is the file.
+# Proven by probe p41 against a port of MTAT's parser (memory-tiering/probes). Rules it set:
+#   * explicit units ("gb", "percent") -- "auto" appends a suffix to the value;
+#   * names come from the config|name PROPERTY, labelled HostName / VMName, because the report
+#     CSV adds its own "Name" column that cannot be relabelled (MTAT ignores extra columns);
+#   * one view per file -- MTAT reads exactly one table per file;
+#   * VMs filtered to powered on, matching MTAT's own collection, on summary|runtime|powerState.
+#     runtime|powerState is the HOST key, and on a VM view it silently empties the list.
+# DO NOT rename a column here: the label is MTAT's contract, not ours.
+MTAT_CLUSTERS = f"Memory Tier Advanced MTAT Clusters {SUFFIX}"
+MTAT_HOSTS = f"Memory Tier Advanced MTAT Hosts {SUFFIX}"
+MTAT_VMS = f"Memory Tier Advanced MTAT VMs {SUFFIX}"
+VM_POWERED_ON = ('[[{"filterType":"properties","metricKey":"summary|runtime|powerState",'
+                 '"condition":"CONTAINS","metricValue":{"value":"Powered On",'
+                 '"isStringMetric":true}}]]')
+# Per-view options beyond (title, kind, seed, columns). Kept apart so VIEWS stays a 4-tuple
+# list -- build_content.py unpacks it to derive GUIDs.
+VIEW_OPTS = {
+    MTAT_CLUSTERS: {"days": 30},
+    MTAT_HOSTS: {"days": 30, "hide_name": True, "page": 1000},
+    MTAT_VMS: {"days": 30, "hide_name": True, "page": 1000, "filter_json": VM_POWERED_ON},
+}
 
 VIEWS = [
     (SIZING, CLUSTER, 760, [
@@ -230,6 +265,36 @@ VIEWS = [
         column("cpu|iowaitPct", "CPU io wait % (max)", VM, transform="MAX"),
         column("mem|guest_activePct", "Active % of configured (max)", VM, transform="MAX"),
     ]),
+    # The picker for the export screen, and the cross-check: the cluster's own simultaneous
+    # peak, which is what MTAT's imported Active total should equal.
+    (MTAT_CLUSTERS, CLUSTER, 780, [
+        column("config|name", "Cluster", CLUSTER, is_property=True, sort=True),
+        column("summary|total_number_hosts", "Hosts", CLUSTER),
+        column("mem|active_average", "Active peak GB (MTAT should match)", CLUSTER,
+               transform="MAX", unit="gb"),
+        column("mem|consumed_average", "Consumed peak GB", CLUSTER, transform="MAX", unit="gb"),
+        column("summary|total_number_mt_hosts", "Hosts already tiered", CLUSTER),
+    ]),
+    (MTAT_HOSTS, HOST, 800, [
+        column("summary|parentCluster", "Cluster", HOST, is_property=True),
+        column("config|name", "HostName", HOST, is_property=True, sort=True),
+        column("hardware|memorySize", "Physical_RAM", HOST, unit="gb"),
+        # Peak, not MTAT's average: hosts are sized on consumed, and an average undersizes.
+        column("mem|consumed_average", "Consumed_GB", HOST, transform="MAX", unit="gb"),
+        # NOT the host's own active peak. MTAT sums this column, and a sum of per-host peaks
+        # that happened at different times overstates the cluster. This is the cluster's
+        # simultaneous active split evenly, so the sum is exactly the cluster's real peak.
+        sm_column("MemTier MTAT Active Share (GB)", "Active_GB", HOST, transform="MAX",
+                  unit="gb"),
+        # Average, as MTAT itself uses for its 80% CPU ceiling.
+        column("cpu|usage_average", "CPU_Pct", HOST, transform="AVG", unit="percent"),
+    ]),
+    (MTAT_VMS, VM, 820, [
+        column("summary|parentHost", "Host", VM, is_property=True),
+        column("config|name", "VMName", VM, is_property=True, sort=True),
+        column("mem|guest_provisioned", "Provisioned_GB", VM, unit="gb"),
+        column("mem|active_average", "Active_GB", VM, transform="MAX", unit="gb"),
+    ]),
 ]
 
 
@@ -243,7 +308,7 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     manifest = {}
     for title, kind, seed, cols in VIEWS:
-        xml = view(title, kind, cols, seed)
+        xml = view(title, kind, cols, seed, **VIEW_OPTS.get(title, {}))
         safe = title.replace(" ", "_").replace("[", "").replace("]", "")
         d = os.path.join(OUT, safe)
         os.makedirs(d, exist_ok=True)

@@ -1,0 +1,234 @@
+{
+ "entries": {
+  "resourceKind": [
+   {
+    "resourceKindKey": "ClusterComputeResource",
+    "internalId": "resourceKind:id:0_::_",
+    "adapterKindKey": "VMWARE"
+   },
+   {
+    "resourceKindKey": "HostSystem",
+    "internalId": "resourceKind:id:1_::_",
+    "adapterKindKey": "VMWARE"
+   },
+   {
+    "resourceKindKey": "VirtualMachine",
+    "internalId": "resourceKind:id:2_::_",
+    "adapterKindKey": "VMWARE"
+   }
+  ],
+  "resource": []
+ },
+ "dashboards": [
+  {
+   "id": "6bcd4bec-9db2-534b-b4b5-10dac79c5188",
+   "name": "Memory Tier Advanced - Export for MTAT",
+   "description": "Produces MTAT's Hosts and VMs import files from Operations data, so MTAT sizes on 5-minute peaks rather than vCenter's 2-hour averages.",
+   "userId": "00000000-0000-0000-0000-000000000000",
+   "lastUpdateUserId": "00000000-0000-0000-0000-000000000000",
+   "shared": true,
+   "hidden": false,
+   "disabled": false,
+   "locked": false,
+   "editAllowed": true,
+   "homeTab": false,
+   "rank": 0,
+   "creationTime": 0,
+   "lastUpdateTime": 0,
+   "importAttempts": 0,
+   "importComplete": true,
+   "autoswitchEnabled": false,
+   "columnCount": 0,
+   "columnProportion": "1",
+   "gridsterMaxColumns": 12,
+   "states": [],
+   "dashboardNavigations": {},
+   "widgetInteractions": [
+    {
+     "widgetIdProvider": "3c3a5549-482b-5d82-a095-726f7cf41935",
+     "type": "resourceId",
+     "widgetIdReceiver": "b1b29cd5-9de0-5fb8-bcf4-0109c1be159e"
+    },
+    {
+     "widgetIdProvider": "3c3a5549-482b-5d82-a095-726f7cf41935",
+     "type": "resourceId",
+     "widgetIdReceiver": "ffa9d59b-d622-55e9-89c3-e222b983c6bf"
+    }
+   ],
+   "widgets": [
+    {
+     "collapsed": false,
+     "id": "3c3a5549-482b-5d82-a095-726f7cf41935",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 7,
+      "y": 1
+     },
+     "state": "",
+     "type": "View",
+     "title": "Choose a cluster to export",
+     "config": {
+      "refreshInterval": 400,
+      "widgetId": "3c3a5549-482b-5d82-a095-726f7cf41935",
+      "description": "",
+      "title": "Choose a cluster to export",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": true
+      },
+      "resource": {
+       "resourceId": "resource:id:0_::_",
+       "traversalSpecId": "",
+       "resourceName": "vSphere World",
+       "resourceKindId": "002006VMWAREvSphere World"
+      },
+      "traversalSpecId": null,
+      "isUpdatedView": true,
+      "viewDefinitionId": "a536a03e-17b2-59c5-9e2f-0fe8d18facf5",
+      "titleLocalized": "Choose a cluster to export",
+      "chartViewItems": [],
+      "selectFirstRow": {
+       "selectFirstRow": true
+      },
+      "viewDetails": ""
+     },
+     "height": 0,
+     "tabId": "6bcd4bec-9db2-534b-b4b5-10dac79c5188"
+    },
+    {
+     "collapsed": false,
+     "id": "b1b29cd5-9de0-5fb8-bcf4-0109c1be159e",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 8,
+      "y": 8
+     },
+     "state": "",
+     "type": "View",
+     "title": "MTAT Hosts CSV (export this)",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "b1b29cd5-9de0-5fb8-bcf4-0109c1be159e",
+      "description": "",
+      "title": "MTAT Hosts CSV (export this)",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": false
+      },
+      "resource": null,
+      "traversalSpecId": "",
+      "isUpdatedView": true,
+      "viewDefinitionId": "51ee2d53-643e-5a1a-bc1f-11aa496a9111",
+      "titleLocalized": "MTAT Hosts CSV (export this)",
+      "viewType": "LIST",
+      "chartViewItems": [],
+      "selectFirstRow": {
+       "selectFirstRow": false
+      },
+      "viewDetails": "",
+      "periodLength": "dashboardTime"
+     },
+     "height": 0,
+     "tabId": "6bcd4bec-9db2-534b-b4b5-10dac79c5188"
+    },
+    {
+     "collapsed": false,
+     "id": "ffa9d59b-d622-55e9-89c3-e222b983c6bf",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 11,
+      "y": 16
+     },
+     "state": "",
+     "type": "View",
+     "title": "MTAT VMs CSV (export this)",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "ffa9d59b-d622-55e9-89c3-e222b983c6bf",
+      "description": "",
+      "title": "MTAT VMs CSV (export this)",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": false
+      },
+      "resource": null,
+      "traversalSpecId": "",
+      "isUpdatedView": true,
+      "viewDefinitionId": "ee3ddcf3-e9ac-5f4b-b7d2-ad9f21240022",
+      "titleLocalized": "MTAT VMs CSV (export this)",
+      "viewType": "LIST",
+      "chartViewItems": [],
+      "selectFirstRow": {
+       "selectFirstRow": false
+      },
+      "viewDetails": "",
+      "periodLength": "dashboardTime"
+     },
+     "height": 0,
+     "tabId": "6bcd4bec-9db2-534b-b4b5-10dac79c5188"
+    },
+    {
+     "collapsed": false,
+     "id": "d048b55b-d723-51c4-9fcb-eaadc380ae57",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 13,
+      "y": 27
+     },
+     "state": "",
+     "type": "TextDisplay",
+     "title": "How to export to MTAT",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "d048b55b-d723-51c4-9fcb-eaadc380ae57",
+      "description": "",
+      "title": "How to export to MTAT",
+      "refreshContent": {
+       "refreshContent": false
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": true
+      },
+      "editorData": "<h3 style=\"color:#e8eaed;font-size:15px;margin:0 0 8px\">How to export this cluster to MTAT</h3>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\">MTAT (the Broadcom Memory Tiering Assessment Tool) sizes new hosts and prices DRAM\nagainst NVMe, but it reads vCenter, where 30 days of history is kept as 2-hour averages. This\nscreen hands it Operations data instead: true 5-minute peaks. The two tables above are MTAT's\nown import files, column for column.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">1. Set the time range</b> at the top of this dashboard to a full business cycle\n&mdash; 30 days at least, longer if month-end or quarter-end matters. Every peak is the Maximum\nover that range. &middot;\n<b style=\"color:#e8eaed\">2. Click a cluster</b> in the first table. &middot;\n<b style=\"color:#e8eaed\">3. Export each table</b> with the widget's CSV export: the hosts table is MTAT's\n<i>Hosts CSV</i>, the VMs table its <i>VMs CSV</i>. Do not open them in Excel first; a re-save\ncan reformat the numbers. &middot;\n<b style=\"color:#e8eaed\">4. In MTAT</b>: connect to vCenter (MTAT requires it even to import), pick the\n<i>same</i> cluster, <b style=\"color:#e8eaed\">Import Data Instead</b> &rarr; <b style=\"color:#e8eaed\">MTAT Export (Hosts + VMs\nCSV)</b>, attach both files, and give the range a label such as\n<span style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">Ops 30d peak</span>. A yellow &ldquo;imported with notes&rdquo; message is normal.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8b84b\">Stop if Active_GB is blank in the hosts table.</b> It is a super metric, and\nsuper metrics arrive disabled: enable the <span style=\"background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px\">MemTier</span> super metrics in the active\npolicy (Configure &rarr; Policies &rarr; Metrics and Properties) and wait a collection cycle.\nMTAT reads a blank as zero, and a cluster with zero active memory passes every check it has.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">Check the import.</b> MTAT's Active Memory total should equal\n<b style=\"color:#e8eaed\">Active peak GB</b> in the first table. Every host shows the same Active_GB on purpose:\nit is the cluster's simultaneous peak shared evenly, because MTAT adds the column up and a sum\nof each host's own peak counts moments that never happened together. Use the\n<b style=\"color:#e8eaed\">Clusters</b> dashboard for real per-host figures.</p>\n\n<p style=\"color:#9aa4b0;margin:0 0 9px;line-height:1.5\"><b style=\"color:#e8eaed\">What MTAT will not know.</b> <b style=\"color:#e8eaed\">Tiering</b> shows <i>Unknown</i> and\n<b style=\"color:#e8eaed\">Pinned_Memory</b> <i>N/A</i>; read pinned memory from the Clusters dashboard, and treat\nit as DRAM in any design. Consumed_GB is the peak, where MTAT's own collection uses the average.\nMTAT reserves no DRAM for vSAN, NSX or the VMkernel &mdash; at 1:1 that rarely changes the\nanswer, at higher ratios it can.</p>",
+      "locationFile": "",
+      "locationUrl": "",
+      "viewModeHTML": true
+     },
+     "height": 0,
+     "tabId": "6bcd4bec-9db2-534b-b4b5-10dac79c5188"
+    }
+   ]
+  }
+ ],
+ "uuid": "1ede420b-fa44-5658-9055-5bc4e3161a84"
+}

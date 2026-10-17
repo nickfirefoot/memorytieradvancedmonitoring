@@ -518,6 +518,65 @@ def build_refresh_dashboard():
                      "tiering saves against an untiered refresh.")
 
 
+MTAT_HELP = f"""<h3 {_H}>How to export this cluster to MTAT</h3>
+
+<p {_P}>MTAT (the Broadcom Memory Tiering Assessment Tool) sizes new hosts and prices DRAM
+against NVMe, but it reads vCenter, where 30 days of history is kept as 2-hour averages. This
+screen hands it Operations data instead: true 5-minute peaks. The two tables above are MTAT's
+own import files, column for column.</p>
+
+<p {_P}><b {_B}>1. Set the time range</b> at the top of this dashboard to a full business cycle
+&mdash; 30 days at least, longer if month-end or quarter-end matters. Every peak is the Maximum
+over that range. &middot;
+<b {_B}>2. Click a cluster</b> in the first table. &middot;
+<b {_B}>3. Export each table</b> with the widget's CSV export: the hosts table is MTAT's
+<i>Hosts CSV</i>, the VMs table its <i>VMs CSV</i>. Do not open them in Excel first; a re-save
+can reformat the numbers. &middot;
+<b {_B}>4. In MTAT</b>: connect to vCenter (MTAT requires it even to import), pick the
+<i>same</i> cluster, <b {_B}>Import Data Instead</b> &rarr; <b {_B}>MTAT Export (Hosts + VMs
+CSV)</b>, attach both files, and give the range a label such as
+<span {_C}>Ops 30d peak</span>. A yellow &ldquo;imported with notes&rdquo; message is normal.</p>
+
+<p {_P}><b {_W}>Stop if Active_GB is blank in the hosts table.</b> It is a super metric, and
+super metrics arrive disabled: enable the <span {_C}>MemTier</span> super metrics in the active
+policy (Configure &rarr; Policies &rarr; Metrics and Properties) and wait a collection cycle.
+MTAT reads a blank as zero, and a cluster with zero active memory passes every check it has.</p>
+
+<p {_P}><b {_B}>Check the import.</b> MTAT's Active Memory total should equal
+<b {_B}>Active peak GB</b> in the first table. Every host shows the same Active_GB on purpose:
+it is the cluster's simultaneous peak shared evenly, because MTAT adds the column up and a sum
+of each host's own peak counts moments that never happened together. Use the
+<b {_B}>Clusters</b> dashboard for real per-host figures.</p>
+
+<p {_P}><b {_B}>What MTAT will not know.</b> <b {_B}>Tiering</b> shows <i>Unknown</i> and
+<b {_B}>Pinned_Memory</b> <i>N/A</i>; read pinned memory from the Clusters dashboard, and treat
+it as DRAM in any design. Consumed_GB is the peak, where MTAT's own collection uses the average.
+MTAT reserves no DRAM for vSAN, NSX or the VMkernel &mdash; at 1:1 that rarely changes the
+answer, at higher ratios it can.</p>"""
+
+
+def build_mtat_dashboard():
+    """One screen whose only job is producing MTAT's two import files. Views are hard to find
+    in the product, so the export lives on its own dashboard with the steps beneath it."""
+    bv, guids = _view_guids()
+    dash_id = str(uuid.uuid5(uuid.NAMESPACE_URL, "memtier-advanced/dashboard-mtat"))
+    widgets = [
+        view_provider("Choose a cluster to export", guids[bv.MTAT_CLUSTERS], y=1, x=1, w=12,
+                      h=7),
+        view_receiver("MTAT Hosts CSV (export this)", guids[bv.MTAT_HOSTS], y=8, x=1, w=12,
+                      h=8),
+        view_receiver("MTAT VMs CSV (export this)", guids[bv.MTAT_VMS], y=16, x=1, w=12, h=11),
+        widget("TextDisplay", "How to export to MTAT", y=27, h=13, config={
+            "editorData": MTAT_HELP, "locationFile": "", "locationUrl": "",
+            "refreshContent": {"refreshContent": False}, "viewModeHTML": True}),
+    ]
+    for w in widgets:
+        w["tabId"] = dash_id
+    return _envelope(dash_id, widgets, "Memory Tier Advanced - Export for MTAT",
+                     "Produces MTAT's Hosts and VMs import files from Operations data, so MTAT "
+                     "sizes on 5-minute peaks rather than vCenter's 2-hour averages.")
+
+
 def _envelope(dash_id, widgets, name, description=None):
     return {
         "entries": {
@@ -800,6 +859,23 @@ def build_supermetrics():
            GROUP_KIND, "gb",
            "Memory across the opted-in clusters that is pinned to DRAM and cannot be tiered. "
            "Subtract it from the saving before quoting a number."),
+        # --- export for MTAT: per-host share of the cluster's SIMULTANEOUS active ----------
+        # MTAT adds up its hosts' Active_GB to get cluster active. Exporting each host's own
+        # 30-day peak would hand it a sum of peaks that happened at different times, which
+        # overstates the cluster. Computed every 5 minutes as cluster active / host count, the
+        # Maximum of this over the window is the cluster's real peak / n, and MTAT's sum of
+        # n rows is exactly that peak. Cost: every host in the export shows the same figure.
+        # depth=-1 reaches the PARENT cluster. That is the documented direction for negative
+        # depth but has not been observed computing on this lab -- confirm the export's total
+        # against "Active peak GB" on the export dashboard before trusting it.
+        sm(f"{PREFIX} MTAT Active Share (GB)",
+           f"(sum(${{adaptertype={ADAPTER}, objecttype={CLUSTER}, metric=mem|active_average, "
+           f"depth=-1}}) / sum(${{adaptertype={ADAPTER}, objecttype={CLUSTER}, "
+           f"metric=summary|total_number_hosts, depth=-1}})) / {KB_PER_GB}",
+           HOST, "gb",
+           "This host's equal share of its cluster's active memory at the same instant. For the "
+           "MTAT export only: MTAT sums the column, so the total is the cluster's real "
+           "simultaneous peak rather than a sum of per-host peaks. Read it with Maximum."),
         # --- A/B test, remove once settled: which depth reaches hosts from vSphere World? ---
         sm(f"{PREFIX} TEST Fleet Active depth3 (GB)",
            f"{roll(HOST, 'mem|active_average', 3)} / {KB_PER_GB}", WORLD, "gb",
@@ -904,6 +980,7 @@ def main():
 
     dash = build_dashboard()
     refresh = build_refresh_dashboard()
+    mtat = build_mtat_dashboard()
     sms = build_supermetrics()
 
     legal = {(ADAPTER, CLUSTER), (ADAPTER, HOST), (ADAPTER, VM), (ADAPTER, WORLD),
@@ -923,7 +1000,7 @@ def main():
                   f"and reports imported=0 with NO error -- a silent total failure.",
                   file=sys.stderr)
             return 1
-    problems = self_check(dash) + self_check(refresh)
+    problems = self_check(dash) + self_check(refresh) + self_check(mtat)
     if problems:
         for p in problems:
             print("SELF-CHECK FAILED:", p, file=sys.stderr)
@@ -938,6 +1015,8 @@ def main():
     rj = os.path.join(OUT, "dashboard-refresh.json")
     with open(rj, "w") as f:
         json.dump(refresh, f, indent=1)
+    with open(os.path.join(OUT, "dashboard-mtat.json"), "w") as f:
+        json.dump(mtat, f, indent=1)
     # A dashboard export is a zip with dashboard/dashboard.json at that exact path; the UI
     # import dialog does not accept a bare .json.
     with zipfile.ZipFile(os.path.join(OUT, "Dashboard.zip"), "w", zipfile.ZIP_DEFLATED) as z:

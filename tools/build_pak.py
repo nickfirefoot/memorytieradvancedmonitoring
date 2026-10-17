@@ -45,6 +45,7 @@ DESCRIPTION = ("Sizes a vSphere estate for VCF 9 NVMe memory tiering from metric
                "adapter, no image, no registry. Target: Operations 8.18 and later.")
 DASH_DIR = "Memory_Tier_Advanced_Clusters"
 REFRESH_DIR = "Memory_Tier_Advanced_Hardware_Refresh"   # pre-created so mp_build-style lowercasing never applies
+MTAT_DIR = "Memory_Tier_Advanced_Export_for_MTAT"
 
 # Mirrors manifest.txt of the real pak on this host; only the adapter fields change.
 MANIFEST = {
@@ -129,12 +130,13 @@ def main():
 
     dash = json.load(open(dash_src))
     refresh = json.load(open(os.path.join(BUILD, "dashboard-refresh.json")))
+    mtat = json.load(open(os.path.join(BUILD, "dashboard-mtat.json")))
     # In-pak dashboards use the CONTENT-EXPORT shape, not the UI-export shape. Every dashboard
     # in the vCommunity pak (SDK-built, installed widely) carries adapterName, namePath,
     # docCenterKey, temporary, widgetInteractions, columnCount 1 and columnProportion "1-1" --
     # the exact fields the vSAN pack found absent from UI exports. Both observations are right;
     # they are two formats. The UI-import zip from build_content.py stays in the UI shape.
-    for d in dash["dashboards"] + refresh["dashboards"]:
+    for d in dash["dashboards"] + refresh["dashboards"] + mtat["dashboards"]:
         d["adapterName"] = PAK_NAME
         d["namePath"] = DISPLAY_NAME                       # groups the dashboard under a folder
         short = d["name"].replace(f"{DISPLAY_NAME} - ", "")  # "… - Clusters" -> "Clusters"
@@ -269,6 +271,7 @@ def main():
         "resources/resources.properties": RESOURCES.encode(),
         f"content/dashboards/{DASH_DIR}/{DASH_DIR}.json": json.dumps(dash, indent=1).encode(),
         f"content/dashboards/{REFRESH_DIR}/{REFRESH_DIR}.json": json.dumps(refresh, indent=1).encode(),
+        f"content/dashboards/{MTAT_DIR}/{MTAT_DIR}.json": json.dumps(mtat, indent=1).encode(),
         **{f"content/customgroups/{f}": open(os.path.join(BUILD, "customgroups", f), "rb").read()
            for f in sorted(os.listdir(os.path.join(BUILD, "customgroups")))},
         # one file per super metric, each a single-entry {uuid: definition} map -- the shape
@@ -321,7 +324,8 @@ def main():
     for name, data in list(members.items()):
         if name.startswith("content/reports/") and name.endswith(".xml"):
             shipped_guids |= set(_re.findall(r'<ViewDef id="([^"]+)"', data.decode()))
-    named = set(_re.findall(r'"viewDefinitionId": "([^"]+)"', json.dumps(dash) + json.dumps(refresh)))
+    named = set(_re.findall(r'"viewDefinitionId": "([^"]+)"', json.dumps(dash) + json.dumps(refresh)
+                                + json.dumps(mtat)))
     if named - shipped_guids:
         problems.append(f"dashboard names view GUIDs the pak does not ship: {sorted(named - shipped_guids)}")
     if shipped_guids - named:
@@ -333,7 +337,8 @@ def main():
             problems.append(f"super metric name may not contain '|' or ':': {v['name']!r} "
                             f"-- the importer would silently create nothing")
     refs = {f"Super Metric|sm_{k}" for k in sms}
-    used = set(re.findall(r"Super Metric\|sm_[0-9a-f-]+", json.dumps(dash) + json.dumps(refresh)))
+    used = set(re.findall(r"Super Metric\|sm_[0-9a-f-]+",
+                          json.dumps(dash) + json.dumps(refresh) + json.dumps(mtat)))
     if used - refs:
         problems.append(f"dashboard references super metrics not in the pak: {sorted(used - refs)}")
     if problems:

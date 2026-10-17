@@ -27,6 +27,12 @@
 > gated on a pak completing an install on an instance that is not the author's lab, and that
 > has still not happened. See `docs/` and the development repo's `LESSONS.md` §10.3.
 >
+> ### Unreleased, on branch `agent/memtier-sizing`
+>
+> A third dashboard, **Export for MTAT**, produces the Hosts and VMs import files for
+> Broadcom's Memory Tiering Assessment Tool from Operations data, so MTAT sizes on 5-minute
+> peaks instead of vCenter's 2-hour averages. Steps are on the dashboard itself.
+>
 > **Verified on VCF Operations 9.1.1**: content imports and resolves, every metric key present
 > on live objects, image pulls anonymously and matches the pinned digest.
 > **Not yet verified on 8.18**, and the pak install itself is not yet proven end to end.
