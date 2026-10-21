@@ -278,7 +278,10 @@ VIEWS = [
     (MTAT_HOSTS, HOST, 800, [
         column("summary|parentCluster", "Cluster", HOST, is_property=True),
         column("config|name", "HostName", HOST, is_property=True, sort=True),
-        column("hardware|memorySize", "Physical_RAM", HOST, unit="gb"),
+        # mem|host_provisioned, not hardware|memorySize: the latter is a PROPERTY, and 9.1.1
+        # tolerates it declared as a metric column -- nothing says 8.18 does. Identical values
+        # on all four lab hosts (2026-10-21), and host_provisioned is a metric on every version.
+        column("mem|host_provisioned", "Physical_RAM", HOST, unit="gb"),
         # Peak, not MTAT's average: hosts are sized on consumed, and an average undersizes.
         column("mem|consumed_average", "Consumed_GB", HOST, transform="MAX", unit="gb"),
         # NOT the host's own active peak. MTAT sums this column, and a sum of per-host peaks

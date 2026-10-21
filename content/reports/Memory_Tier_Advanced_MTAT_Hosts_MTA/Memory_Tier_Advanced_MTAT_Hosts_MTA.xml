@@ -65,7 +65,7 @@
                             <Item>
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
-                                    <Property name="attributeKey" value="hardware|memorySize" />
+                                    <Property name="attributeKey" value="mem|host_provisioned" />
                                     <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
