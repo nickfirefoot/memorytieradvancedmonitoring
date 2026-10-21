@@ -33,10 +33,10 @@ import zlib
 HERE = os.path.dirname(os.path.abspath(__file__))
 BUILD = os.path.join(HERE, "build")
 
-VERSION = "2.1.4"      # 2.1.4: selectable cluster overview at the top, sizing detail as a receiver, fixed 30-day windows. 2.1.3: text panels as self-contrasting cards for light and dark themes, rewritten help. 2.1.2: dashboards defined vSphere World in entries.resource (providers timed out), custom group in content-import shape, heatmap follows selection, text panels styled. 2.1.1: adapter.zip stored files before their directories, so 2.1.0 failed at APPLY_ADAPTER. 2.1.0: Export for MTAT dashboard, fleet-rollup binding fix. 2.0.0: real collector, two dashboards, opt-in group
+VERSION = "2.1.5"      # 2.1.5: new icon, Active_GB from a built-in metric, receiver heat map removed (server error), adapter sends no relationships. 2.1.4: selectable cluster overview at the top, sizing detail as a receiver, fixed 30-day windows. 2.1.3: text panels as self-contrasting cards for light and dark themes, rewritten help. 2.1.2: dashboards defined vSphere World in entries.resource (providers timed out), custom group in content-import shape, heatmap follows selection, text panels styled. 2.1.1: adapter.zip stored files before their directories, so 2.1.0 failed at APPLY_ADAPTER. 2.1.0: Export for MTAT dashboard, fleet-rollup binding fix. 2.0.0: real collector, two dashboards, opt-in group
 IMAGE_REGISTRY = "ghcr.io"
 IMAGE_REPOSITORY = "/nickfirefoot/memorytieradvancedmonitoring"
-IMAGE_DIGEST = "sha256:667b35ba2f74886ceae15aaeaa98dbad8bc8d7513f40e0e9b5eb670b25b6d93d"
+IMAGE_DIGEST = "sha256:f022578468f00c836447ce872784fab479b15a22855d3865ae70c405a9f44cfe"
 PAK_NAME = "MemoryTierAdvanced"           # manifest "name"; also injected as adapterName
 KIND_KEY = "MemTierAdvanced"                 # a REAL adapter now: collects the tiering disqualifiers
 DISPLAY_NAME = "Memory Tier Advanced"
@@ -230,7 +230,10 @@ def main():
     sms = json.load(open(sm_src))
 
     manifest_bytes = json.dumps(MANIFEST, indent=4).encode()
-    icon = png_icon()
+    # The real icon (2026-10-21), 256x256 as both working paks on the lab carry. The generated
+    # flat square remains only as a fallback if the file is missing.
+    icon_path = os.path.join(HERE, "pak_icon.png")
+    icon = open(icon_path, "rb").read() if os.path.exists(icon_path) else png_icon()
 
     # v0.3.0: content import is adapter-shaped (LESSONS.md 4.7; SDK source read by the vSAN
     # session), and describeSchema.xsd makes an AdapterKind REQUIRE at least one ResourceKind.

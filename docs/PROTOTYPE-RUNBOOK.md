@@ -80,7 +80,7 @@ at that size; the 2.0.0 code needed over 10,000.
 
 Open, in the order they could block:
 
-- [ ] **Super metric parent lookup.** `MemTier MTAT Active Share (GB)` reaches the cluster with
+- [x] **Super metric parent lookup** (removed in 2.1.5; `Active_GB` is the built-in host peak). Was: `MemTier MTAT Active Share (GB)` reached the cluster with
       `depth=-1`. That is the documented direction but has never been seen computing. If it is
       blank after step 8, the export's `Active_GB` is blank, and MTAT reads blank as zero.
 - [ ] **Export row limits.** The MTAT views page at 1,000 rows. Whether the widget's CSV export

@@ -43,7 +43,7 @@ import aria.ops.adapter_logging as logging
 from aria.ops.adapter_instance import AdapterInstance
 from aria.ops.definition.adapter_definition import AdapterDefinition
 from aria.ops.object import Identifier, Key, Object
-from aria.ops.result import CollectResult, EndpointResult, TestResult
+from aria.ops.result import CollectResult, EndpointResult, RelationshipUpdateModes, TestResult
 from aria.ops.timer import Timer
 
 logger = logging.getLogger(__name__)
@@ -55,6 +55,15 @@ HOST_KIND = "MemTierAdvancedHost"
 
 VC_ADAPTER = "VMWARE"
 VC_VM, VC_HOST = "VirtualMachine", "HostSystem"
+
+# OFF until proven safe. The SDK's default relationship mode (AUTO, which acts as ALL once any
+# relationship is reported) REMOVES every existing relationship not present in the result. An
+# adapter that attaches children under the vCenter adapter's VMs and hosts in that mode can
+# strip their Host / ResourcePool parents -- and on the lab, 23 of 28 VMs had lost exactly those
+# (2026-10-21; not this adapter, which had never run). So the adapter sends NO relationships:
+# objects and properties only. Cost: cluster rollups of pinned memory stay blank. Turn this on
+# only with a mode proven, on a lab, to add links without removing any.
+LINK_TO_VCENTER = False
 
 HOST_ID, USER_ID, VERIFY_ID = "vcenter_host", "vcenter_user", "verify_certs"
 CRED_KIND, PASSWORD_ID = "memtier_vc_credential", "vcenter_password"
@@ -263,6 +272,8 @@ def collect(adapter_instance: AdapterInstance) -> CollectResult:
     from pyVmomi import vim
     with Timer(logger, "Collection"):
         result = CollectResult()
+        if not LINK_TO_VCENTER:
+            result.update_relationships = RelationshipUpdateModes.NONE
         si = None
         try:
             si = _connect(adapter_instance)
@@ -296,9 +307,10 @@ def collect(adapter_instance: AdapterInstance) -> CollectResult:
                 obj.with_metric("pinnedMemoryKB", pinned_kb)
                 n_vm += 1
                 n_pinned += pinned
-                parent = _vc_parent(parents, VC_VM, vm._moId, vc_uuid, name)
-                if parent is not None:
-                    parent.add_child(obj)
+                if LINK_TO_VCENTER:
+                    parent = _vc_parent(parents, VC_VM, vm._moId, vc_uuid, name)
+                    if parent is not None:
+                        parent.add_child(obj)
 
             for host, p in _fetch(content, vim.HostSystem,
                                   ["name", "configManager.advancedOption"]):
@@ -316,9 +328,10 @@ def collect(adapter_instance: AdapterInstance) -> CollectResult:
                 for key in HOST_ADVANCED:
                     obj.with_property(key.replace(".", "_"), wanted.get(key, "not set"))
                 n_host += 1
-                parent = _vc_parent(parents, VC_HOST, host._moId, vc_uuid, name)
-                if parent is not None:
-                    parent.add_child(obj)
+                if LINK_TO_VCENTER:
+                    parent = _vc_parent(parents, VC_HOST, host._moId, vc_uuid, name)
+                    if parent is not None:
+                        parent.add_child(obj)
 
             for parent in parents.values():
                 result.add_object(parent)

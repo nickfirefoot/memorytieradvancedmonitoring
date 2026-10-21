@@ -66,11 +66,6 @@
      "widgetIdProvider": "5a7186a4-acf6-552d-9261-55931b550b70",
      "type": "resourceId",
      "widgetIdReceiver": "d8ec1029-57fd-5616-b087-86186fcea768"
-    },
-    {
-     "widgetIdProvider": "5a7186a4-acf6-552d-9261-55931b550b70",
-     "type": "resourceId",
-     "widgetIdReceiver": "9154562e-6e04-5227-a4f0-f7e843910aa5"
     }
    ],
    "widgets": [
@@ -102,7 +97,7 @@
       "selfProvider": {
        "selfProvider": true
       },
-      "editorData": "<div style=\"background:#1e2d36;color:#d5dde3;border-radius:6px;padding:12px 16px;font-size:13px;line-height:1.5;font-family:Metropolis,'Clarity City',-apple-system,'Segoe UI',Roboto,Arial,sans-serif\"><div style=\"color:#ffffff;font-size:15px;font-weight:600;margin:0 0 6px\">How to read this</div>\n<p style=\"color:#d5dde3;margin:0 0 8px\">Sizes each cluster for NVMe memory tiering <b style=\"color:#ffffff;font-weight:600\">before</b> the upgrade: how much DRAM the\nworkload needs, what tiering saves, and what can never be tiered.</p>\n<ul style=\"margin:0 0 8px;padding-left:18px\">\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">Click a cluster</b> in the overview. The sizing detail, host and VM tables and the heat\nmap follow it.</li>\n<li style=\"margin:0 0 3px\">Every figure covers the <b style=\"color:#ffffff;font-weight:600\">last 30 days</b>; peaks are the <b style=\"color:#ffffff;font-weight:600\">Maximum</b> over that\nwindow. The time selector at the top does not apply.</li>\n<li style=\"margin:0 0 3px\">Every column is defined in the <b style=\"color:#ffffff;font-weight:600\">Field reference</b> at the bottom. To price the result,\nuse <b style=\"color:#ffffff;font-weight:600\">Export for MTAT</b>.</li>\n</ul>\n<p style=\"color:#aab7c0;margin:0 0 8px\"><span style=\"color:#f2b544;font-weight:600\">Blank columns?</span> Enable the <code style=\"background:#33454f;color:#e6edf1;padding:1px 4px;border-radius:3px;font-family:Menlo,Consolas,monospace;font-size:12px\">MemTier</code> super metrics in the active\npolicy and allow a collection cycle; pinned columns also need a Memory Tier Advanced adapter\ninstance.</p></div>",
+      "editorData": "<div style=\"background:#1e2d36;color:#d5dde3;border-radius:6px;padding:12px 16px;font-size:13px;line-height:1.5;font-family:Metropolis,'Clarity City',-apple-system,'Segoe UI',Roboto,Arial,sans-serif\"><div style=\"color:#ffffff;font-size:15px;font-weight:600;margin:0 0 6px\">How to read this</div>\n<p style=\"color:#d5dde3;margin:0 0 8px\">Sizes each cluster for NVMe memory tiering <b style=\"color:#ffffff;font-weight:600\">before</b> the upgrade: how much DRAM the\nworkload needs, what tiering saves, and what can never be tiered.</p>\n<ul style=\"margin:0 0 8px;padding-left:18px\">\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">Click a cluster</b> in the overview. The sizing detail and the host and VM tables\nfollow it.</li>\n<li style=\"margin:0 0 3px\">Every figure covers the <b style=\"color:#ffffff;font-weight:600\">last 30 days</b>; peaks are the <b style=\"color:#ffffff;font-weight:600\">Maximum</b> over that\nwindow. The time selector at the top does not apply.</li>\n<li style=\"margin:0 0 3px\">Every column is defined in the <b style=\"color:#ffffff;font-weight:600\">Field reference</b> at the bottom. To price the result,\nuse <b style=\"color:#ffffff;font-weight:600\">Export for MTAT</b>.</li>\n</ul>\n<p style=\"color:#aab7c0;margin:0 0 8px\"><span style=\"color:#f2b544;font-weight:600\">Blank columns?</span> Enable the <code style=\"background:#33454f;color:#e6edf1;padding:1px 4px;border-radius:3px;font-family:Menlo,Consolas,monospace;font-size:12px\">MemTier</code> super metrics in the active\npolicy and allow a collection cycle; pinned columns also need a Memory Tier Advanced adapter\ninstance.</p></div>",
       "locationFile": "",
       "locationUrl": "",
       "viewModeHTML": true
@@ -291,113 +286,12 @@
     },
     {
      "collapsed": false,
-     "id": "9154562e-6e04-5227-a4f0-f7e843910aa5",
-     "gridsterCoords": {
-      "w": 12,
-      "x": 1,
-      "h": 7,
-      "y": 40
-     },
-     "state": "",
-     "type": "Heatmap",
-     "title": "Hosts in the selected cluster: memory usage (%), sized by presented memory",
-     "config": {
-      "refreshInterval": 300,
-      "widgetId": "9154562e-6e04-5227-a4f0-f7e843910aa5",
-      "description": "",
-      "title": "Hosts in the selected cluster: memory usage (%), sized by presented memory",
-      "refreshContent": {
-       "refreshContent": false
-      },
-      "customFilter": {
-       "filter": [],
-       "excludedResources": null,
-       "includedResources": null
-      },
-      "selfProvider": {
-       "selfProvider": false
-      },
-      "mode": "resource",
-      "depth": 1,
-      "resource": [],
-      "relationshipMode": {
-       "relationshipMode": [
-        1,
-        -1,
-        0
-       ]
-      },
-      "value": 0,
-      "viewDetails": "",
-      "configs": [
-       {
-        "id": "extModel1-1",
-        "name": "Hosts in the selected cluster: memory usage (%), sized by presented memory",
-        "nameOrig": "Hosts in the selected cluster: memory usage (%), sized by presented memory",
-        "nameLocalized": "Hosts in the selected cluster: memory usage (%), sized by presented memory",
-        "resourceKind": "resourceKind:id:1_::_",
-        "colorBy": {
-         "metricKey": "mem|usage_average",
-         "value": "Memory usage (%)"
-        },
-        "sizeBy": {
-         "metricKey": "mem|host_provisioned",
-         "value": "Presented memory"
-        },
-        "attributeKind": {
-         "value": ""
-        },
-        "customFilter": {
-         "filter": [],
-         "excludedResources": null,
-         "includedResources": null
-        },
-        "groupBy": null,
-        "thenBy": null,
-        "color": {
-         "thresholds": {
-          "values": [
-           0,
-           40,
-           80,
-           100
-          ],
-          "colors": [
-           "#5A5A5A",
-           "#67CA16",
-           "#FFDB24",
-           "#FF4D2E"
-          ]
-         }
-        },
-        "colorRange": {
-         "min": null,
-         "max": null
-        },
-        "filterMode": "tagPicker",
-        "focusOnGroups": true,
-        "relationalGrouping": false,
-        "solidColoring": false,
-        "mode": {
-         "mode": false
-        },
-        "config": {
-         "value": ""
-        }
-       }
-      ]
-     },
-     "height": 0,
-     "tabId": "da9260bc-9f85-5e48-9dbe-34302798d6c2"
-    },
-    {
-     "collapsed": false,
      "id": "3e21f9fe-7b83-5d5e-ac1f-cae112064d7c",
      "gridsterCoords": {
       "w": 12,
       "x": 1,
       "h": 14,
-      "y": 47
+      "y": 40
      },
      "state": "",
      "type": "TextDisplay",

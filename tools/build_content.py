@@ -228,8 +228,8 @@ HELP = f"""<div {_H}>How to read this</div>
 <p {_P}>Sizes each cluster for NVMe memory tiering <b {_B}>before</b> the upgrade: how much DRAM the
 workload needs, what tiering saves, and what can never be tiered.</p>
 <ul {_UL}>
-<li {_LI}><b {_B}>Click a cluster</b> in the overview. The sizing detail, host and VM tables and the heat
-map follow it.</li>
+<li {_LI}><b {_B}>Click a cluster</b> in the overview. The sizing detail and the host and VM tables
+follow it.</li>
 <li {_LI}>Every figure covers the <b {_B}>last 30 days</b>; peaks are the <b {_B}>Maximum</b> over that
 window. The time selector at the top does not apply.</li>
 <li {_LI}>Every column is defined in the <b {_B}>Field reference</b> at the bottom. To price the result,
@@ -471,12 +471,11 @@ def build_dashboard():
         # right widget for many objects at a glance (practitioner guide p50). Colour MUST be a
         # percentage: the [0, 50, 100] threshold block is a percent scale, and colouring a KB
         # metric against it paints every host red (caught 2026-10-02).
-        # Follows the selected cluster: its hosts, coloured by memory usage, sized by presented
-        # memory. Estate-wide it answered nothing the table above did not (feedback 2026-10-21).
-        heatmap("Hosts in the selected cluster: memory usage (%), sized by presented memory",
-                HOST, "mem|usage_average", "mem|host_provisioned", CLUSTER, y=40, receiver=True),
+        # The receiver heat map is OUT: its config made getHeatmapData return null and the UI
+        # threw an Internal Server Error on every load (HeatMapAction NPE, 2026-10-21). Rebuild
+        # it from a UI-made receiver heat map, never from a guessed shape (BACKLOG).
         text_panel("Field reference", FIELDS.replace("{factor}", f"{CONSERVATIVE_FACTOR:g}"),
-                   y=47, h=14),
+                   y=40, h=14),
     ]
     for w in widgets:
         w["tabId"] = dash_id
@@ -533,12 +532,14 @@ peaks.</p>
 <li {_LI}><b {_B}>In MTAT:</b> connect to vCenter, pick the <i>same</i> cluster,
 <b {_B}>Import Data Instead &rarr; MTAT Export (Hosts + VMs CSV)</b>, attach both, label the range
 e.g. <code {_C}>Ops 30d peak</code>.</li>
-<li {_LI}><b {_B}>Check:</b> MTAT's Active Memory total should equal <b {_B}>Active peak GB</b> above.
-Every host shows the same Active_GB on purpose &mdash; the cluster's simultaneous peak, shared evenly.</li>
+<li {_LI}><b {_B}>Check:</b> Active_GB is each host's own 30-day peak. MTAT adds them up, so its total
+can sit slightly above the cluster's <b {_B}>Active peak GB</b> when hosts peak at different times &mdash;
+the safe direction, more DRAM rather than less.</li>
 </ul>
-<p {_M}><span {_W}>Stop if Active_GB is blank</span> &mdash; enable the <code {_C}>MemTier</code> super
-metrics first; MTAT reads a blank as zero. MTAT will show Tiering <i>Unknown</i> and Pinned
-<i>N/A</i>; read pinned memory from the Clusters dashboard.</p>"""
+<p {_M}><span {_W}>Never import a file with a "-" in a number column</span> &mdash; MTAT reads it as
+zero. Every column here is a built-in metric, so that only happens for an object with no data yet.
+MTAT will show Tiering <i>Unknown</i> and Pinned <i>N/A</i>; read pinned memory from the Clusters
+dashboard.</p>"""
 
 
 def build_mtat_dashboard():
@@ -852,23 +853,7 @@ def build_supermetrics():
            GROUP_KIND, "gb",
            "Memory across the opted-in clusters that is pinned to DRAM and cannot be tiered. "
            "Subtract it from the saving before quoting a number."),
-        # --- export for MTAT: per-host share of the cluster's SIMULTANEOUS active ----------
-        # MTAT adds up its hosts' Active_GB to get cluster active. Exporting each host's own
-        # 30-day peak would hand it a sum of peaks that happened at different times, which
-        # overstates the cluster. Computed every 5 minutes as cluster active / host count, the
-        # Maximum of this over the window is the cluster's real peak / n, and MTAT's sum of
-        # n rows is exactly that peak. Cost: every host in the export shows the same figure.
-        # depth=-1 reaches the PARENT cluster. That is the documented direction for negative
-        # depth but has not been observed computing on this lab -- confirm the export's total
-        # against "Active peak GB" on the export dashboard before trusting it.
-        sm(f"{PREFIX} MTAT Active Share (GB)",
-           f"(sum(${{adaptertype={ADAPTER}, objecttype={CLUSTER}, metric=mem|active_average, "
-           f"depth=-1}}) / sum(${{adaptertype={ADAPTER}, objecttype={CLUSTER}, "
-           f"metric=summary|total_number_hosts, depth=-1}})) / {KB_PER_GB}",
-           HOST, "gb",
-           "This host's equal share of its cluster's active memory at the same instant. For the "
-           "MTAT export only: MTAT sums the column, so the total is the cluster's real "
-           "simultaneous peak rather than a sum of per-host peaks. Read it with Maximum."),
+
     ]:
         out[k] = v
     return out

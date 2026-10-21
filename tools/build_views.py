@@ -304,11 +304,12 @@ VIEWS = [
         column("mem|host_provisioned", "Physical_RAM", HOST, unit="gb"),
         # Peak, not MTAT's average: hosts are sized on consumed, and an average undersizes.
         column("mem|consumed_average", "Consumed_GB", HOST, transform="MAX", unit="gb"),
-        # NOT the host's own active peak. MTAT sums this column, and a sum of per-host peaks
-        # that happened at different times overstates the cluster. This is the cluster's
-        # simultaneous active split evenly, so the sum is exactly the cluster's real peak.
-        sm_column("MemTier MTAT Active Share (GB)", "Active_GB", HOST, transform="MAX",
-                  unit="gb"),
+        # The host's own 30-day active peak, a built-in metric. 2.1.3 exported a super metric
+        # here (the cluster's simultaneous peak shared per host) and it read "-" whenever the
+        # super metrics were not enabled in policy -- which MTAT parses as ZERO, a cluster with
+        # no working set. Summing per-host peaks can overstate a cluster whose hosts peak at
+        # different times; measured 0% on the lab, and the error is towards more DRAM.
+        column("mem|active_average", "Active_GB", HOST, transform="MAX", unit="gb"),
         # Average, as MTAT itself uses for its 80% CPU ceiling.
         column("cpu|usage_average", "CPU_Pct", HOST, transform="AVG", unit="percent"),
     ]),

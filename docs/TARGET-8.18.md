@@ -27,7 +27,7 @@ there.
 | 1 | Metric keys | `summary|total_number_mt_hosts` (hosts already tiered) is a VCF 9 memory-tiering metric | "Hosts already tiered" column blank | **Expected**, harmless |
 | 2 | Metric keys | `cpu|max_cpu_ready`, `cpu|percentage_of_vms_facing_cpu_ready`, `cpu|20_sec_peak_readyPct` may be newer than 8.18 | CPU columns blank | check with step 1 |
 | 3 | Key typing | `hardware|memorySize` is a **property**; the MTAT Hosts view declared it as a metric, which 9.1.1 tolerates | MTAT `Physical_RAM` blank | **Fixed**: now `mem|host_provisioned`, a metric, identical values on all lab hosts |
-| 4 | Super metrics | `depth=-1` (parent lookup) in `MemTier MTAT Active Share` | MTAT export `Active_GB` blank | unproven on any version |
+| 4 | Super metrics | `depth=-1` (parent lookup) in `MemTier MTAT Active Share` | MTAT export `Active_GB` blank | **Removed in 2.1.5**: `Active_GB` is now the built-in host active peak |
 | 5 | Super metrics | one super metric referencing another (`attribute=Super Metric|sm_…`), `abs()`, unit ids `gb`/`percent` | rollups compute nothing | proven on 9.1.1 only (OPS818-REVIEW §4, §5) |
 | 6 | Content format | dashboards follow a **9.1.1** export shape; views are cloned from a pak installed on 9.1 | dashboards or views rejected or blank | unproven on 8.18 |
 | 7 | View options | `hideObjectNameColumn`, the power-state subject filter, explicit `preferredUnitId` | name column reappears; powered-off VMs in the MTAT file; units differ | `hideObjectNameColumn` doesn't matter (MTAT ignores extra columns); the filter matters |
@@ -39,6 +39,8 @@ there.
 | 13 | vCenter 8 API | properties the adapter reads: `config.latencySensitivity`, `memoryReservationLockedToMax`, `hardware.device`, `memoryAllocation.reservation`, host `LPage.*` / `Mem.AllocGuestLargePage` | disqualifier blank or host skipped (a missing option now reads "not set") | all exist in the vSphere 8 API; pyvmomi 8.0.3 in the image; untested against vCenter 8 |
 | 14 | Diagnosing installs | 9.x forwards logs to Operations for Logs, reached by token exchange; 8.18 does not work that way | can't read why an install failed | plan: SSH to the 8.18 node, or a support bundle |
 | 15 | Memory tiering on vCenter 8 | 8.0 U3 tiering is a tech preview, so most hosts report nothing tiering-related | none for sizing: this pack sizes from active and consumed memory, which vCenter 8 has | by design |
+| 17 | Adapter relationships | the SDK default mode removes existing relationships not in the result; attaching under vCenter VMs and hosts can strip their parents | vCenter tree damaged: VMs drop out of every cluster view | **2.1.5 sends no relationships**; pinned rollups blank until a mode is proven to add links only |
+| 18 | Heat map | a receiver heat map built from a guessed config returned null data | Internal Server Error on the dashboard | **removed in 2.1.5**; rebuild from a UI-made one |
 | 16 | MTAT | MTAT needs PowerCLI and a vCenter connection even to import | the export flow needs both on the user's machine | documented on the dashboard |
 
 Anything that turns up here on the lab becomes a row, with what was run and what came back.

@@ -109,7 +109,7 @@
                             <Item>
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
-                                    <Property name="attributeKey" value="Super Metric|sm_42b62e0d-f0dd-53e8-88ac-14f0a0f6f507" />
+                                    <Property name="attributeKey" value="mem|active_average" />
                                     <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
