@@ -455,18 +455,18 @@ def build_dashboard():
     bv, guids = _view_guids()
     dash_id = str(uuid.uuid5(uuid.NAMESPACE_URL, "memtier-advanced/dashboard"))
     widgets = [
-        text_panel("How to read this", HELP, y=1, h=6),
+        text_panel("How to read this", HELP, y=1, h=5),
         # The sizing table is the headline AND the provider: click a cluster row and the host
         # and VM lists below follow it. A Scoreboard held these numbers and was replaced -- it
         # caps at 100 cells (metrics x objects), shows present value only, and cannot carry
         # dashboardTime, so the one panel with the sizing figures was the one panel that could
         # not honour the time range the whole peak-based model depends on. The vSAN pack's
         # seven shipped dashboards use zero Scoreboards for the same reasons.
-        view_provider("Clusters: select one", guids[bv.OVERVIEW], y=7, x=1, w=12, h=8),
-        view_receiver("Sizing detail for the selected cluster", guids[bv.SIZING], y=15, x=1,
+        view_provider("Clusters: select one", guids[bv.OVERVIEW], y=6, x=1, w=12, h=8),
+        view_receiver("Sizing detail for the selected cluster", guids[bv.SIZING], y=14, x=1,
                       w=12, h=5),
-        view_receiver("Hosts in the selected cluster", guids[bv.HOSTS], y=20, x=1, w=12, h=9),
-        view_receiver("VMs in the selected cluster", guids[bv.VMS], y=29, x=1, w=12, h=11),
+        view_receiver("Hosts in the selected cluster", guids[bv.HOSTS], y=19, x=1, w=12, h=9),
+        view_receiver("VMs in the selected cluster", guids[bv.VMS], y=28, x=1, w=12, h=11),
         # Heat map stays. Present-value-only is acceptable in the capacity genre and it is the
         # right widget for many objects at a glance (practitioner guide p50). Colour MUST be a
         # percentage: the [0, 50, 100] threshold block is a percent scale, and colouring a KB
@@ -475,7 +475,7 @@ def build_dashboard():
         # threw an Internal Server Error on every load (HeatMapAction NPE, 2026-10-21). Rebuild
         # it from a UI-made receiver heat map, never from a guessed shape (BACKLOG).
         text_panel("Field reference", FIELDS.replace("{factor}", f"{CONSERVATIVE_FACTOR:g}"),
-                   y=40, h=14),
+                   y=39, h=14),
     ]
     for w in widgets:
         w["tabId"] = dash_id
@@ -503,16 +503,16 @@ def build_refresh_dashboard():
     bv, guids = _view_guids()
     dash_id = str(uuid.uuid5(uuid.NAMESPACE_URL, "memtier-advanced/dashboard-refresh"))
     widgets = [
-        text_panel("Sizing new hardware", REFRESH_HELP, y=1, h=7),
-        view_provider("Clusters to refresh: select one", guids[bv.OVERVIEW], y=8, x=1, w=12, h=8),
-        view_receiver("Sizing detail for the selected cluster", guids[bv.SIZING], y=16, x=1,
+        text_panel("Sizing new hardware", REFRESH_HELP, y=1, h=5),
+        view_provider("Clusters to refresh: select one", guids[bv.OVERVIEW], y=6, x=1, w=12, h=8),
+        view_receiver("Sizing detail for the selected cluster", guids[bv.SIZING], y=14, x=1,
                       w=12, h=5),
-        view_receiver("VMs in the selected cluster", guids[bv.VMS], y=21, x=1, w=12, h=11),
-        view_receiver("Hosts in the selected cluster", guids[bv.HOSTS], y=32, x=1, w=12, h=9),
+        view_receiver("VMs in the selected cluster", guids[bv.VMS], y=19, x=1, w=12, h=11),
+        view_receiver("Hosts in the selected cluster", guids[bv.HOSTS], y=30, x=1, w=12, h=9),
         # Same three views means the same columns, so the same field reference applies verbatim.
         # Parity with the as-is dashboard is the point: a reader who starts on either screen
         # gets the definitions without having to know the other one exists.
-        text_panel("Field reference", FIELDS, y=41, h=14),
+        text_panel("Field reference", FIELDS, y=39, h=14),
     ]
     for w in widgets:
         w["tabId"] = dash_id
@@ -553,7 +553,7 @@ def build_mtat_dashboard():
         view_receiver("MTAT Hosts CSV (export this)", guids[bv.MTAT_HOSTS], y=8, x=1, w=12,
                       h=8),
         view_receiver("MTAT VMs CSV (export this)", guids[bv.MTAT_VMS], y=16, x=1, w=12, h=11),
-        text_panel("How to export to MTAT", MTAT_HELP, y=27, h=10),
+        text_panel("How to export to MTAT", MTAT_HELP, y=27, h=9),
     ]
     for w in widgets:
         w["tabId"] = dash_id

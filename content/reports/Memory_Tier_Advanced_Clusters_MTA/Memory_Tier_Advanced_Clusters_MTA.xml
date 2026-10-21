@@ -44,7 +44,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="mem|host_provisioned" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -66,7 +66,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_d4f30e63-b0c5-5389-a919-03f9effeb56f" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -88,7 +88,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_c8545a57-91e1-57e2-9240-86fa875ae62f" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -110,7 +110,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_669b5085-8f41-54e3-9a05-6dca4a21b6eb" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -132,7 +132,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="mem|consumed_average" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -154,7 +154,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="mem|active_average" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -176,7 +176,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="mem|active_average" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -198,7 +198,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_79b34dab-c8de-569e-8ea5-4e61f24a11a2" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="percent" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -220,7 +220,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_a1343c53-30ca-5c1c-a5e6-0b23dc8429a9" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -242,7 +242,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_e58afed0-71aa-5eb4-aacd-52816d86aa0a" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -264,7 +264,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_d2f53553-4799-5bfa-9839-d377b6eb64a8" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="percent" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -286,7 +286,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_5e22168f-6b00-5ed2-8331-b81d01605604" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -308,7 +308,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_81b53d69-3fca-5816-a129-c89c6edc39bb" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -330,7 +330,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_680c80b8-2936-5438-bb96-f34f7f9d8e65" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -352,7 +352,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_8c5343d0-55c5-5bfc-adae-cda5efeba33f" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="percent" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -374,7 +374,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_4ad27278-e166-5e1e-aa59-c10a117694d1" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="percent" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -396,7 +396,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_374b9a22-2ab1-5275-8638-3ecc2df62629" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -418,7 +418,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_3222e9d7-fdfa-5723-b6a3-5b84cafb0cdf" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -462,7 +462,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_1cbdf1c7-87e7-575a-a35d-c39c8604f3c6" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -484,7 +484,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_4e1bb9de-0b09-526d-90f2-fa9437828e9b" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -506,7 +506,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_0f9d8553-db55-5dad-85d3-398ddc38807a" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -528,7 +528,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_b9d812e3-0d77-501e-a8fd-356dc98ba743" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -550,7 +550,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="cpu|capacity_usagepct_average" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="percent" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -572,7 +572,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_037a52aa-e1a1-5154-9b74-765c931bf975" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="percent" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -638,7 +638,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="cpu|max_cpu_ready" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="percent" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -660,7 +660,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="cpu|percentage_of_vms_facing_cpu_ready" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="percent" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />
@@ -726,7 +726,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="Super Metric|sm_725d2aa5-8113-5cd0-a446-e488a842e6d2" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="ClusterComputeResource" />

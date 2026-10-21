@@ -44,7 +44,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="mem|guest_provisioned" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="VirtualMachine" />
@@ -66,7 +66,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="mem|active_average" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="VirtualMachine" />
@@ -88,7 +88,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="mem|consumed_average" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="VirtualMachine" />
@@ -110,7 +110,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="mem|reservation_used" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="VirtualMachine" />
@@ -176,7 +176,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="summary|oversized|memory" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="VirtualMachine" />
@@ -198,7 +198,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="summary|undersized|memory" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="gb" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="VirtualMachine" />
@@ -220,7 +220,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="cpu|usage_average" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="percent" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="VirtualMachine" />
@@ -242,7 +242,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="cpu|20_sec_peak_readyPct" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="percent" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="VirtualMachine" />
@@ -264,7 +264,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="cpu|costopPct" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="percent" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="VirtualMachine" />
@@ -286,7 +286,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="cpu|iowaitPct" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="percent" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="VirtualMachine" />
@@ -308,7 +308,7 @@
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
                                     <Property name="attributeKey" value="mem|guest_activePct" />
-                                    <Property name="preferredUnitId" value="" />
+                                    <Property name="preferredUnitId" value="percent" />
                                     <Property name="isStringAttribute" value="false" />
                                     <Property name="adapterKind" value="VMWARE" />
                                     <Property name="resourceKind" value="VirtualMachine" />

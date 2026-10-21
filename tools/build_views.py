@@ -61,6 +61,26 @@ def guid_for(title):
     return str(uuid.uuid5(NAMESPACE, title))
 
 
+# Default display units, so no column falls back to raw KB (feedback 2026-10-21: the sizing,
+# host and VM tables read "2,063,914,452 KB" beside an overview reading "1,968.3 GB").
+KB_KEYS = {"mem|host_provisioned", "mem|consumed_average", "mem|active_average",
+           "mem|guest_provisioned", "mem|reservation_used", "summary|oversized|memory",
+           "summary|undersized|memory"}
+PCT_KEYS = {"cpu|capacity_usagepct_average", "cpu|max_cpu_ready",
+            "cpu|percentage_of_vms_facing_cpu_ready", "mem|usage_average", "cpu|usage_average",
+            "cpu|20_sec_peak_readyPct", "cpu|costopPct", "cpu|iowaitPct", "mem|guest_activePct"}
+
+
+def default_unit(key, label):
+    if key in KB_KEYS:
+        return "gb"
+    if key in PCT_KEYS:
+        return "percent"
+    if key.startswith("Super Metric|"):
+        return "gb" if "GB" in label else ("percent" if "%" in label else "")
+    return ""
+
+
 def column(key, label, kind, is_property=False, transform="CURRENT", sort=False, unit=""):
     """One attributeInfo entry. transform CURRENT for configuration, MAX for performance --
     never average, which is a lagging indicator (practitioner guide p52).
@@ -68,6 +88,8 @@ def column(key, label, kind, is_property=False, transform="CURRENT", sort=False,
     `unit` is preferredUnitId. Empty lets Operations pick; an explicit id ("gb", "percent")
     converts with NO suffix in a CSV export, while "auto" appends one ("16.76 MBps") -- which
     matters only where the export is read by another tool (probe p41)."""
+    if not unit and not is_property:
+        unit = default_unit(key, label)
     return f"""                            <Item>
                                 <Value>
                                     <Property name="objectType" value="RESOURCE" />
@@ -206,7 +228,7 @@ VIEW_OPTS = {
 VIEWS = [
     (SIZING, CLUSTER, 760, [
         column("config|name", "Cluster", CLUSTER, is_property=True, sort=True),
-        column("mem|host_provisioned", "Presented", CLUSTER),
+        column("mem|host_provisioned", "Presented", CLUSTER, unit="gb"),
         sm_column("MemTier Allocated (GB)", "Allocated GB (all VMs)", CLUSTER),
         sm_column("MemTier Allocated Powered On (GB)", "Allocated GB (powered on)", CLUSTER),
         sm_column("MemTier Allocated Powered Off (GB)", "Allocated GB (powered off)", CLUSTER),
@@ -247,7 +269,7 @@ VIEWS = [
     ]),
     (HOSTS, HOST, 720, [
         column("config|name", "Host", HOST, is_property=True, sort=True),
-        column("mem|host_provisioned", "Presented memory", HOST),
+        column("mem|host_provisioned", "Presented memory", HOST, unit="gb"),
         column("mem|consumed_average", "Consumed (max)", HOST, transform="MAX"),
         column("mem|active_average", "Active (max)", HOST, transform="MAX"),
         column("mem|usage_average", "Memory usage % (max)", HOST, transform="MAX"),
@@ -258,14 +280,14 @@ VIEWS = [
     ]),
     (VMS, VM, 740, [
         column("config|name", "VM", VM, is_property=True, sort=True),
-        column("mem|guest_provisioned", "Configured", VM),
+        column("mem|guest_provisioned", "Configured", VM, unit="gb"),
         column("mem|active_average", "Active (max)", VM, transform="MAX"),
         column("mem|consumed_average", "Consumed (max)", VM, transform="MAX"),
         column("mem|reservation_used", "Reserved (used)", VM),
         column("config|memoryAllocation|reservation", "Reserved (configured)", VM, is_property=True),
         column("config|memoryAllocation|limit", "Memory limit", VM, is_property=True),
-        column("summary|oversized|memory", "Oversized by", VM),
-        column("summary|undersized|memory", "Undersized by", VM),
+        column("summary|oversized|memory", "Oversized by", VM, unit="gb"),
+        column("summary|undersized|memory", "Undersized by", VM, unit="gb"),
         # 20-second peak ready is the one that catches contention a 5-minute average hides.
         column("cpu|usage_average", "CPU util % (max)", VM, transform="MAX"),
         column("cpu|20_sec_peak_readyPct", "CPU ready 20s peak % (max)", VM, transform="MAX"),
