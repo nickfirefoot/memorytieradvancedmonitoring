@@ -53,17 +53,22 @@
    "dashboardNavigations": {},
    "widgetInteractions": [
     {
-     "widgetIdProvider": "389c1c7c-2de0-5300-a0b5-73033a854fb9",
+     "widgetIdProvider": "5a7186a4-acf6-552d-9261-55931b550b70",
+     "type": "resourceId",
+     "widgetIdReceiver": "4b53265e-f552-545a-b1bb-743c632c7c86"
+    },
+    {
+     "widgetIdProvider": "5a7186a4-acf6-552d-9261-55931b550b70",
      "type": "resourceId",
      "widgetIdReceiver": "af265b25-a92a-5853-a07c-d0cf9a8d2289"
     },
     {
-     "widgetIdProvider": "389c1c7c-2de0-5300-a0b5-73033a854fb9",
+     "widgetIdProvider": "5a7186a4-acf6-552d-9261-55931b550b70",
      "type": "resourceId",
      "widgetIdReceiver": "d8ec1029-57fd-5616-b087-86186fcea768"
     },
     {
-     "widgetIdProvider": "389c1c7c-2de0-5300-a0b5-73033a854fb9",
+     "widgetIdProvider": "5a7186a4-acf6-552d-9261-55931b550b70",
      "type": "resourceId",
      "widgetIdReceiver": "9154562e-6e04-5227-a4f0-f7e843910aa5"
     }
@@ -97,7 +102,7 @@
       "selfProvider": {
        "selfProvider": true
       },
-      "editorData": "<div style=\"background:#1e2d36;color:#d5dde3;border-radius:6px;padding:12px 16px;font-size:13px;line-height:1.5;font-family:Metropolis,'Clarity City',-apple-system,'Segoe UI',Roboto,Arial,sans-serif\"><div style=\"color:#ffffff;font-size:15px;font-weight:600;margin:0 0 6px\">How to read this</div>\n<p style=\"color:#d5dde3;margin:0 0 8px\">Sizes each cluster for NVMe memory tiering <b style=\"color:#ffffff;font-weight:600\">before</b> the upgrade: how much DRAM the\nworkload needs, what tiering saves, and what can never be tiered.</p>\n<ul style=\"margin:0 0 8px;padding-left:18px\">\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">Set the time range</b> (top right) to 30 days or more. Every sizing column is the\n<b style=\"color:#ffffff;font-weight:600\">Maximum</b> over that range.</li>\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">Click a cluster row.</b> The host and VM tables and the heat map follow it.</li>\n<li style=\"margin:0 0 3px\">Every column is defined in the <b style=\"color:#ffffff;font-weight:600\">Field reference</b> at the bottom. To price the result,\nuse <b style=\"color:#ffffff;font-weight:600\">Export for MTAT</b>.</li>\n</ul>\n<p style=\"color:#aab7c0;margin:0 0 8px\"><span style=\"color:#f2b544;font-weight:600\">Blank columns?</span> Enable the <code style=\"background:#33454f;color:#e6edf1;padding:1px 4px;border-radius:3px;font-family:Menlo,Consolas,monospace;font-size:12px\">MemTier</code> super metrics in the active\npolicy and allow a collection cycle; pinned columns also need a Memory Tier Advanced adapter\ninstance.</p></div>",
+      "editorData": "<div style=\"background:#1e2d36;color:#d5dde3;border-radius:6px;padding:12px 16px;font-size:13px;line-height:1.5;font-family:Metropolis,'Clarity City',-apple-system,'Segoe UI',Roboto,Arial,sans-serif\"><div style=\"color:#ffffff;font-size:15px;font-weight:600;margin:0 0 6px\">How to read this</div>\n<p style=\"color:#d5dde3;margin:0 0 8px\">Sizes each cluster for NVMe memory tiering <b style=\"color:#ffffff;font-weight:600\">before</b> the upgrade: how much DRAM the\nworkload needs, what tiering saves, and what can never be tiered.</p>\n<ul style=\"margin:0 0 8px;padding-left:18px\">\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">Click a cluster</b> in the overview. The sizing detail, host and VM tables and the heat\nmap follow it.</li>\n<li style=\"margin:0 0 3px\">Every figure covers the <b style=\"color:#ffffff;font-weight:600\">last 30 days</b>; peaks are the <b style=\"color:#ffffff;font-weight:600\">Maximum</b> over that\nwindow. The time selector at the top does not apply.</li>\n<li style=\"margin:0 0 3px\">Every column is defined in the <b style=\"color:#ffffff;font-weight:600\">Field reference</b> at the bottom. To price the result,\nuse <b style=\"color:#ffffff;font-weight:600\">Export for MTAT</b>.</li>\n</ul>\n<p style=\"color:#aab7c0;margin:0 0 8px\"><span style=\"color:#f2b544;font-weight:600\">Blank columns?</span> Enable the <code style=\"background:#33454f;color:#e6edf1;padding:1px 4px;border-radius:3px;font-family:Menlo,Consolas,monospace;font-size:12px\">MemTier</code> super metrics in the active\npolicy and allow a collection cycle; pinned columns also need a Memory Tier Advanced adapter\ninstance.</p></div>",
       "locationFile": "",
       "locationUrl": "",
       "viewModeHTML": true
@@ -107,21 +112,21 @@
     },
     {
      "collapsed": false,
-     "id": "389c1c7c-2de0-5300-a0b5-73033a854fb9",
+     "id": "5a7186a4-acf6-552d-9261-55931b550b70",
      "gridsterCoords": {
       "w": 12,
       "x": 1,
-      "h": 11,
+      "h": 8,
       "y": 7
      },
      "state": "",
      "type": "View",
-     "title": "Memory tiering sizing by cluster",
+     "title": "Clusters: select one",
      "config": {
       "refreshInterval": 400,
-      "widgetId": "389c1c7c-2de0-5300-a0b5-73033a854fb9",
+      "widgetId": "5a7186a4-acf6-552d-9261-55931b550b70",
       "description": "",
-      "title": "Memory tiering sizing by cluster",
+      "title": "Clusters: select one",
       "refreshContent": {
        "refreshContent": true
       },
@@ -141,8 +146,8 @@
       },
       "traversalSpecId": null,
       "isUpdatedView": true,
-      "viewDefinitionId": "662da61f-58e3-5ca2-8424-80b8fae3a9f3",
-      "titleLocalized": "Memory tiering sizing by cluster",
+      "viewDefinitionId": "e58d2fa5-f81e-5017-92d2-311026ac62e7",
+      "titleLocalized": "Clusters: select one",
       "chartViewItems": [],
       "selectFirstRow": {
        "selectFirstRow": true
@@ -154,12 +159,56 @@
     },
     {
      "collapsed": false,
+     "id": "4b53265e-f552-545a-b1bb-743c632c7c86",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 5,
+      "y": 15
+     },
+     "state": "",
+     "type": "View",
+     "title": "Sizing detail for the selected cluster",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "4b53265e-f552-545a-b1bb-743c632c7c86",
+      "description": "",
+      "title": "Sizing detail for the selected cluster",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": false
+      },
+      "resource": null,
+      "traversalSpecId": "",
+      "isUpdatedView": true,
+      "viewDefinitionId": "662da61f-58e3-5ca2-8424-80b8fae3a9f3",
+      "titleLocalized": "Sizing detail for the selected cluster",
+      "viewType": "LIST",
+      "chartViewItems": [],
+      "selectFirstRow": {
+       "selectFirstRow": false
+      },
+      "viewDetails": "",
+      "periodLength": null
+     },
+     "height": 0,
+     "tabId": "da9260bc-9f85-5e48-9dbe-34302798d6c2"
+    },
+    {
+     "collapsed": false,
      "id": "af265b25-a92a-5853-a07c-d0cf9a8d2289",
      "gridsterCoords": {
       "w": 12,
       "x": 1,
       "h": 9,
-      "y": 18
+      "y": 20
      },
      "state": "",
      "type": "View",
@@ -191,7 +240,7 @@
        "selectFirstRow": false
       },
       "viewDetails": "",
-      "periodLength": "dashboardTime"
+      "periodLength": null
      },
      "height": 0,
      "tabId": "da9260bc-9f85-5e48-9dbe-34302798d6c2"
@@ -203,7 +252,7 @@
       "w": 12,
       "x": 1,
       "h": 11,
-      "y": 27
+      "y": 29
      },
      "state": "",
      "type": "View",
@@ -235,7 +284,7 @@
        "selectFirstRow": false
       },
       "viewDetails": "",
-      "periodLength": "dashboardTime"
+      "periodLength": null
      },
      "height": 0,
      "tabId": "da9260bc-9f85-5e48-9dbe-34302798d6c2"
@@ -247,7 +296,7 @@
       "w": 12,
       "x": 1,
       "h": 7,
-      "y": 38
+      "y": 40
      },
      "state": "",
      "type": "Heatmap",
@@ -348,7 +397,7 @@
       "w": 12,
       "x": 1,
       "h": 14,
-      "y": 45
+      "y": 47
      },
      "state": "",
      "type": "TextDisplay",

@@ -228,9 +228,10 @@ HELP = f"""<div {_H}>How to read this</div>
 <p {_P}>Sizes each cluster for NVMe memory tiering <b {_B}>before</b> the upgrade: how much DRAM the
 workload needs, what tiering saves, and what can never be tiered.</p>
 <ul {_UL}>
-<li {_LI}><b {_B}>Set the time range</b> (top right) to 30 days or more. Every sizing column is the
-<b {_B}>Maximum</b> over that range.</li>
-<li {_LI}><b {_B}>Click a cluster row.</b> The host and VM tables and the heat map follow it.</li>
+<li {_LI}><b {_B}>Click a cluster</b> in the overview. The sizing detail, host and VM tables and the heat
+map follow it.</li>
+<li {_LI}>Every figure covers the <b {_B}>last 30 days</b>; peaks are the <b {_B}>Maximum</b> over that
+window. The time selector at the top does not apply.</li>
 <li {_LI}>Every column is defined in the <b {_B}>Field reference</b> at the bottom. To price the result,
 use <b {_B}>Export for MTAT</b>.</li>
 </ul>
@@ -424,7 +425,7 @@ def view_receiver(title, view_guid, y, x=1, w=12, h=9):
         "isUpdatedView": True, "viewDefinitionId": view_guid, "titleLocalized": title,
         "viewType": "LIST", "chartViewItems": [],
         "selectFirstRow": {"selectFirstRow": False}, "viewDetails": "",
-        "selfProvider": {"selfProvider": False}, "periodLength": "dashboardTime"})
+        "selfProvider": {"selfProvider": False}, "periodLength": None})
 
 
 def _interactions(widgets):
@@ -461,9 +462,11 @@ def build_dashboard():
         # dashboardTime, so the one panel with the sizing figures was the one panel that could
         # not honour the time range the whole peak-based model depends on. The vSAN pack's
         # seven shipped dashboards use zero Scoreboards for the same reasons.
-        view_provider("Memory tiering sizing by cluster", guids[bv.SIZING], y=7, x=1, w=12, h=11),
-        view_receiver("Hosts in the selected cluster", guids[bv.HOSTS], y=18, x=1, w=12, h=9),
-        view_receiver("VMs in the selected cluster", guids[bv.VMS], y=27, x=1, w=12, h=11),
+        view_provider("Clusters: select one", guids[bv.OVERVIEW], y=7, x=1, w=12, h=8),
+        view_receiver("Sizing detail for the selected cluster", guids[bv.SIZING], y=15, x=1,
+                      w=12, h=5),
+        view_receiver("Hosts in the selected cluster", guids[bv.HOSTS], y=20, x=1, w=12, h=9),
+        view_receiver("VMs in the selected cluster", guids[bv.VMS], y=29, x=1, w=12, h=11),
         # Heat map stays. Present-value-only is acceptable in the capacity genre and it is the
         # right widget for many objects at a glance (practitioner guide p50). Colour MUST be a
         # percentage: the [0, 50, 100] threshold block is a percent scale, and colouring a KB
@@ -471,9 +474,9 @@ def build_dashboard():
         # Follows the selected cluster: its hosts, coloured by memory usage, sized by presented
         # memory. Estate-wide it answered nothing the table above did not (feedback 2026-10-21).
         heatmap("Hosts in the selected cluster: memory usage (%), sized by presented memory",
-                HOST, "mem|usage_average", "mem|host_provisioned", CLUSTER, y=38, receiver=True),
+                HOST, "mem|usage_average", "mem|host_provisioned", CLUSTER, y=40, receiver=True),
         text_panel("Field reference", FIELDS.replace("{factor}", f"{CONSERVATIVE_FACTOR:g}"),
-                   y=45, h=14),
+                   y=47, h=14),
     ]
     for w in widgets:
         w["tabId"] = dash_id
@@ -492,7 +495,7 @@ NVMe, use the <b {_B}>Clusters</b> dashboard.</p>
 <p {_M}><span {_W}>Before quoting:</span> pinned memory must stay in DRAM &mdash; use
 <b {_B}>Tierable GB</b>, which already subtracts it. And compare <b {_B}>CPU headroom %</b> with
 <b {_B}>Active of host RAM %</b>: if CPU runs out first, the memory answer is not the constraint.
-Set the time range to 30 days or more.</p>"""
+Every figure covers the last 30 days.</p>"""
 
 
 def build_refresh_dashboard():
@@ -502,13 +505,15 @@ def build_refresh_dashboard():
     dash_id = str(uuid.uuid5(uuid.NAMESPACE_URL, "memtier-advanced/dashboard-refresh"))
     widgets = [
         text_panel("Sizing new hardware", REFRESH_HELP, y=1, h=7),
-        view_provider("Clusters to refresh", guids[bv.SIZING], y=8, x=1, w=12, h=11),
-        view_receiver("VMs in the selected cluster", guids[bv.VMS], y=19, x=1, w=12, h=11),
-        view_receiver("Hosts in the selected cluster", guids[bv.HOSTS], y=30, x=1, w=12, h=9),
+        view_provider("Clusters to refresh: select one", guids[bv.OVERVIEW], y=8, x=1, w=12, h=8),
+        view_receiver("Sizing detail for the selected cluster", guids[bv.SIZING], y=16, x=1,
+                      w=12, h=5),
+        view_receiver("VMs in the selected cluster", guids[bv.VMS], y=21, x=1, w=12, h=11),
+        view_receiver("Hosts in the selected cluster", guids[bv.HOSTS], y=32, x=1, w=12, h=9),
         # Same three views means the same columns, so the same field reference applies verbatim.
         # Parity with the as-is dashboard is the point: a reader who starts on either screen
         # gets the definitions without having to know the other one exists.
-        text_panel("Field reference", FIELDS, y=39, h=14),
+        text_panel("Field reference", FIELDS, y=41, h=14),
     ]
     for w in widgets:
         w["tabId"] = dash_id
@@ -522,7 +527,7 @@ MTAT_HELP = f"""<div {_H}>How to export this cluster to MTAT</div>
 averages. The two tables above are MTAT's own import files, built from Operations' 5-minute
 peaks.</p>
 <ul {_UL}>
-<li {_LI}><b {_B}>Set the time range</b> to 30 days or more, then <b {_B}>click a cluster</b>.</li>
+<li {_LI}><b {_B}>Click a cluster.</b> Both tables cover the last 30 days.</li>
 <li {_LI}><b {_B}>Export each table</b> with the widget's CSV export: hosts &rarr; MTAT's
 <i>Hosts CSV</i>, VMs &rarr; <i>VMs CSV</i>. Don't re-save them in Excel.</li>
 <li {_LI}><b {_B}>In MTAT:</b> connect to vCenter, pick the <i>same</i> cluster,
@@ -909,8 +914,12 @@ def self_check(dash):
     missing = refs - set(guids.values())
     if missing:
         problems.append(f"dashboard references view GUIDs no view defines: {sorted(missing)}")
-    if refs and not any(w["config"].get("periodLength") == "dashboardTime" for w in widgets):
-        problems.append("no widget set to dashboardTime -- the 1H/6H/24H selector will grey out")
+    # FIXED 30-day windows: every view carries its own range and no widget follows the
+    # dashboard selector, whose 6H default produced 6-hour "peaks" (feedback 2026-10-21). A
+    # single widget left on dashboardTime would mix two time windows on one screen.
+    mixed = [w["title"] for w in widgets if w["config"].get("periodLength") == "dashboardTime"]
+    if mixed:
+        problems.append(f"widgets still follow the dashboard time selector: {mixed}")
     # entries.resource may hold the vSphere World singleton and nothing else: anything with
     # identifiers pins a site-specific object (BACKLOG §9). And every widget resource reference
     # must resolve through it, or the widget's view runs rootless and times out (2.1.1).

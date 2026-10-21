@@ -13,7 +13,7 @@
                 <Control id="time-interval-selector_id_760" type="time-interval-selector" visible="false">
                     <Property name="advancedTimeMode" value="false" />
                     <Property name="unit" value="DAYS" />
-                    <Property name="count" value="7" />
+                    <Property name="count" value="30" />
                 </Control>
                 <Control id="attributes-selector_id_761" type="attributes-selector" visible="false">
                     <Property name="attributeInfos">

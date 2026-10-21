@@ -33,7 +33,7 @@ import zlib
 HERE = os.path.dirname(os.path.abspath(__file__))
 BUILD = os.path.join(HERE, "build")
 
-VERSION = "2.1.3"      # 2.1.3: text panels as self-contrasting cards for light and dark themes, rewritten help. 2.1.2: dashboards defined vSphere World in entries.resource (providers timed out), custom group in content-import shape, heatmap follows selection, text panels styled. 2.1.1: adapter.zip stored files before their directories, so 2.1.0 failed at APPLY_ADAPTER. 2.1.0: Export for MTAT dashboard, fleet-rollup binding fix. 2.0.0: real collector, two dashboards, opt-in group
+VERSION = "2.1.4"      # 2.1.4: selectable cluster overview at the top, sizing detail as a receiver, fixed 30-day windows. 2.1.3: text panels as self-contrasting cards for light and dark themes, rewritten help. 2.1.2: dashboards defined vSphere World in entries.resource (providers timed out), custom group in content-import shape, heatmap follows selection, text panels styled. 2.1.1: adapter.zip stored files before their directories, so 2.1.0 failed at APPLY_ADAPTER. 2.1.0: Export for MTAT dashboard, fleet-rollup binding fix. 2.0.0: real collector, two dashboards, opt-in group
 IMAGE_REGISTRY = "ghcr.io"
 IMAGE_REPOSITORY = "/nickfirefoot/memorytieradvancedmonitoring"
 IMAGE_DIGEST = "sha256:667b35ba2f74886ceae15aaeaa98dbad8bc8d7513f40e0e9b5eb670b25b6d93d"

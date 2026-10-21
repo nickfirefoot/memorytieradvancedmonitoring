@@ -53,12 +53,17 @@
    "dashboardNavigations": {},
    "widgetInteractions": [
     {
-     "widgetIdProvider": "c8a2e4af-117d-5efc-be43-b49dd4377853",
+     "widgetIdProvider": "b139c14e-2c2f-52cc-b7f1-a99fe7baeae6",
+     "type": "resourceId",
+     "widgetIdReceiver": "4b53265e-f552-545a-b1bb-743c632c7c86"
+    },
+    {
+     "widgetIdProvider": "b139c14e-2c2f-52cc-b7f1-a99fe7baeae6",
      "type": "resourceId",
      "widgetIdReceiver": "d8ec1029-57fd-5616-b087-86186fcea768"
     },
     {
-     "widgetIdProvider": "c8a2e4af-117d-5efc-be43-b49dd4377853",
+     "widgetIdProvider": "b139c14e-2c2f-52cc-b7f1-a99fe7baeae6",
      "type": "resourceId",
      "widgetIdReceiver": "af265b25-a92a-5853-a07c-d0cf9a8d2289"
     }
@@ -92,7 +97,7 @@
       "selfProvider": {
        "selfProvider": true
       },
-      "editorData": "<div style=\"background:#1e2d36;color:#d5dde3;border-radius:6px;padding:12px 16px;font-size:13px;line-height:1.5;font-family:Metropolis,'Clarity City',-apple-system,'Segoe UI',Roboto,Arial,sans-serif\"><div style=\"color:#ffffff;font-size:15px;font-weight:600;margin:0 0 6px\">Hardware refresh &mdash; sizing new hosts</div>\n<p style=\"color:#d5dde3;margin:0 0 8px\">How much RAM to buy for <b style=\"color:#ffffff;font-weight:600\">replacement</b> hosts. For keeping the hosts you own and adding\nNVMe, use the <b style=\"color:#ffffff;font-weight:600\">Clusters</b> dashboard.</p>\n<ul style=\"margin:0 0 8px;padding-left:18px\">\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">Allocated (powered on)</b> &mdash; what the new hosts must present.</li>\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">DRAM floor</b> &mdash; peak active: the least DRAM that holds the working set.</li>\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">DRAM conservative</b> &mdash; the planning number.</li>\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">RAM saved</b> &mdash; DRAM you do not buy, against an untiered refresh.</li>\n</ul>\n<p style=\"color:#aab7c0;margin:0 0 8px\"><span style=\"color:#f2b544;font-weight:600\">Before quoting:</span> pinned memory must stay in DRAM &mdash; use\n<b style=\"color:#ffffff;font-weight:600\">Tierable GB</b>, which already subtracts it. And compare <b style=\"color:#ffffff;font-weight:600\">CPU headroom %</b> with\n<b style=\"color:#ffffff;font-weight:600\">Active of host RAM %</b>: if CPU runs out first, the memory answer is not the constraint.\nSet the time range to 30 days or more.</p></div>",
+      "editorData": "<div style=\"background:#1e2d36;color:#d5dde3;border-radius:6px;padding:12px 16px;font-size:13px;line-height:1.5;font-family:Metropolis,'Clarity City',-apple-system,'Segoe UI',Roboto,Arial,sans-serif\"><div style=\"color:#ffffff;font-size:15px;font-weight:600;margin:0 0 6px\">Hardware refresh &mdash; sizing new hosts</div>\n<p style=\"color:#d5dde3;margin:0 0 8px\">How much RAM to buy for <b style=\"color:#ffffff;font-weight:600\">replacement</b> hosts. For keeping the hosts you own and adding\nNVMe, use the <b style=\"color:#ffffff;font-weight:600\">Clusters</b> dashboard.</p>\n<ul style=\"margin:0 0 8px;padding-left:18px\">\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">Allocated (powered on)</b> &mdash; what the new hosts must present.</li>\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">DRAM floor</b> &mdash; peak active: the least DRAM that holds the working set.</li>\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">DRAM conservative</b> &mdash; the planning number.</li>\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">RAM saved</b> &mdash; DRAM you do not buy, against an untiered refresh.</li>\n</ul>\n<p style=\"color:#aab7c0;margin:0 0 8px\"><span style=\"color:#f2b544;font-weight:600\">Before quoting:</span> pinned memory must stay in DRAM &mdash; use\n<b style=\"color:#ffffff;font-weight:600\">Tierable GB</b>, which already subtracts it. And compare <b style=\"color:#ffffff;font-weight:600\">CPU headroom %</b> with\n<b style=\"color:#ffffff;font-weight:600\">Active of host RAM %</b>: if CPU runs out first, the memory answer is not the constraint.\nEvery figure covers the last 30 days.</p></div>",
       "locationFile": "",
       "locationUrl": "",
       "viewModeHTML": true
@@ -102,21 +107,21 @@
     },
     {
      "collapsed": false,
-     "id": "c8a2e4af-117d-5efc-be43-b49dd4377853",
+     "id": "b139c14e-2c2f-52cc-b7f1-a99fe7baeae6",
      "gridsterCoords": {
       "w": 12,
       "x": 1,
-      "h": 11,
+      "h": 8,
       "y": 8
      },
      "state": "",
      "type": "View",
-     "title": "Clusters to refresh",
+     "title": "Clusters to refresh: select one",
      "config": {
       "refreshInterval": 400,
-      "widgetId": "c8a2e4af-117d-5efc-be43-b49dd4377853",
+      "widgetId": "b139c14e-2c2f-52cc-b7f1-a99fe7baeae6",
       "description": "",
-      "title": "Clusters to refresh",
+      "title": "Clusters to refresh: select one",
       "refreshContent": {
        "refreshContent": true
       },
@@ -136,8 +141,8 @@
       },
       "traversalSpecId": null,
       "isUpdatedView": true,
-      "viewDefinitionId": "662da61f-58e3-5ca2-8424-80b8fae3a9f3",
-      "titleLocalized": "Clusters to refresh",
+      "viewDefinitionId": "e58d2fa5-f81e-5017-92d2-311026ac62e7",
+      "titleLocalized": "Clusters to refresh: select one",
       "chartViewItems": [],
       "selectFirstRow": {
        "selectFirstRow": true
@@ -149,12 +154,56 @@
     },
     {
      "collapsed": false,
+     "id": "4b53265e-f552-545a-b1bb-743c632c7c86",
+     "gridsterCoords": {
+      "w": 12,
+      "x": 1,
+      "h": 5,
+      "y": 16
+     },
+     "state": "",
+     "type": "View",
+     "title": "Sizing detail for the selected cluster",
+     "config": {
+      "refreshInterval": 300,
+      "widgetId": "4b53265e-f552-545a-b1bb-743c632c7c86",
+      "description": "",
+      "title": "Sizing detail for the selected cluster",
+      "refreshContent": {
+       "refreshContent": true
+      },
+      "customFilter": {
+       "filter": [],
+       "excludedResources": null,
+       "includedResources": null
+      },
+      "selfProvider": {
+       "selfProvider": false
+      },
+      "resource": null,
+      "traversalSpecId": "",
+      "isUpdatedView": true,
+      "viewDefinitionId": "662da61f-58e3-5ca2-8424-80b8fae3a9f3",
+      "titleLocalized": "Sizing detail for the selected cluster",
+      "viewType": "LIST",
+      "chartViewItems": [],
+      "selectFirstRow": {
+       "selectFirstRow": false
+      },
+      "viewDetails": "",
+      "periodLength": null
+     },
+     "height": 0,
+     "tabId": "0e903b81-5596-5367-acd9-4453d8dbe985"
+    },
+    {
+     "collapsed": false,
      "id": "d8ec1029-57fd-5616-b087-86186fcea768",
      "gridsterCoords": {
       "w": 12,
       "x": 1,
       "h": 11,
-      "y": 19
+      "y": 21
      },
      "state": "",
      "type": "View",
@@ -186,7 +235,7 @@
        "selectFirstRow": false
       },
       "viewDetails": "",
-      "periodLength": "dashboardTime"
+      "periodLength": null
      },
      "height": 0,
      "tabId": "0e903b81-5596-5367-acd9-4453d8dbe985"
@@ -198,7 +247,7 @@
       "w": 12,
       "x": 1,
       "h": 9,
-      "y": 30
+      "y": 32
      },
      "state": "",
      "type": "View",
@@ -230,7 +279,7 @@
        "selectFirstRow": false
       },
       "viewDetails": "",
-      "periodLength": "dashboardTime"
+      "periodLength": null
      },
      "height": 0,
      "tabId": "0e903b81-5596-5367-acd9-4453d8dbe985"
@@ -242,7 +291,7 @@
       "w": 12,
       "x": 1,
       "h": 14,
-      "y": 39
+      "y": 41
      },
      "state": "",
      "type": "TextDisplay",

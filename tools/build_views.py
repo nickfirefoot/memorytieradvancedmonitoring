@@ -92,8 +92,10 @@ def column(key, label, kind, is_property=False, transform="CURRENT", sort=False,
                             </Item>"""
 
 
-def view(title, kind, columns, seed, page=50, days=7, hide_name=False, filter_json=None):
-    """One ViewDef. `seed` only namespaces the Control ids within the document; it carries no
+def view(title, kind, columns, seed, page=50, days=30, hide_name=False, filter_json=None):
+    """One ViewDef, 30 days by default: dashboards use each view's own range rather than the
+    dashboard time selector, which opens on 6H -- a 6-hour peak is not a sizing figure
+    (feedback 2026-10-21). `seed` only namespaces the Control ids within the document; it carries no
     meaning beyond keeping them unique, which is how the reference views do it.
 
     `hide_name` drops the object-name column from the widget. A report CSV adds it back
@@ -168,6 +170,12 @@ HOSTS = f"Memory Tier Advanced Hosts {SUFFIX}"
 # This table is ALSO the provider: clicking a cluster row drives the host and VM lists below,
 # which removes a separate selector widget.
 SIZING = f"Memory Tier Advanced Clusters {SUFFIX}"
+
+# The selector at the top of both sizing dashboards (feedback 2026-10-21: "a list at the top
+# showing a cluster overview that's selectable"). Deliberately small -- the 33-column sizing
+# table was the provider, which made the one widget everything waits on the heaviest one on the
+# screen. The full sizing row now sits below it as a receiver for the selected cluster.
+OVERVIEW = f"Memory Tier Advanced Cluster Overview {SUFFIX}"
 
 # --- Export for MTAT ----------------------------------------------------------------------
 # MTAT (vmware/MTAT v3.1) cannot read Operations, but its "MTAT Export" import accepts its own
@@ -267,6 +275,18 @@ VIEWS = [
     ]),
     # The picker for the export screen, and the cross-check: the cluster's own simultaneous
     # peak, which is what MTAT's imported Active total should equal.
+    (OVERVIEW, CLUSTER, 840, [
+        column("config|name", "Cluster", CLUSTER, is_property=True, sort=True),
+        column("summary|total_number_hosts", "Hosts", CLUSTER),
+        column("mem|host_provisioned", "Presented GB", CLUSTER, unit="gb"),
+        sm_column("MemTier Allocated Powered On (GB)", "Allocated GB (powered on)", CLUSTER),
+        column("mem|active_average", "Active peak GB", CLUSTER, transform="MAX", unit="gb"),
+        sm_column("MemTier DRAM Required Floor (GB)", "DRAM floor GB", CLUSTER, transform="MAX"),
+        sm_column("MemTier RAM Saved at Floor (GB)", "RAM saved GB", CLUSTER, transform="MAX"),
+        sm_column("MemTier Pinned Memory (GB)", "Pinned GB", CLUSTER),
+        column("cpu|capacity_usagepct_average", "CPU peak %", CLUSTER, transform="MAX",
+               unit="percent"),
+    ]),
     (MTAT_CLUSTERS, CLUSTER, 780, [
         column("config|name", "Cluster", CLUSTER, is_property=True, sort=True),
         column("summary|total_number_hosts", "Hosts", CLUSTER),
