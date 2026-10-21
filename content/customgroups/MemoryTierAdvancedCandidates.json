@@ -1,33 +1,29 @@
 {
- "resourceKey": {
-  "name": "Memory Tier Advanced Candidates",
-  "adapterKindKey": "Container",
-  "resourceKindKey": "Environment",
-  "resourceIdentifiers": []
- },
- "autoResolveMembership": true,
- "membershipDefinition": {
-  "includedResources": [],
-  "excludedResources": [],
-  "custom-group-properties": [],
-  "rules": [
-   {
-    "resourceKindKey": {
-     "resourceKind": "ClusterComputeResource",
-     "adapterKind": "VMWARE"
-    },
-    "statConditionRules": [],
-    "propertyConditionRules": [
+ "customGroups": [
+  {
+   "resourceKind": "Environment",
+   "adapterKind": "Container",
+   "name": "Memory Tier Advanced Candidates",
+   "description": "Clusters tagged 'memtier-include' in vCenter. The Memory Tier Advanced fleet totals count exactly these clusters.",
+   "autoResolveMembership": true,
+   "started": true,
+   "membershipDefinition": {
+    "ruleGroups": [
      {
-      "key": "summary|tag",
-      "stringValue": "memtier-include",
-      "compareOperator": "CONTAINS"
+      "resourceKind": "ClusterComputeResource",
+      "adapterKind": "VMWARE",
+      "rules": [
+       {
+        "ruleType": "StringMetricPropertyRule",
+        "ruleMetricKey": "summary|tag",
+        "isProperty": true,
+        "ruleStringOperator": "CONTAINS",
+        "ruleStringValue": "memtier-include"
+       }
+      ]
      }
-    ],
-    "resourceNameConditionRules": [],
-    "relationshipConditionRules": [],
-    "resourceTagConditionRules": []
+    ]
    }
-  ]
- }
+  }
+ ]
 }

@@ -358,29 +358,5 @@
     "adapterKindKey": "VMWARE"
    }
   ]
- },
- "420d7b57-1420-5b96-ba32-e7c37459ed2a": {
-  "name": "MemTier TEST Fleet Active depth3 (GB)",
-  "formula": "sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=3}) / 1048576",
-  "description": "A/B TEST ONLY. Measured tree depth from vSphere World to HostSystem is 3.",
-  "unitId": "gb",
-  "resourceKinds": [
-   {
-    "resourceKindKey": "vSphere World",
-    "adapterKindKey": "VMWARE"
-   }
-  ]
- },
- "e57c0363-8ca5-5ccc-a660-7595d48b8b87": {
-  "name": "MemTier TEST Fleet Active depth10 (GB)",
-  "formula": "sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=10}) / 1048576",
-  "description": "A/B TEST ONLY. The inherited content uses depth=10. If this one reports data and depth3 does not, depth means 'up to N'; if the reverse, it means 'exactly N'.",
-  "unitId": "gb",
-  "resourceKinds": [
-   {
-    "resourceKindKey": "vSphere World",
-    "adapterKindKey": "VMWARE"
-   }
-  ]
  }
 }

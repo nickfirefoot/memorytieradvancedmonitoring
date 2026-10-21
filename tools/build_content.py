@@ -156,9 +156,21 @@ def pareto(title, kind, key, y, x=1, w=6, bars=15):
         "resourceKind": [{"id": KIND_ID[kind]}]})
 
 
-def heatmap(title, kind, color_key, size_key, group_kind, y, h=7):
+def heatmap(title, kind, color_key, size_key, group_kind, y, h=7, receiver=False):
+    """receiver=True: no self-provider, driven by the dashboard's provider through
+    widgetInteractions, so it shows the objects of `kind` under whatever is selected.
+    UNPROVEN SHAPE: no working pak here carries a receiver heatmap to clone (vSAN pack
+    searched 2026-10-21). Built from the self-provider shape with the provider flags flipped;
+    confirm on install that it follows the selection."""
+    cfg_mode = {"mode": "resource", "depth": 1} if receiver else {"mode": "all", "depth": 10}
+    group = None if receiver else {
+        "resourceKind": group_kind, "adapterKind": ADAPTER, "typeId": KIND_ID[group_kind],
+        "id": f"004null002006{ADAPTER}{group_kind}",
+        "text": GROUP_TEXT.get(group_kind, group_kind),
+        "type": "resourceKind", "parentText": "vCenter", "parentId": ADAPTER}
+    extra = {"selfProvider": {"selfProvider": False}} if receiver else {}
     return widget("Heatmap", title, y, h=h, config={
-        "mode": "all", "depth": 10, "resource": [],
+        **cfg_mode, **extra, "resource": [],
         "relationshipMode": {"relationshipMode": [1, -1, 0]},
         "refreshContent": {"refreshContent": False}, "value": 0,
         "viewDetails": "",
@@ -172,11 +184,7 @@ def heatmap(title, kind, color_key, size_key, group_kind, y, h=7):
             "customFilter": {"filter": [], "excludedResources": None, "includedResources": None},
             # groupBy names the KIND twice -- placeholder typeId and the encoded kind id. Both
             # encode a resource kind, never an instance, so both are portable (BACKLOG §9).
-            "groupBy": {"resourceKind": group_kind, "adapterKind": ADAPTER,
-                        "typeId": KIND_ID[group_kind],
-                        "id": f"004null002006{ADAPTER}{group_kind}",
-                        "text": GROUP_TEXT.get(group_kind, group_kind),
-                        "type": "resourceKind", "parentText": "vCenter", "parentId": ADAPTER},
+            "groupBy": group,
             "thenBy": None,
             # green / amber / red, the product's own palette; thresholds are per-widget so the
             # panel carries its own banding with no alert definition behind it
@@ -194,33 +202,36 @@ def heatmap(title, kind, color_key, size_key, group_kind, y, h=7):
 # Inline style on EVERY element: the editor strips <style> blocks and keeps only inline
 # attributes, and unstyled text renders black on a dark theme (vSAN pack lesson). #7f8c9a is a
 # mid tone that stays legible on both the light and dark themes; confirm visually on import.
-_C = 'style="color:#7f8c9a"'
-_B = 'style="color:#9fb0c0;font-weight:bold"'
-HELP = f"""<p {_C}><b {_B}>Memory tiering sizing &mdash; sample.</b> Every tile below reads a metric the
-vCenter adapter already collects. <b {_B}>No super metrics are required for this dashboard</b>; if you
-import <code {_C}>supermetric.json</code> as well, the derived figures become available for a second
-screen.</p>
-<p {_C}><b {_B}>This is a sizing tool, not a monitoring tool.</b> It answers <i {_C}>what hardware would this
-workload need if it were tiered</i>. On a vSphere 8 estate there is no tiering to report, which
-is the point &mdash; the assessment happens before the upgrade.</p>
-<p {_C}><b {_B}>Reading this on a cluster that already has tiering enabled?</b> Then
-<code {_C}>mem|host_provisioned</code> is <i {_C}>presented</i> memory &mdash; installed DRAM plus the NVMe
-tier &mdash; not installed DRAM. Measured on a tiered lab host: 639.4 GiB presented against a
-127.9 GiB DRAM tier, a 5.00&times; overstatement. Every tile labelled <i {_C}>presented memory</i>
-says presented for that reason. On an untiered vSphere 8 host the two are the same number.</p>
-<p {_C}><b {_B}>Tiles show the latest sample, not a peak.</b> Sizing must be done on business-cycle peaks,
-which need a View transformation rather than a dashboard tile. Treat these values as a shape
-check, not as the number on the quote.</p>"""
+# ONE style set for every text panel. The panels' own default font is a serif, so a paragraph
+# that sets only a colour renders in Times -- which is how "How to read this" looked while the
+# Field reference beside it did not (feedback 2026-10-21). Every paragraph names its font.
+_F = "font-family:Metropolis,'Clarity City',-apple-system,'Segoe UI',Roboto,Arial,sans-serif"
+_H = f'style="color:#e8eaed;font-size:15px;margin:0 0 8px;{_F}"'
+_P = f'style="color:#9aa4b0;margin:0 0 9px;line-height:1.5;font-size:13px;{_F}"'
+_B = 'style="color:#e8eaed"'
+_C = ('style="background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px;'
+      'font-family:Menlo,Consolas,monospace;font-size:12px"')
+_W = 'style="color:#e8b84b"'
+HELP = f"""<h3 {_H}>How to read this</h3>
+<p {_P}><b {_B}>Sizes each cluster for NVMe memory tiering, before the upgrade:</b> how much DRAM the
+workload actually needs, how much tiering saves, and what cannot be tiered at all. A sizing tool,
+not a monitoring tool &mdash; on a vSphere 8 estate there is no tiering to report yet.</p>
+<p {_P}><b {_B}>1. Set the time range</b> (top right) to a full business cycle, 30 days or more. Every
+sizing column is the <b {_B}>Maximum</b> over that range. &nbsp;<b {_B}>2. Click a cluster row</b>;
+the host and VM tables and the heat map below follow it.</p>
+<p {_P}><b {_W}>Blank columns?</b> The derived figures are <code {_C}>MemTier</code> super metrics,
+which arrive disabled: enable them in the active policy (Configure &rarr; Policies &rarr; Metrics and
+Properties) and allow a collection cycle; their history starts then. The pinned columns also need a
+<b {_B}>Memory Tier Advanced</b> adapter instance.</p>
+<p {_P}><b {_B}>Cluster already tiered?</b> Then <code {_C}>mem|host_provisioned</code> is
+<i>presented</i> memory &mdash; DRAM plus the NVMe tier &mdash; not installed DRAM. On an untiered host
+the two are the same. &nbsp;Every column is defined in the <b {_B}>Field reference</b> at the bottom;
+to price the result, use the <b {_B}>Export for MTAT</b> dashboard.</p>"""
 
 
 # Field reference, modelled on the vSAN pack's help panel. Inline style on every element --
 # the rich-text editor discards <style> blocks and keeps only inline attributes, and unstyled
 # text renders black on a dark theme (LESSONS.md 1.2).
-_H = 'style="color:#e8eaed;font-size:15px;margin:0 0 8px"'
-_P = 'style="color:#9aa4b0;margin:0 0 9px;line-height:1.5"'
-_B = 'style="color:#e8eaed"'
-_C = 'style="background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px"'
-_W = 'style="color:#e8b84b"'
 
 FIELDS = f"""<h3 {_H}>What each figure means</h3>
 
@@ -411,7 +422,7 @@ def _interactions(widgets):
     def sp(w):
         return w["config"].get("selfProvider", {}).get("selfProvider") is True
     providers = [w for w in widgets if w["type"] == "View" and sp(w)]
-    receivers = [w for w in widgets if w["type"] == "View" and not sp(w)]
+    receivers = [w for w in widgets if w["type"] in ("View", "Heatmap") and not sp(w)]
     if not providers or not receivers:
         return []
     if len(providers) > 1:
@@ -449,8 +460,10 @@ def build_dashboard():
         # right widget for many objects at a glance (practitioner guide p50). Colour MUST be a
         # percentage: the [0, 50, 100] threshold block is a percent scale, and colouring a KB
         # metric against it paints every host red (caught 2026-10-02).
-        heatmap("Hosts: memory usage (%), sized by presented memory, grouped by cluster",
-                HOST, "mem|usage_average", "mem|host_provisioned", CLUSTER, y=37),
+        # Follows the selected cluster: its hosts, coloured by memory usage, sized by presented
+        # memory. Estate-wide it answered nothing the table above did not (feedback 2026-10-21).
+        heatmap("Hosts in the selected cluster: memory usage (%), sized by presented memory",
+                HOST, "mem|usage_average", "mem|host_provisioned", CLUSTER, y=37, receiver=True),
         widget("TextDisplay", "Field reference", y=44, h=14, config={
             "editorData": FIELDS.replace("{factor}", f"{CONSERVATIVE_FACTOR:g}"),
             "locationFile": "", "locationUrl": "",
@@ -577,12 +590,21 @@ def build_mtat_dashboard():
                      "sizes on 5-minute peaks rather than vCenter's 2-hour averages.")
 
 
+VSPHERE_WORLD_ENTRY = {"resourceKindKey": WORLD, "internalId": "resource:id:0_::_",
+                       "adapterKindKey": ADAPTER, "identifiers": [], "name": WORLD}
+
+
 def _envelope(dash_id, widgets, name, description=None):
     return {
         "entries": {
             "resourceKind": [{"resourceKindKey": k, "internalId": KIND_ID[k],
                               "adapterKindKey": ADAPTER} for k in KINDS],
-            "resource": [],          # deliberately empty: never pin a resource (BACKLOG §9)
+            # The provider's "resource:id:0_::_" resolves ONLY through this list. Left empty,
+            # the reference dangles: 2.1.1 logged "Invalid UUID string: resource:id:0_::_" on
+            # every load and the view timed out (2026-10-21). vSphere World by name and kind,
+            # no identifiers, exactly as the vSAN pack's working dashboards carry it -- a
+            # singleton on every instance, so this pins nothing site-specific (BACKLOG §9).
+            "resource": [VSPHERE_WORLD_ENTRY],
         },
         "dashboards": [{
             "id": dash_id,
@@ -876,14 +898,6 @@ def build_supermetrics():
            "This host's equal share of its cluster's active memory at the same instant. For the "
            "MTAT export only: MTAT sums the column, so the total is the cluster's real "
            "simultaneous peak rather than a sum of per-host peaks. Read it with Maximum."),
-        # --- A/B test, remove once settled: which depth reaches hosts from vSphere World? ---
-        sm(f"{PREFIX} TEST Fleet Active depth3 (GB)",
-           f"{roll(HOST, 'mem|active_average', 3)} / {KB_PER_GB}", WORLD, "gb",
-           "A/B TEST ONLY. Measured tree depth from vSphere World to HostSystem is 3."),
-        sm(f"{PREFIX} TEST Fleet Active depth10 (GB)",
-           f"{roll(HOST, 'mem|active_average', 10)} / {KB_PER_GB}", WORLD, "gb",
-           "A/B TEST ONLY. The inherited content uses depth=10. If this one reports data and "
-           "depth3 does not, depth means 'up to N'; if the reverse, it means 'exactly N'."),
     ]:
         out[k] = v
     return out
@@ -931,8 +945,19 @@ def self_check(dash):
         problems.append(f"dashboard references view GUIDs no view defines: {sorted(missing)}")
     if refs and not any(w["config"].get("periodLength") == "dashboardTime" for w in widgets):
         problems.append("no widget set to dashboardTime -- the 1H/6H/24H selector will grey out")
-    if dash["entries"]["resource"]:
-        problems.append("entries.resource is not empty -- forbidden by BACKLOG §9")
+    # entries.resource may hold the vSphere World singleton and nothing else: anything with
+    # identifiers pins a site-specific object (BACKLOG §9). And every widget resource reference
+    # must resolve through it, or the widget's view runs rootless and times out (2.1.1).
+    entries = dash["entries"]["resource"]
+    for e in entries:
+        if e != VSPHERE_WORLD_ENTRY:
+            problems.append(f"entries.resource pins a site-specific object: {e}")
+    defined = {e["internalId"] for e in entries}
+    for w in widgets:
+        ref = (w["config"].get("resource") or {}).get("resourceId")
+        if ref and ref not in defined:
+            problems.append(f"{w['title']}: resource {ref!r} is not defined in entries.resource "
+                            f"-- the view runs rootless and times out")
     return problems
 
 
@@ -1023,23 +1048,23 @@ def main():
         z.write(dj, "dashboard/dashboard.json")
     with open(os.path.join(OUT, "supermetric.json"), "w") as f:
         json.dump(sms, f, indent=1)
-    # Shape taken from a live group read back over the API, not invented.
-    group = {
-        "resourceKey": {"name": GROUP_NAME, "adapterKindKey": GROUP_ADAPTER,
-                        "resourceKindKey": GROUP_KIND, "resourceIdentifiers": []},
-        "autoResolveMembership": True,
-        "membershipDefinition": {
-            "includedResources": [], "excludedResources": [], "custom-group-properties": [],
-            "rules": [{
-                "resourceKindKey": {"resourceKind": CLUSTER, "adapterKind": ADAPTER},
-                "statConditionRules": [],
-                "propertyConditionRules": [
-                    {"key": "summary|tag", "stringValue": OPT_IN_TAG, "compareOperator": "CONTAINS"}],
-                "resourceNameConditionRules": [], "relationshipConditionRules": [],
-                "resourceTagConditionRules": [],
-            }],
-        },
-    }
+    # CONTENT-IMPORT shape, cloned from a CUSTOM_GROUPS content export of this lab
+    # (2026-10-21). 2.1.1 shipped the suite-api REST shape (resourceKey / rules /
+    # propertyConditionRules) read back off a live group, and the pak installer rejected it:
+    # CUSTOM_GROUP.IMPORT failure, "invalid input parameter". The importer reads what the
+    # exporter writes -- customGroups / ruleGroups / ruleType -- not the REST model.
+    group = {"customGroups": [{
+        "resourceKind": GROUP_KIND, "adapterKind": GROUP_ADAPTER,
+        "name": GROUP_NAME,
+        "description": (f"Clusters tagged {OPT_IN_TAG!r} in vCenter. The Memory Tier Advanced "
+                        "fleet totals count exactly these clusters."),
+        "autoResolveMembership": True, "started": True,
+        "membershipDefinition": {"ruleGroups": [{
+            "resourceKind": CLUSTER, "adapterKind": ADAPTER,
+            "rules": [{"ruleType": "StringMetricPropertyRule", "ruleMetricKey": "summary|tag",
+                       "isProperty": True, "ruleStringOperator": "CONTAINS",
+                       "ruleStringValue": OPT_IN_TAG}]}]},
+    }]}
     gdir = os.path.join(OUT, "customgroups")
     os.makedirs(gdir, exist_ok=True)
     with open(os.path.join(gdir, "MemoryTierAdvancedCandidates.json"), "w") as f:
