@@ -199,41 +199,51 @@ def heatmap(title, kind, color_key, size_key, group_kind, y, h=7, receiver=False
             "config": {"value": ""}}]})
 
 
-# Inline style on EVERY element: the editor strips <style> blocks and keeps only inline
-# attributes, and unstyled text renders black on a dark theme (vSAN pack lesson). #7f8c9a is a
-# mid tone that stays legible on both the light and dark themes; confirm visually on import.
-# ONE style set for every text panel. The panels' own default font is a serif, so a paragraph
-# that sets only a colour renders in Times -- which is how "How to read this" looked while the
-# Field reference beside it did not (feedback 2026-10-21). Every paragraph names its font.
+# Text panels are drawn as a CARD with its own background. Two failures forced it
+# (feedback 2026-10-21): the panel's default font is a serif, and the panel does not follow the
+# light/dark theme, so any text colour chosen for one theme fails on the other -- near-white
+# vanishes on light, and no single grey reaches 4.5:1 on both. A card fixes its own contrast in
+# both themes. Measured (WCAG): body 10.3:1, strong 14.2:1, muted 6.9:1, warning 7.7:1, code
+# 8.4:1. Inline style on every element: the editor strips <style> blocks (vSAN pack lesson).
 _F = "font-family:Metropolis,'Clarity City',-apple-system,'Segoe UI',Roboto,Arial,sans-serif"
-_H = f'style="color:#e8eaed;font-size:15px;margin:0 0 8px;{_F}"'
-_P = f'style="color:#9aa4b0;margin:0 0 9px;line-height:1.5;font-size:13px;{_F}"'
-_B = 'style="color:#e8eaed"'
-_C = ('style="background:#2a2f36;color:#c8d0d8;padding:1px 4px;border-radius:3px;'
+_CARD = (f'style="background:#1e2d36;color:#d5dde3;border-radius:6px;padding:12px 16px;'
+         f'font-size:13px;line-height:1.5;{_F}"')
+_H = 'style="color:#ffffff;font-size:15px;font-weight:600;margin:0 0 6px"'
+_P = 'style="color:#d5dde3;margin:0 0 8px"'
+_M = 'style="color:#aab7c0;margin:0 0 8px"'
+_B = 'style="color:#ffffff;font-weight:600"'
+_C = ('style="background:#33454f;color:#e6edf1;padding:1px 4px;border-radius:3px;'
       'font-family:Menlo,Consolas,monospace;font-size:12px"')
-_W = 'style="color:#e8b84b"'
-HELP = f"""<h3 {_H}>How to read this</h3>
-<p {_P}><b {_B}>Sizes each cluster for NVMe memory tiering, before the upgrade:</b> how much DRAM the
-workload actually needs, how much tiering saves, and what cannot be tiered at all. A sizing tool,
-not a monitoring tool &mdash; on a vSphere 8 estate there is no tiering to report yet.</p>
-<p {_P}><b {_B}>1. Set the time range</b> (top right) to a full business cycle, 30 days or more. Every
-sizing column is the <b {_B}>Maximum</b> over that range. &nbsp;<b {_B}>2. Click a cluster row</b>;
-the host and VM tables and the heat map below follow it.</p>
-<p {_P}><b {_W}>Blank columns?</b> The derived figures are <code {_C}>MemTier</code> super metrics,
-which arrive disabled: enable them in the active policy (Configure &rarr; Policies &rarr; Metrics and
-Properties) and allow a collection cycle; their history starts then. The pinned columns also need a
-<b {_B}>Memory Tier Advanced</b> adapter instance.</p>
-<p {_P}><b {_B}>Cluster already tiered?</b> Then <code {_C}>mem|host_provisioned</code> is
-<i>presented</i> memory &mdash; DRAM plus the NVMe tier &mdash; not installed DRAM. On an untiered host
-the two are the same. &nbsp;Every column is defined in the <b {_B}>Field reference</b> at the bottom;
-to price the result, use the <b {_B}>Export for MTAT</b> dashboard.</p>"""
+_W = 'style="color:#f2b544;font-weight:600"'
+_UL = 'style="margin:0 0 8px;padding-left:18px"'
+_LI = 'style="margin:0 0 3px"'
+
+
+def text_panel(title, html, y, h):
+    """Every text panel goes through here, so none can ship outside the card."""
+    return widget("TextDisplay", title, y, h=h, config={
+        "editorData": f"<div {_CARD}>{html}</div>", "locationFile": "", "locationUrl": "",
+        "refreshContent": {"refreshContent": False}, "viewModeHTML": True})
+HELP = f"""<div {_H}>How to read this</div>
+<p {_P}>Sizes each cluster for NVMe memory tiering <b {_B}>before</b> the upgrade: how much DRAM the
+workload needs, what tiering saves, and what can never be tiered.</p>
+<ul {_UL}>
+<li {_LI}><b {_B}>Set the time range</b> (top right) to 30 days or more. Every sizing column is the
+<b {_B}>Maximum</b> over that range.</li>
+<li {_LI}><b {_B}>Click a cluster row.</b> The host and VM tables and the heat map follow it.</li>
+<li {_LI}>Every column is defined in the <b {_B}>Field reference</b> at the bottom. To price the result,
+use <b {_B}>Export for MTAT</b>.</li>
+</ul>
+<p {_M}><span {_W}>Blank columns?</span> Enable the <code {_C}>MemTier</code> super metrics in the active
+policy and allow a collection cycle; pinned columns also need a Memory Tier Advanced adapter
+instance.</p>"""
 
 
 # Field reference, modelled on the vSAN pack's help panel. Inline style on every element --
 # the rich-text editor discards <style> blocks and keeps only inline attributes, and unstyled
 # text renders black on a dark theme (LESSONS.md 1.2).
 
-FIELDS = f"""<h3 {_H}>What each figure means</h3>
+FIELDS = f"""<div {_H}>What each figure means</div>
 
 <p {_P}><b {_B}>Available</b> &mdash; <code {_C}>mem|host_provisioned</code>, summed over the
 cluster's hosts. The memory the hypervisor presents. <b {_W}>On an untiered vSphere 8 host this
@@ -444,18 +454,16 @@ def build_dashboard():
     bv, guids = _view_guids()
     dash_id = str(uuid.uuid5(uuid.NAMESPACE_URL, "memtier-advanced/dashboard"))
     widgets = [
-        widget("TextDisplay", "How to read this", y=1, h=5, config={
-            "editorData": HELP, "locationFile": "", "locationUrl": "",
-            "refreshContent": {"refreshContent": False}, "viewModeHTML": True}),
+        text_panel("How to read this", HELP, y=1, h=6),
         # The sizing table is the headline AND the provider: click a cluster row and the host
         # and VM lists below follow it. A Scoreboard held these numbers and was replaced -- it
         # caps at 100 cells (metrics x objects), shows present value only, and cannot carry
         # dashboardTime, so the one panel with the sizing figures was the one panel that could
         # not honour the time range the whole peak-based model depends on. The vSAN pack's
         # seven shipped dashboards use zero Scoreboards for the same reasons.
-        view_provider("Memory tiering sizing by cluster", guids[bv.SIZING], y=6, x=1, w=12, h=11),
-        view_receiver("Hosts in the selected cluster", guids[bv.HOSTS], y=17, x=1, w=12, h=9),
-        view_receiver("VMs in the selected cluster", guids[bv.VMS], y=26, x=1, w=12, h=11),
+        view_provider("Memory tiering sizing by cluster", guids[bv.SIZING], y=7, x=1, w=12, h=11),
+        view_receiver("Hosts in the selected cluster", guids[bv.HOSTS], y=18, x=1, w=12, h=9),
+        view_receiver("VMs in the selected cluster", guids[bv.VMS], y=27, x=1, w=12, h=11),
         # Heat map stays. Present-value-only is acceptable in the capacity genre and it is the
         # right widget for many objects at a glance (practitioner guide p50). Colour MUST be a
         # percentage: the [0, 50, 100] threshold block is a percent scale, and colouring a KB
@@ -463,46 +471,28 @@ def build_dashboard():
         # Follows the selected cluster: its hosts, coloured by memory usage, sized by presented
         # memory. Estate-wide it answered nothing the table above did not (feedback 2026-10-21).
         heatmap("Hosts in the selected cluster: memory usage (%), sized by presented memory",
-                HOST, "mem|usage_average", "mem|host_provisioned", CLUSTER, y=37, receiver=True),
-        widget("TextDisplay", "Field reference", y=44, h=14, config={
-            "editorData": FIELDS.replace("{factor}", f"{CONSERVATIVE_FACTOR:g}"),
-            "locationFile": "", "locationUrl": "",
-            "refreshContent": {"refreshContent": False}, "viewModeHTML": True}),
+                HOST, "mem|usage_average", "mem|host_provisioned", CLUSTER, y=38, receiver=True),
+        text_panel("Field reference", FIELDS.replace("{factor}", f"{CONSERVATIVE_FACTOR:g}"),
+                   y=45, h=14),
     ]
     for w in widgets:
         w["tabId"] = dash_id
     return _envelope(dash_id, widgets, "Memory Tier Advanced - Clusters")
 
 
-REFRESH_HELP = f"""<h3 {_H}>Hardware refresh &mdash; sizing new hosts</h3>
-
-<p {_P}>This screen answers <b {_B}>how much RAM do we actually need to buy</b>. Installed DRAM
-is an <i>output</i> here: size presented memory to the workload, then split it DRAM/NVMe by the
-ratio the workload can carry. The companion screen,
-<b {_B}>Memory Tier Advanced &mdash; Clusters</b>, answers the other case: keeping the hosts you
-own and adding NVMe.</p>
-
-<p {_P}><b {_B}>Read these columns, in this order.</b>
-<b {_B}>Allocated (powered on)</b> is what the new hosts must present &mdash; not the raw
-allocated figure, which counts powered-off VMs and templates. &middot;
-<b {_B}>DRAM floor</b> is peak active: the least DRAM that holds the working set. &middot;
-<b {_B}>DRAM conservative</b> is the planning number. &middot;
-<b {_B}>RAM saved</b> is what you do not buy, versus an untiered refresh where every presented
-GB must be DRAM.</p>
-
-<p {_P}><b {_W}>Subtract pinned memory before quoting anything.</b> <b {_B}>Pinned GB</b> is
-memory belonging to VMs that cannot be tiered at all &mdash; 1 GB pages, latency-sensitive,
-locked reservations, PCI passthrough or vGPU, or fully reserved. That memory must be DRAM in
-any design, so the real saving is the saving column <i>less</i> the pinned column.
-<b {_B}>Tierable GB</b> does that subtraction for you.</p>
-
-<p {_P}><b {_W}>And check CPU before believing the memory answer.</b> New hosts sized on memory
-alone will be wrong if CPU binds first &mdash; compare <b {_B}>CPU headroom %</b> against
-<b {_B}>Active of host RAM %</b>. Ready time that is fixable by rightsizing frees CPU and moves
-the constraint back to memory, which is where tiering pays.</p>
-
-<p {_P}>Everything here reads the <b {_B}>Maximum</b> over the dashboard time range, so set it
-to a full business cycle. A 24-hour window sizes a purchase off a quiet Tuesday.</p>"""
+REFRESH_HELP = f"""<div {_H}>Hardware refresh &mdash; sizing new hosts</div>
+<p {_P}>How much RAM to buy for <b {_B}>replacement</b> hosts. For keeping the hosts you own and adding
+NVMe, use the <b {_B}>Clusters</b> dashboard.</p>
+<ul {_UL}>
+<li {_LI}><b {_B}>Allocated (powered on)</b> &mdash; what the new hosts must present.</li>
+<li {_LI}><b {_B}>DRAM floor</b> &mdash; peak active: the least DRAM that holds the working set.</li>
+<li {_LI}><b {_B}>DRAM conservative</b> &mdash; the planning number.</li>
+<li {_LI}><b {_B}>RAM saved</b> &mdash; DRAM you do not buy, against an untiered refresh.</li>
+</ul>
+<p {_M}><span {_W}>Before quoting:</span> pinned memory must stay in DRAM &mdash; use
+<b {_B}>Tierable GB</b>, which already subtracts it. And compare <b {_B}>CPU headroom %</b> with
+<b {_B}>Active of host RAM %</b>: if CPU runs out first, the memory answer is not the constraint.
+Set the time range to 30 days or more.</p>"""
 
 
 def build_refresh_dashboard():
@@ -511,18 +501,14 @@ def build_refresh_dashboard():
     bv, guids = _view_guids()
     dash_id = str(uuid.uuid5(uuid.NAMESPACE_URL, "memtier-advanced/dashboard-refresh"))
     widgets = [
-        widget("TextDisplay", "Sizing new hardware", y=1, h=7, config={
-            "editorData": REFRESH_HELP, "locationFile": "", "locationUrl": "",
-            "refreshContent": {"refreshContent": False}, "viewModeHTML": True}),
+        text_panel("Sizing new hardware", REFRESH_HELP, y=1, h=7),
         view_provider("Clusters to refresh", guids[bv.SIZING], y=8, x=1, w=12, h=11),
         view_receiver("VMs in the selected cluster", guids[bv.VMS], y=19, x=1, w=12, h=11),
         view_receiver("Hosts in the selected cluster", guids[bv.HOSTS], y=30, x=1, w=12, h=9),
         # Same three views means the same columns, so the same field reference applies verbatim.
         # Parity with the as-is dashboard is the point: a reader who starts on either screen
         # gets the definitions without having to know the other one exists.
-        widget("TextDisplay", "Field reference", y=39, h=14, config={
-            "editorData": FIELDS, "locationFile": "", "locationUrl": "",
-            "refreshContent": {"refreshContent": False}, "viewModeHTML": True}),
+        text_panel("Field reference", FIELDS, y=39, h=14),
     ]
     for w in widgets:
         w["tabId"] = dash_id
@@ -531,41 +517,23 @@ def build_refresh_dashboard():
                      "tiering saves against an untiered refresh.")
 
 
-MTAT_HELP = f"""<h3 {_H}>How to export this cluster to MTAT</h3>
-
-<p {_P}>MTAT (the Broadcom Memory Tiering Assessment Tool) sizes new hosts and prices DRAM
-against NVMe, but it reads vCenter, where 30 days of history is kept as 2-hour averages. This
-screen hands it Operations data instead: true 5-minute peaks. The two tables above are MTAT's
-own import files, column for column.</p>
-
-<p {_P}><b {_B}>1. Set the time range</b> at the top of this dashboard to a full business cycle
-&mdash; 30 days at least, longer if month-end or quarter-end matters. Every peak is the Maximum
-over that range. &middot;
-<b {_B}>2. Click a cluster</b> in the first table. &middot;
-<b {_B}>3. Export each table</b> with the widget's CSV export: the hosts table is MTAT's
-<i>Hosts CSV</i>, the VMs table its <i>VMs CSV</i>. Do not open them in Excel first; a re-save
-can reformat the numbers. &middot;
-<b {_B}>4. In MTAT</b>: connect to vCenter (MTAT requires it even to import), pick the
-<i>same</i> cluster, <b {_B}>Import Data Instead</b> &rarr; <b {_B}>MTAT Export (Hosts + VMs
-CSV)</b>, attach both files, and give the range a label such as
-<span {_C}>Ops 30d peak</span>. A yellow &ldquo;imported with notes&rdquo; message is normal.</p>
-
-<p {_P}><b {_W}>Stop if Active_GB is blank in the hosts table.</b> It is a super metric, and
-super metrics arrive disabled: enable the <span {_C}>MemTier</span> super metrics in the active
-policy (Configure &rarr; Policies &rarr; Metrics and Properties) and wait a collection cycle.
-MTAT reads a blank as zero, and a cluster with zero active memory passes every check it has.</p>
-
-<p {_P}><b {_B}>Check the import.</b> MTAT's Active Memory total should equal
-<b {_B}>Active peak GB</b> in the first table. Every host shows the same Active_GB on purpose:
-it is the cluster's simultaneous peak shared evenly, because MTAT adds the column up and a sum
-of each host's own peak counts moments that never happened together. Use the
-<b {_B}>Clusters</b> dashboard for real per-host figures.</p>
-
-<p {_P}><b {_B}>What MTAT will not know.</b> <b {_B}>Tiering</b> shows <i>Unknown</i> and
-<b {_B}>Pinned_Memory</b> <i>N/A</i>; read pinned memory from the Clusters dashboard, and treat
-it as DRAM in any design. Consumed_GB is the peak, where MTAT's own collection uses the average.
-MTAT reserves no DRAM for vSAN, NSX or the VMkernel &mdash; at 1:1 that rarely changes the
-answer, at higher ratios it can.</p>"""
+MTAT_HELP = f"""<div {_H}>How to export this cluster to MTAT</div>
+<p {_P}>MTAT sizes new hosts and prices DRAM against NVMe, but from vCenter it only sees 2-hour
+averages. The two tables above are MTAT's own import files, built from Operations' 5-minute
+peaks.</p>
+<ul {_UL}>
+<li {_LI}><b {_B}>Set the time range</b> to 30 days or more, then <b {_B}>click a cluster</b>.</li>
+<li {_LI}><b {_B}>Export each table</b> with the widget's CSV export: hosts &rarr; MTAT's
+<i>Hosts CSV</i>, VMs &rarr; <i>VMs CSV</i>. Don't re-save them in Excel.</li>
+<li {_LI}><b {_B}>In MTAT:</b> connect to vCenter, pick the <i>same</i> cluster,
+<b {_B}>Import Data Instead &rarr; MTAT Export (Hosts + VMs CSV)</b>, attach both, label the range
+e.g. <code {_C}>Ops 30d peak</code>.</li>
+<li {_LI}><b {_B}>Check:</b> MTAT's Active Memory total should equal <b {_B}>Active peak GB</b> above.
+Every host shows the same Active_GB on purpose &mdash; the cluster's simultaneous peak, shared evenly.</li>
+</ul>
+<p {_M}><span {_W}>Stop if Active_GB is blank</span> &mdash; enable the <code {_C}>MemTier</code> super
+metrics first; MTAT reads a blank as zero. MTAT will show Tiering <i>Unknown</i> and Pinned
+<i>N/A</i>; read pinned memory from the Clusters dashboard.</p>"""
 
 
 def build_mtat_dashboard():
@@ -579,9 +547,7 @@ def build_mtat_dashboard():
         view_receiver("MTAT Hosts CSV (export this)", guids[bv.MTAT_HOSTS], y=8, x=1, w=12,
                       h=8),
         view_receiver("MTAT VMs CSV (export this)", guids[bv.MTAT_VMS], y=16, x=1, w=12, h=11),
-        widget("TextDisplay", "How to export to MTAT", y=27, h=13, config={
-            "editorData": MTAT_HELP, "locationFile": "", "locationUrl": "",
-            "refreshContent": {"refreshContent": False}, "viewModeHTML": True}),
+        text_panel("How to export to MTAT", MTAT_HELP, y=27, h=10),
     ]
     for w in widgets:
         w["tabId"] = dash_id
