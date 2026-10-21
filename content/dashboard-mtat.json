@@ -201,21 +201,21 @@
     },
     {
      "collapsed": false,
-     "id": "d048b55b-d723-51c4-9fcb-eaadc380ae57",
+     "id": "15b442d3-4235-5e28-a047-bfb882d368ae",
      "gridsterCoords": {
       "w": 12,
       "x": 1,
-      "h": 9,
+      "h": 12,
       "y": 27
      },
      "state": "",
      "type": "TextDisplay",
-     "title": "How to export to MTAT",
+     "title": "How to read this",
      "config": {
       "refreshInterval": 300,
-      "widgetId": "d048b55b-d723-51c4-9fcb-eaadc380ae57",
+      "widgetId": "15b442d3-4235-5e28-a047-bfb882d368ae",
       "description": "",
-      "title": "How to export to MTAT",
+      "title": "How to read this",
       "refreshContent": {
        "refreshContent": false
       },
@@ -227,7 +227,7 @@
       "selfProvider": {
        "selfProvider": true
       },
-      "editorData": "<div style=\"background:#1e2d36;color:#d5dde3;border-radius:6px;padding:12px 16px;font-size:13px;line-height:1.5;font-family:Metropolis,'Clarity City',-apple-system,'Segoe UI',Roboto,Arial,sans-serif\"><div style=\"color:#ffffff;font-size:15px;font-weight:600;margin:0 0 6px\">How to export this cluster to MTAT</div>\n<p style=\"color:#d5dde3;margin:0 0 8px\">MTAT sizes new hosts and prices DRAM against NVMe, but from vCenter it only sees 2-hour\naverages. The two tables above are MTAT's own import files, built from Operations' 5-minute\npeaks.</p>\n<ul style=\"margin:0 0 8px;padding-left:18px\">\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">Click a cluster.</b> Both tables cover the last 30 days.</li>\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">Export each table</b> with the widget's CSV export: hosts &rarr; MTAT's\n<i>Hosts CSV</i>, VMs &rarr; <i>VMs CSV</i>. Don't re-save them in Excel.</li>\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">In MTAT:</b> connect to vCenter, pick the <i>same</i> cluster,\n<b style=\"color:#ffffff;font-weight:600\">Import Data Instead &rarr; MTAT Export (Hosts + VMs CSV)</b>, attach both, label the range\ne.g. <code style=\"background:#33454f;color:#e6edf1;padding:1px 4px;border-radius:3px;font-family:Menlo,Consolas,monospace;font-size:12px\">Ops 30d peak</code>.</li>\n<li style=\"margin:0 0 3px\"><b style=\"color:#ffffff;font-weight:600\">Check:</b> Active_GB is each host's own 30-day peak. MTAT adds them up, so its total\ncan sit slightly above the cluster's <b style=\"color:#ffffff;font-weight:600\">Active peak GB</b> when hosts peak at different times &mdash;\nthe safe direction, more DRAM rather than less.</li>\n</ul>\n<p style=\"color:#aab7c0;margin:0 0 8px\"><span style=\"color:#f2b544;font-weight:600\">Never import a file with a \"-\" in a number column</span> &mdash; MTAT reads it as\nzero. Every column here is a built-in metric, so that only happens for an object with no data yet.\nMTAT will show Tiering <i>Unknown</i> and Pinned <i>N/A</i>; read pinned memory from the Clusters\ndashboard.</p></div>",
+      "editorData": "<div style=\"font-family:'Metropolis','Segoe UI',sans-serif;font-size:13px;line-height:1.45;padding:12px 14px;background:#2b3137;color:#e9edf0;border-radius:6px;border:1px solid #4a535d\"><h3 style=\"font-size:15px;margin:4px 0 10px 0;color:#ffffff\">Export for MTAT &mdash; size this cluster on Operations' peaks</h3>\n<p style=\"margin:5px 0;line-height:1.45;color:#e9edf0\"><b style=\"font-weight:700;color:#ffffff\">The two tables above are MTAT's own import files, column for column.</b> MTAT (Broadcom's\nMemory Tiering Assessment Tool) sizes new hosts and prices DRAM against NVMe, but from vCenter it only\nsees 2-hour averages over 30 days. These files carry Operations' 5-minute peaks instead.</p>\n<p style=\"margin:5px 0;line-height:1.45;color:#e9edf0\"><b style=\"font-weight:700;color:#ffffff\">Export.</b> Click a cluster, then use each table's CSV export: the hosts table is MTAT's\n<i style=\"font-style:italic;color:#e9edf0\">Hosts CSV</i>, the VMs table its <i style=\"font-style:italic;color:#e9edf0\">VMs CSV</i>. Both cover the last 30 days. Do not re-save them in\nExcel; a re-save can reformat the numbers.</p>\n<p style=\"margin:5px 0;line-height:1.45;color:#e9edf0\"><b style=\"font-weight:700;color:#ffffff\">Import.</b> In MTAT, connect to vCenter (it needs that even to import), pick the\n<i style=\"font-style:italic;color:#e9edf0\">same</i> cluster, then <b style=\"font-weight:700;color:#ffffff\">Import Data Instead &rarr; MTAT Export (Hosts + VMs CSV)</b>, attach both\nfiles and label the range, for example <code style=\"font-family:monospace;background:#363d45;color:#8fd3ff;padding:1px 3px;border-radius:3px\">Ops 30d peak</code>. A yellow \"imported with notes\"\nmessage is normal.</p>\n<p style=\"margin:5px 0;line-height:1.45;color:#e9edf0\"><b style=\"font-weight:700;color:#ffffff\">Check the result.</b> <code style=\"font-family:monospace;background:#363d45;color:#8fd3ff;padding:1px 3px;border-radius:3px\">Active_GB</code> is each host's own 30-day peak, and MTAT\nadds them up, so its total can sit slightly above the cluster's <b style=\"font-weight:700;color:#ffffff\">Active peak GB</b> when hosts\npeak at different times &mdash; the safe direction, more DRAM rather than less.</p>\n<p style=\"margin:5px 0;line-height:1.45;color:#e9edf0\"><b style=\"font-weight:700;color:#ffd79a\">Never import a file with a \"-\" in a number column</b> &mdash; MTAT reads it as zero. MTAT will\nshow Tiering <i style=\"font-style:italic;color:#e9edf0\">Unknown</i> and Pinned <i style=\"font-style:italic;color:#e9edf0\">N/A</i>; read pinned memory from the Clusters dashboard.</p></div>",
       "locationFile": "",
       "locationUrl": "",
       "viewModeHTML": true
