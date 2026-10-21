@@ -462,7 +462,12 @@ def main():
             if d not in dirs:
                 dirs.append(d)
 
-    out = os.path.join(BUILD, f"{PAK_NAME}_{VERSION}.pak")
+    # The FILE name carries the rc so every download says which build it is (feedback
+    # 2026-10-21: "the pak file has no rc identifier, so I have no clue if it's latest").
+    # manifest.txt keeps the plain X.Y.Z, which Operations needs, as the vSAN pack does.
+    rc = os.environ.get("MEMTIER_RC", "").strip()
+    suffix = f"-rc.{rc}" if rc else ""
+    out = os.path.join(BUILD, f"{PAK_NAME}_{VERSION}{suffix}.pak")
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         write_parents_first(z, list(members.items()) + [(d, None) for d in dirs],
                             last=("adapter.zip",))

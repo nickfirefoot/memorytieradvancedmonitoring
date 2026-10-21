@@ -6,12 +6,17 @@ Same tag scheme as the vSAN Host Metrics pack (`~/vsan-net-mp/README.md`, "To re
 |---|---|---|
 | Tag | `vX.Y.Z-rc.N`, from any branch | `vX.Y.Z`, from the release branch |
 | GitHub | **published pre-release**, named after the tag | full release |
-| Pak file | `MemoryTierAdvanced_X.Y.Z.pak`: carries the **target** version | the same |
+| Pak file | `MemoryTierAdvanced_X.Y.Z-rc.N.pak`; `manifest.txt` inside carries the plain target `X.Y.Z` | `MemoryTierAdvanced_X.Y.Z.pak` |
 | Image tag | `X.Y.Z-rc.N` | `X.Y.Z` |
 | Assets | the pak + `SHA256SUMS` | the same |
 
 - **Download URLs are permanent:** `…/releases/download/<tag>/<file>`. Never hand out a draft
   release's `untagged-…` link; it dies when the draft is published or re-cut.
+- **The rc is in the file name** so every download says which build it is. Operations itself
+  shows only `X.Y.Z`; confirm which rc is installed with `p43_pak_install_check.py`.
+- **Builds are not byte-reproducible** (zip timestamps), so a rebuild of the same commit gets a
+  different sha256. Never upload a rebuild under a name that is already published; the release
+  asset is the artefact of record.
 - **A version is never re-cut.** If `vX.Y.Z` is wrong, release `vX.Y.(Z+1)`. Each rc of the same
   target carries the same pak version, so reinstalling one over another needs *Install even if
   already installed*.
@@ -24,9 +29,9 @@ Same tag scheme as the vSAN Host Metrics pack (`~/vsan-net-mp/README.md`, "To re
 
 ## Cutting a dev build
 
-1. `cd tools && python3 build_content.py && python3 build_views.py && ~/.mp/bin/python3 build_pak.py`
+1. `cd tools && python3 build_content.py && python3 build_views.py && MEMTIER_RC=N ~/.mp/bin/python3 build_pak.py`
    (the SDK's Python, so the describe/adapter comparison runs).
-2. `cd build && sha256sum MemoryTierAdvanced_X.Y.Z.pak > SHA256SUMS`
+2. `cd build && sha256sum MemoryTierAdvanced_X.Y.Z-rc.N.pak > SHA256SUMS`
 3. Commit, then `git tag -a vX.Y.Z-rc.N -m …` and push the branch and the tag.
 4. If the adapter changed: build the image, test it (`p42_adapter_local_run.py --image`), push it,
    pin its digest in `build_pak.py`, and rebuild the pak.
