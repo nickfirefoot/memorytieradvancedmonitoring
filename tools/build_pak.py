@@ -22,6 +22,7 @@ Bump VERSION for every reinstall (BACKLOG.md §6).
 Usage:  python3 build_content.py && python3 build_pak.py
 """
 import json
+import io
 import os
 import re
 import struct
@@ -32,7 +33,7 @@ import zlib
 HERE = os.path.dirname(os.path.abspath(__file__))
 BUILD = os.path.join(HERE, "build")
 
-VERSION = "2.1.0"      # 2.1.0: Export for MTAT dashboard, fleet-rollup binding fix. 2.0.0: real collector, two dashboards, opt-in group
+VERSION = "2.1.1"      # 2.1.1: adapter.zip stored files before their directories, so 2.1.0 failed at APPLY_ADAPTER. 2.1.0: Export for MTAT dashboard, fleet-rollup binding fix. 2.0.0: real collector, two dashboards, opt-in group
 IMAGE_REGISTRY = "ghcr.io"
 IMAGE_REPOSITORY = "/nickfirefoot/memorytieradvancedmonitoring"
 IMAGE_DIGEST = "sha256:667b35ba2f74886ceae15aaeaa98dbad8bc8d7513f40e0e9b5eb670b25b6d93d"
@@ -120,6 +121,43 @@ def png_icon(size=128, rgb=(0x2E, 0x6F, 0xA7)):
             + chunk(b"IEND", b""))
 
 
+def write_parents_first(zf, entries, last=()):
+    """Write (name, data) entries so every directory entry precedes everything inside it.
+    data None means a bare directory. The installer extracts in STORED order and creates a
+    directory only when it reaches that directory's own entry: 2.1.0 stored
+    resources/resources.properties ahead of resources/ and failed at APPLY_ADAPTER with
+    NoSuchFileException (analytics log, 2026-10-21 03:43:01). The netstats pak, which
+    installs, stores each directory immediately before its first child."""
+    written = set()
+
+    def ensure(path):
+        parts = path.rstrip("/").split("/")
+        for i in range(1, len(parts) + (1 if path.endswith("/") else 0)):
+            d = "/".join(parts[:i]) + "/"
+            if d not in written:
+                zf.writestr(zipfile.ZipInfo(d), b"")
+                written.add(d)
+
+    # Root files first, then trees; `last` names go at the very end, as adapter.zip does in
+    # the netstats pak that installs.
+    order = sorted(entries, key=lambda e: (e[0] in last, e[0].count("/") > 0, e[0]))
+    for name, data in order:
+        ensure(name)
+        if data is not None:
+            zf.writestr(name, data)
+
+
+def children_before_parents(blob):
+    """Entries whose parent directory entry is stored later or not at all."""
+    seen, bad = set(), []
+    for n in zipfile.ZipFile(io.BytesIO(blob)).namelist():
+        parent = n.rstrip("/").rpartition("/")[0]
+        if parent and parent + "/" not in seen:
+            bad.append(n)
+        seen.add(n if n.endswith("/") else n + "#")
+    return bad
+
+
 def describe_drift(describe_xml):
     """Differences between describe.xml and the adapter's own adapter_definition(), by kind
     and attribute key. Needs the Integration SDK library to import the adapter; without it the
@@ -201,7 +239,6 @@ def main():
     # configure, nothing that can run, exists only so the installer registers a solution and
     # reaches content/. This is how pre-SDK community content paks were distributed.
     # adapter.zip mirrors the real VsanHostMetrics pak member for member, minus <Kind>.conf.
-    import io
     # The adapter COLLECTS now, so describe.xml declares what it publishes: an adapter
     # instance kind (type 7) carrying the connection parameters, a credential kind, and the two
     # object kinds that hold the disqualifiers. nameKey values index resources.properties.
@@ -302,20 +339,21 @@ def main():
                  f"DIGEST={IMAGE_DIGEST}\n")
     inner = io.BytesIO()
     with zipfile.ZipFile(inner, "w", zipfile.ZIP_DEFLATED) as a:
-        a.writestr(f"{KIND_KEY}.conf", kind_conf)
-        a.writestr("manifest.txt", manifest_bytes)
-        a.writestr("eula.txt", EULA.encode())
-        a.writestr("pak_icon.png", icon)
-        a.writestr("resources/resources.properties", RESOURCES.encode())
-        a.writestr(f"{KIND_KEY}/conf/describe.xml", describe)
-        a.writestr(f"{KIND_KEY}/conf/describeSchema.xsd", open(xsd_src, "rb").read())
-        a.writestr(f"{KIND_KEY}/conf/version.txt", version_txt)
-        a.writestr(f"{KIND_KEY}/conf/resources/resources.properties", inner_props)
-        # directory entries and empty image dirs, exactly as the real adapter.zip carries them
-        for d in ("resources/", f"{KIND_KEY}/", f"{KIND_KEY}/conf/", f"{KIND_KEY}/conf/resources/",
-                  f"{KIND_KEY}/conf/images/", f"{KIND_KEY}/conf/images/AdapterKind/",
-                  f"{KIND_KEY}/conf/images/ResourceKind/", f"{KIND_KEY}/conf/images/TraversalSpec/"):
-            a.writestr(zipfile.ZipInfo(d), b"")
+        write_parents_first(a, [
+            (f"{KIND_KEY}.conf", kind_conf),
+            ("eula.txt", EULA.encode()),
+            ("manifest.txt", manifest_bytes),
+            ("pak_icon.png", icon),
+            ("resources/resources.properties", RESOURCES.encode()),
+            (f"{KIND_KEY}/conf/describe.xml", describe),
+            (f"{KIND_KEY}/conf/describeSchema.xsd", open(xsd_src, "rb").read()),
+            (f"{KIND_KEY}/conf/version.txt", version_txt),
+            (f"{KIND_KEY}/conf/resources/resources.properties", inner_props),
+            # empty image dirs, and the adapter-kind icon, as the netstats adapter.zip carries
+            (f"{KIND_KEY}/conf/images/TraversalSpec/", None),
+            (f"{KIND_KEY}/conf/images/ResourceKind/", None),
+            (f"{KIND_KEY}/conf/images/AdapterKind/{KIND_KEY}.png", icon),
+        ])
 
     members = {
         "manifest.txt": manifest_bytes,
@@ -423,10 +461,16 @@ def main():
 
     out = os.path.join(BUILD, f"{PAK_NAME}_{VERSION}.pak")
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
-        for d in dirs:
-            z.writestr(zipfile.ZipInfo(d), b"")
-        for name, data in members.items():
-            z.writestr(name, data)
+        write_parents_first(z, list(members.items()) + [(d, None) for d in dirs],
+                            last=("adapter.zip",))
+    for label, blob in (("pak", open(out, "rb").read()), ("adapter.zip", members["adapter.zip"])):
+        bad = children_before_parents(blob)
+        if bad:
+            print(f"SELF-CHECK FAILED: {label} stores files before their directory entries: "
+                  f"{bad[:5]}. The installer extracts in stored order and creates a directory "
+                  f"only at its own entry, so this aborts with NoSuchFileException "
+                  f"(2.1.0, 2026-10-21).", file=sys.stderr)
+            return 1
     print(f"wrote {out}  ({os.path.getsize(out)} bytes)")
     for name, data in members.items():
         print(f"   {len(data):>7}  {name}")
