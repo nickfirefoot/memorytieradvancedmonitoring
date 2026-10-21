@@ -120,6 +120,48 @@ def png_icon(size=128, rgb=(0x2E, 0x6F, 0xA7)):
             + chunk(b"IEND", b""))
 
 
+def describe_drift(describe_xml):
+    """Differences between describe.xml and the adapter's own adapter_definition(), by kind
+    and attribute key. Needs the Integration SDK library to import the adapter; without it the
+    check is reported as skipped rather than silently passed."""
+    import importlib.util
+    import xml.etree.ElementTree as ET
+    path = os.path.join(os.path.dirname(HERE), "adapter", "app", "adapter.py")
+    saved = sys.argv
+    # The SDK library reads sys.argv[-2] / [-1] as pipe paths at IMPORT time, as defaults.
+    sys.argv = [saved[0], "", ""]
+    try:
+        spec = importlib.util.spec_from_file_location("memtier_adapter", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        code = mod.adapter_definition().to_json()
+    except ImportError as e:
+        sys.argv = saved
+        print(f"   describe/adapter_definition comparison SKIPPED: {e} "
+              f"(run with ~/.mp/bin/python3 to include it)")
+        return []
+    sys.argv = saved
+    ns = "{http://schemas.vmware.com/vcops/schema}"
+    root = ET.fromstring(describe_xml.encode())
+    in_xml = {rk.get("key"): {a.get("key") for a in rk.findall(f"{ns}ResourceAttribute")}
+              for rk in root.iter(f"{ns}ResourceKind") if rk.get("type") != "7"}
+    in_code = {}
+    for o in code.get("object_types", code.get("objectTypes", [])):
+        key = o.get("key")
+        attrs = set()
+        for group in ("properties", "metrics", "attributes"):
+            attrs |= {a.get("key") for a in o.get(group, [])}
+        in_code[key] = attrs
+    problems = []
+    for kind in sorted(set(in_xml) | set(in_code)):
+        a, b = in_xml.get(kind), in_code.get(kind)
+        if a is None or b is None:
+            problems.append(f"object kind {kind!r} is in {'code' if a is None else 'describe.xml'} only")
+        elif a != b:
+            problems.append(f"{kind}: describe.xml lacks {sorted(b - a)}, code lacks {sorted(a - b)}")
+    return problems
+
+
 def main():
     dash_src = os.path.join(BUILD, "dashboard.json")
     sm_src = os.path.join(BUILD, "supermetric.json")
@@ -191,6 +233,7 @@ def main():
       <ResourceAttribute key="memoryReservationLockedToMax" nameKey="17" unit="" dashboardOrder="6" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
       <ResourceAttribute key="passthroughDevices" nameKey="18" unit="" dashboardOrder="7" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
       <ResourceAttribute key="numaNodeAffinity" nameKey="19" unit="" dashboardOrder="8" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
+      <ResourceAttribute key="pinReason" nameKey="29" unit="" dashboardOrder="9" dataType="string" isProperty="true" isRate="false" isDiscrete="true" isImpact="false" defaultMonitored="true" keyAttribute="false"/>
     </ResourceKind>
     <ResourceKind key="MemTierAdvancedHost" nameKey="22" type="1">
       <ResourceIdentifier default="" key="host_moref" nameKey="23" required="true" dispOrder="0" enum="false" type="string" identType="1"/>
@@ -218,7 +261,17 @@ def main():
         "20 = vCenter credential", "21 = vCenter password",
         "22 = Memory Tier Host Configuration", "23 = Host MoRef", "24 = vCenter UUID",
         "25 = Mem.AllocGuestLargePage", "26 = LPage.LPageAlwaysTryForNPT",
-        "27 = LPage.LPageDefragEnable", "28 = LPage.MaxSharedPages", ""])
+        "27 = LPage.LPageDefragEnable", "28 = LPage.MaxSharedPages",
+        "29 = Pin reason", "29.description = Which condition pins this VM to DRAM, or none.", ""])
+    # describe.xml is written by hand here, while the adapter declares the same model in
+    # adapter_definition(). mp-build generates one from the other; this build does not, so
+    # the two can drift with nothing to notice -- a property the adapter sends that describe
+    # does not declare. Compare them on every build.
+    drift = describe_drift(describe)
+    if drift:
+        for d in drift:
+            print("SELF-CHECK FAILED:", d, file=sys.stderr)
+        return 1
     major, minor, impl = VERSION.split(".")
     version_txt = f"Major-Version={major}\nMinor-Version={minor}\nImplementation-Version={impl}\n"
     xsd_src = os.path.join(HERE, "describeSchema.xsd")
