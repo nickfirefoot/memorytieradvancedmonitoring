@@ -41,9 +41,16 @@ PAK_NAME = "MemoryTierAdvanced"           # manifest "name"; also injected as ad
 KIND_KEY = "MemTierAdvanced"                 # a REAL adapter now: collects the tiering disqualifiers
 DISPLAY_NAME = "Memory Tier Advanced"
 VENDOR = "Nick Wilson"
-DESCRIPTION = ("Sizes a vSphere estate for VCF 9 NVMe memory tiering from metrics the vCenter "
-               "adapter already collects. Content only: dashboards and super metrics, no "
-               "adapter, no image, no registry. Target: Operations 8.18 and later.")
+# The build label is the ONE place an operator can tell builds apart: every rc of a version
+# reports the same manifest version (feedback 2026-10-21: "they all have the same number").
+# It goes into the displayed pak name and description and the file name, and the build fails
+# if those disagree. Dashboards keep the plain DISPLAY_NAME, so their folder never moves.
+RC = os.environ.get("MEMTIER_RC", "").strip()
+BUILD_LABEL = f"{VERSION}-rc.{RC}" if RC else VERSION
+DESCRIPTION = (f"Build {BUILD_LABEL}. Sizes a vSphere estate for NVMe memory tiering from metrics "
+               "the vCenter adapter already collects, plus an adapter that reads the settings "
+               "which pin VM memory to DRAM. Includes an Export for MTAT dashboard. "
+               "Target: Operations 8.18 and later.")
 DASH_DIR = "Memory_Tier_Advanced_Clusters"
 REFRESH_DIR = "Memory_Tier_Advanced_Hardware_Refresh"   # pre-created so mp_build-style lowercasing never applies
 MTAT_DIR = "Memory_Tier_Advanced_Export_for_MTAT"
@@ -95,7 +102,7 @@ Not affiliated with or endorsed by Broadcom or VMware.
 RESOURCES = f"""#Default localization file.
 
 #The solution's localized name displayed in UI
-DISPLAY_NAME={DISPLAY_NAME}
+DISPLAY_NAME={DISPLAY_NAME} {BUILD_LABEL}
 
 #The solution's localized description
 DESCRIPTION={DESCRIPTION}
@@ -465,9 +472,7 @@ def main():
     # The FILE name carries the rc so every download says which build it is (feedback
     # 2026-10-21: "the pak file has no rc identifier, so I have no clue if it's latest").
     # manifest.txt keeps the plain X.Y.Z, which Operations needs, as the vSAN pack does.
-    rc = os.environ.get("MEMTIER_RC", "").strip()
-    suffix = f"-rc.{rc}" if rc else ""
-    out = os.path.join(BUILD, f"{PAK_NAME}_{VERSION}{suffix}.pak")
+    out = os.path.join(BUILD, f"{PAK_NAME}_{BUILD_LABEL}.pak")
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         write_parents_first(z, list(members.items()) + [(d, None) for d in dirs],
                             last=("adapter.zip",))
@@ -479,7 +484,13 @@ def main():
                   f"only at its own entry, so this aborts with NoSuchFileException "
                   f"(2.1.0, 2026-10-21).", file=sys.stderr)
             return 1
-    print(f"wrote {out}  ({os.path.getsize(out)} bytes)")
+    shown = zipfile.ZipFile(out).read("resources/resources.properties").decode()
+    if f"DISPLAY_NAME={DISPLAY_NAME} {BUILD_LABEL}" not in shown or f"_{BUILD_LABEL}.pak" not in out:
+        print(f"SELF-CHECK FAILED: the displayed build label and the file name disagree "
+              f"({BUILD_LABEL!r}); an operator could not tell which build is installed",
+              file=sys.stderr)
+        return 1
+    print(f"wrote {out}  ({os.path.getsize(out)} bytes)  build label {BUILD_LABEL}")
     for name, data in members.items():
         print(f"   {len(data):>7}  {name}")
     print(f"self-check passed: adapter.zip carries {KIND_KEY}.conf + describe.xml, no instance names, "
