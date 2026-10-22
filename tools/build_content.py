@@ -32,6 +32,11 @@ OUT = os.path.join(HERE, "build")
 
 PREFIX = "MemTier"   # separator is a SPACE: a super metric name may not contain | or :
 CONSERVATIVE_FACTOR = float(os.environ.get("MEMTIER_CONSERVATIVE_FACTOR", "4"))
+# DRAM set aside on every host for vSAN, NSX and the hypervisor: resident, never tierable, and
+# invisible to active memory (feedback 2026-10-22: "set aside 20GB per host"). vSAN alone needs
+# about 20 GB; the lab measured ~30 GB of non-guest consumed per host. Added once to every DRAM
+# figure, subtracted once from everything derived from it, and called out in the field text.
+HOST_RESERVE_GB = float(os.environ.get("MEMTIER_HOST_RESERVE_GB", "20"))
 ADAPTER = "VMWARE"
 CLUSTER, HOST, VM, WORLD = "ClusterComputeResource", "HostSystem", "VirtualMachine", "vSphere World"
 DATACENTER = "Datacenter"
@@ -249,6 +254,11 @@ the two are the same. To price the result, use the <b {_B}>Export for MTAT</b> d
 # text renders black on a dark theme (LESSONS.md 1.2).
 
 FIELDS = f"""<h4 {_H2}>What each figure means</h4>
+<p {_P}><b {_W}>Every DRAM figure includes {HOST_RESERVE_GB:g} GB per host for vSAN and the hypervisor.</b>
+vSAN, NSX and the VMkernel hold memory that must stay in DRAM and never shows as guest active memory,
+so it is added to the DRAM floor and conservative figures, subtracted from RAM saved and from tierable,
+and counted in the NVMe and retrofit figures. On a cluster without vSAN it is generous; adjust it at
+build time with <code {_C}>MEMTIER_HOST_RESERVE_GB</code>.</p>
 
 <p {_P}><b {_B}>Available</b> &mdash; <code {_C}>mem|host_provisioned</code>, summed over the
 cluster's hosts. The memory the hypervisor presents. <b {_W}>On an untiered vSphere 8 host this
@@ -623,6 +633,11 @@ def build_supermetrics():
     # DRAM needed". Arithmetic only -- no reliance on ternary support, which is documented for
     # 8.18 but unverified there, and a formula the importer rejects would be worse than the bug.
     guard = f"({host_active} / {host_active})"
+    # Cluster-level reserve: hosts x the per-host reserve, in KB like every other operand.
+    reserve = (f"({roll(CLUSTER, 'summary|total_number_hosts', 0)} * "
+               f"{int(round(HOST_RESERVE_GB * KB_PER_GB))})")
+    floor_kb = f"({host_active} + {reserve})"
+    cons_kb = f"(({host_active} * {CONSERVATIVE_FACTOR}) + {reserve})"
 
     host_consumed = roll(HOST, "mem|consumed_average", 1)
     vm_alloc = roll(VM, "mem|guest_provisioned", 2)
@@ -664,7 +679,7 @@ def build_supermetrics():
            "native cluster metric. INCLUDES powered-off VMs and templates, so it is an upper "
            "bound -- compare it against Allocated Powered On, which does not."),
         sm(f"{PREFIX} Tierable of Used (GB)",
-           f"((({host_consumed} - {host_active}) / 2) * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
+           f"((({host_consumed} - {reserve} - {host_active}) / 2) * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
            "Cold memory currently backed in DRAM, halved for conservatism. Blank means the "
            "active metric is missing, not that everything is cold. Consumed minus "
            "active, in that order -- active is the working set within consumed."),
@@ -728,12 +743,12 @@ def build_supermetrics():
         # the floor, DRAM = peak active. The difference is what tiering saves. Guarded, because
         # a missing active metric would otherwise report a saving equal to the whole estate.
         sm(f"{PREFIX} RAM Saved at Floor (GB)",
-           f"(({vm_alloc} - {host_active}) * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
+           f"(({vm_alloc} - {floor_kb}) * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
            "allocated - peak active. RAM you would NOT have to buy if this cluster were tiered "
            "and DRAM sized to the working set. Read with the Maximum transformation over a full "
            "business cycle; blank means the active metric is missing."),
         sm(f"{PREFIX} RAM Saved Conservative (GB)",
-           f"(({vm_alloc} - ({host_active} * {CONSERVATIVE_FACTOR})) * {guard}) / {KB_PER_GB}",
+           f"(({vm_alloc} - {cons_kb}) * {guard}) / {KB_PER_GB}",
            CLUSTER, "gb",
            f"allocated - ({CONSERVATIVE_FACTOR:g} x peak active). The saving with the planning "
            "factor applied rather than the floor. Negative means the conservative DRAM figure "
@@ -743,7 +758,7 @@ def build_supermetrics():
         # The replacement case treats DRAM as an output. Retrofit inverts it: installed DRAM is
         # a CONSTRAINT, and the question is whether the working set already fits it.
         sm(f"{PREFIX} Retrofit Headroom (GB)",
-           f"(({host_avail} - {host_active}) * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
+           f"(({host_avail} - {floor_kb}) * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
            "Installed DRAM minus peak active. POSITIVE means the working set already fits the "
            "DRAM you own, so this cluster can be tiered by adding NVMe alone, with no DRAM "
            "purchase. Negative means it cannot, whatever NVMe is added."),
@@ -759,7 +774,7 @@ def build_supermetrics():
         # cluster-level arithmetic looks -- MTAT clamps at 4096 GB/host and this had no notion
         # of it at all.
         sm(f"{PREFIX} NVMe per Host (GB)",
-           f"((({vm_alloc} - {host_active}) * {guard}) / {KB_PER_GB}) / "
+           f"((({vm_alloc} - {floor_kb}) * {guard}) / {KB_PER_GB}) / "
            f"{roll(CLUSTER, 'summary|total_number_hosts', 0)}",
            CLUSTER, "gb",
            "NVMe tier each host would carry at the DRAM floor. COMPARE AGAINST 4096 GB: above "
@@ -789,7 +804,7 @@ def build_supermetrics():
         # k * max(active), so a widget or View with the Maximum transformation over 30 days
         # yields a true peak-based figure from an instantaneous formula. Use it that way.
         sm(f"{PREFIX} DRAM Required Floor (GB)",
-           f"({host_active} * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
+           f"({floor_kb} * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
            "AGGRESSIVE. DRAM sized to the working set and nothing more: at peak, every page "
            "the guests are actually touching fits in DRAM and all cold memory lives on NVMe. "
            "Blank means the active metric is missing, NOT that no DRAM is needed. "
@@ -797,18 +812,18 @@ def build_supermetrics():
            "working set that moves, or for active memory being an ESXi estimate rather than a "
            "measurement. Read it with the Maximum transformation over 30 days."),
         sm(f"{PREFIX} DRAM Required Conservative (GB)",
-           f"({host_active} * {CONSERVATIVE_FACTOR} * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
+           f"({cons_kb} * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
            f"CONSERVATIVE. {CONSERVATIVE_FACTOR:g}x the working set, so DRAM holds the active "
            f"set with {CONSERVATIVE_FACTOR:g}x headroom for growth and for the working set "
            "shifting. Starting point for planning, not a final answer -- tune the factor once "
            "real peaks are in hand. Read it with the Maximum transformation over 30 days."),
         sm(f"{PREFIX} NVMe Required at Floor (GB)",
-           f"(({vm_alloc} - {host_active}) * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
+           f"(({vm_alloc} - {floor_kb}) * {guard}) / {KB_PER_GB}", CLUSTER, "gb",
            "Allocated memory that would sit on NVMe if DRAM were sized to the floor. Negative "
            "means the working set already exceeds what is allocated -- investigate before "
            "sizing anything on it."),
         sm(f"{PREFIX} Implied DRAM Share at Floor (%)",
-           f"({host_active} / {vm_alloc}) * 100 * {guard}", CLUSTER, "percent",
+           f"({floor_kb} / {vm_alloc}) * 100 * {guard}", CLUSTER, "percent",
            "DRAM as a share of presented memory at the floor. Compare against the supported "
            "ratios: 50% is 1:1, 33% is 1:2, 20% is 1:4. Below 20% the workload is cold enough "
            "that the platform's maximum ratio, not the workload, is the limit."),
@@ -840,6 +855,15 @@ def build_supermetrics():
 
     ]:
         out[k] = v
+    reserved = {"DRAM Required Floor (GB)", "DRAM Required Conservative (GB)",
+                "RAM Saved at Floor (GB)", "RAM Saved Conservative (GB)",
+                "NVMe Required at Floor (GB)", "NVMe per Host (GB)", "Retrofit Headroom (GB)",
+                "Implied DRAM Share at Floor (%)", "Tierable of Used (GB)"}
+    for v in out.values():
+        if v["name"].replace(f"{PREFIX} ", "", 1) in reserved:
+            v["description"] += (f" Includes {HOST_RESERVE_GB:g} GB per host reserved for vSAN, "
+                                 "NSX and the hypervisor: resident, never tierable, and not part "
+                                 "of active memory.")
     return out
 
 

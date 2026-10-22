@@ -114,7 +114,34 @@ def column(key, label, kind, is_property=False, transform="CURRENT", sort=False,
                             </Item>"""
 
 
-def view(title, kind, columns, seed, page=50, days=30, hide_name=False, filter_json=None):
+def summary_xml(totals):
+    """A Total row: SUM over the named column indexes. Shape cloned from the built-in 'Powered
+    Off VMs on vSAN Cluster' view (summaryInfos inside the attributes-selector control). Never
+    on an MTAT view -- a Total row would export as one more host or VM, and MTAT would read it
+    as one."""
+    if not totals:
+        return ""
+    idx = "\n".join(f'                                        <Item value="{i}" />' for i in totals)
+    return f"""
+                    <Property name="summaryInfos">
+                        <List>
+                            <Item>
+                                <Value>
+                                    <Property name="displayName" value="Total" />
+                                    <Property name="aggregation" value="SUM" />
+                                    <Property name="attributeIndexes">
+                                        <List>
+{idx}
+                                        </List>
+                                    </Property>
+                                </Value>
+                            </Item>
+                        </List>
+                    </Property>"""
+
+
+def view(title, kind, columns, seed, page=50, days=30, hide_name=False, filter_json=None,
+         totals=None):
     """One ViewDef, 30 days by default: dashboards use each view's own range rather than the
     dashboard time selector, which opens on 6H -- a 6-hour peak is not a sizing figure
     (feedback 2026-10-21). `seed` only namespaces the Control ids within the document; it carries no
@@ -147,7 +174,7 @@ def view(title, kind, columns, seed, page=50, days=30, hide_name=False, filter_j
                         <List>
 {cols}
                         </List>
-                    </Property>
+                    </Property>{summary_xml(totals)}
                 </Control>
                 <Control id="pagination-control_id_{seed + 2}" type="pagination-control" visible="true">
                     <Property name="start" value="0" />
@@ -220,6 +247,10 @@ VM_POWERED_ON = ('[[{"filterType":"properties","metricKey":"summary|runtime|powe
 # Per-view options beyond (title, kind, seed, columns). Kept apart so VIEWS stays a 4-tuple
 # list -- build_content.py unpacks it to derive GUIDs.
 VIEW_OPTS = {
+    # Totals on the memory columns (feedback 2026-10-22: "missing sums on the hosts, and the
+    # vms"). Indexes are positions in the view's column list; asserted in main().
+    HOSTS: {"totals": [1, 2, 3]},          # Presented, Consumed (max), Active (max)
+    VMS: {"totals": [1, 2, 3, 4]},         # Configured, Active (max), Consumed (max), Reserved
     MTAT_CLUSTERS: {"days": 30},
     MTAT_HOSTS: {"days": 30, "hide_name": True, "page": 1000},
     MTAT_VMS: {"days": 30, "hide_name": True, "page": 1000, "filter_json": VM_POWERED_ON},
@@ -404,6 +435,22 @@ def main():
         print(f"   {len(xml):>6} B  {os.path.relpath(path, HERE)}")
         print(f"            guid {guid_for(title)}  subject {kind}  {len(cols)} column(s)")
 
+    for title, kind, seed, cols in VIEWS:
+        tot = VIEW_OPTS.get(title, {}).get("totals")
+        if not tot:
+            continue
+        if title in MTAT_CONTRACT:
+            print(f"FAILED: {title} has a Total row, which MTAT would import as a host or VM",
+                  file=sys.stderr)
+            return 1
+        import re as _re
+        labels = [_re.search(r'displayName" value="([^"]+)"', c).group(1) for c in cols]
+        summed = [labels[i] for i in tot]
+        if not all(("GB" in l or "max" in l or l in ("Presented memory", "Configured", "Reserved (used)"))
+                   for l in summed):
+            print(f"FAILED: {title} totals cover non-memory columns: {summed}", file=sys.stderr)
+            return 1
+        print(f"   totals on {title}: {summed}")
     for prob in mtat_contract_problems():
         print("FAILED:", prob, file=sys.stderr)
         return 1

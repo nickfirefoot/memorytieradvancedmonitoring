@@ -47,6 +47,12 @@ VENDOR = "Nick Wilson"
 # if those disagree. Dashboards keep the plain DISPLAY_NAME, so their folder never moves.
 RC = os.environ.get("MEMTIER_RC", "").strip()
 BUILD_LABEL = f"{VERSION}-rc.{RC}" if RC else VERSION
+# The version Operations DISPLAYS. A fourth numeric field carries the build, so builds differ in
+# the version column itself (feedback 2026-10-22: "append a 2.2.0-6.rc6 if possible"). Letters
+# are avoided -- Operations' own paks use all-numeric versions such as 9.1.1.0.25679832, and a
+# letter is the untested case. version.txt keeps the three-part X.Y.Z it has always carried.
+# 2.2.0-rc.3 is the first build to ship this: if it installs and shows 2.2.0.3, keep it.
+MANIFEST_VERSION = f"{VERSION}.{RC}" if RC else VERSION
 DESCRIPTION = (f"Build {BUILD_LABEL}. Sizes a vSphere estate for NVMe memory tiering from metrics "
                "the vCenter adapter already collects, plus an adapter that reads the settings "
                "which pin VM memory to DRAM. Includes an Export for MTAT dashboard. "
@@ -60,7 +66,7 @@ MANIFEST = {
     "display_name": "DISPLAY_NAME",
     "name": PAK_NAME,
     "description": "DESCRIPTION",
-    "version": VERSION,
+    "version": MANIFEST_VERSION,
     "vcops_minimum_version": "8.10.0",      # proven to install on 9.1.1; below the 8.18 target
     "disk_space_required": 10,
     "run_scripts_on_all_nodes": "true",
@@ -399,7 +405,12 @@ def main():
         problems.append("manifest adapter_kinds must name the schema-only kind")
     for name, data in members.items():
         if name.endswith((".json", ".txt", ".properties")):
-            hit = NAME_AUDIT.search(data.decode())
+            text = data.decode()
+            if name == "manifest.txt":
+                # The four-part version (2.2.0.3) has an IP address's shape. Exempt exactly that
+                # one value, so the audit still sees everything else in the manifest.
+                text = text.replace(f'"version": "{MANIFEST_VERSION}"', '"version": ""')
+            hit = NAME_AUDIT.search(text)
             if hit:
                 problems.append(f"{name}: instance name / domain / IP found: {hit.group(0)!r}")
     # The three shapes that installed with a clean log and registered nothing (LESSONS 4.12):

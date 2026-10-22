@@ -218,6 +218,23 @@
                             </Item>
                         </List>
                     </Property>
+                    <Property name="summaryInfos">
+                        <List>
+                            <Item>
+                                <Value>
+                                    <Property name="displayName" value="Total" />
+                                    <Property name="aggregation" value="SUM" />
+                                    <Property name="attributeIndexes">
+                                        <List>
+                                        <Item value="1" />
+                                        <Item value="2" />
+                                        <Item value="3" />
+                                        </List>
+                                    </Property>
+                                </Value>
+                            </Item>
+                        </List>
+                    </Property>
                 </Control>
                 <Control id="pagination-control_id_722" type="pagination-control" visible="true">
                     <Property name="start" value="0" />

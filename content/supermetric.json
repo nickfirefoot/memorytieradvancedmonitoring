@@ -49,8 +49,8 @@
  },
  "5e22168f-6b00-5ed2-8331-b81d01605604": {
   "name": "MemTier Tierable of Used (GB)",
-  "formula": "(((sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|consumed_average, depth=1}) - sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1})) / 2) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
-  "description": "Cold memory currently backed in DRAM, halved for conservatism. Blank means the active metric is missing, not that everything is cold. Consumed minus active, in that order -- active is the working set within consumed.",
+  "formula": "(((sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|consumed_average, depth=1}) - (sum(${adaptertype=VMWARE, objecttype=ClusterComputeResource, metric=summary|total_number_hosts, depth=0}) * 20971520) - sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1})) / 2) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
+  "description": "Cold memory currently backed in DRAM, halved for conservatism. Blank means the active metric is missing, not that everything is cold. Consumed minus active, in that order -- active is the working set within consumed. Includes 20 GB per host reserved for vSAN, NSX and the hypervisor: resident, never tierable, and not part of active memory.",
   "unitId": "gb",
   "resourceKinds": [
    {
@@ -169,8 +169,8 @@
  },
  "374b9a22-2ab1-5275-8638-3ecc2df62629": {
   "name": "MemTier RAM Saved at Floor (GB)",
-  "formula": "((sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) - sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1})) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
-  "description": "allocated - peak active. RAM you would NOT have to buy if this cluster were tiered and DRAM sized to the working set. Read with the Maximum transformation over a full business cycle; blank means the active metric is missing.",
+  "formula": "((sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) - (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) + (sum(${adaptertype=VMWARE, objecttype=ClusterComputeResource, metric=summary|total_number_hosts, depth=0}) * 20971520))) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
+  "description": "allocated - peak active. RAM you would NOT have to buy if this cluster were tiered and DRAM sized to the working set. Read with the Maximum transformation over a full business cycle; blank means the active metric is missing. Includes 20 GB per host reserved for vSAN, NSX and the hypervisor: resident, never tierable, and not part of active memory.",
   "unitId": "gb",
   "resourceKinds": [
    {
@@ -181,8 +181,8 @@
  },
  "3222e9d7-fdfa-5723-b6a3-5b84cafb0cdf": {
   "name": "MemTier RAM Saved Conservative (GB)",
-  "formula": "((sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) - (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) * 4.0)) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
-  "description": "allocated - (4 x peak active). The saving with the planning factor applied rather than the floor. Negative means the conservative DRAM figure exceeds what is allocated today, i.e. tiering saves nothing at this factor.",
+  "formula": "((sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) - ((sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) * 4.0) + (sum(${adaptertype=VMWARE, objecttype=ClusterComputeResource, metric=summary|total_number_hosts, depth=0}) * 20971520))) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
+  "description": "allocated - (4 x peak active). The saving with the planning factor applied rather than the floor. Negative means the conservative DRAM figure exceeds what is allocated today, i.e. tiering saves nothing at this factor. Includes 20 GB per host reserved for vSAN, NSX and the hypervisor: resident, never tierable, and not part of active memory.",
   "unitId": "gb",
   "resourceKinds": [
    {
@@ -193,8 +193,8 @@
  },
  "0f9d8553-db55-5dad-85d3-398ddc38807a": {
   "name": "MemTier Retrofit Headroom (GB)",
-  "formula": "((sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|host_provisioned, depth=1}) - sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1})) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
-  "description": "Installed DRAM minus peak active. POSITIVE means the working set already fits the DRAM you own, so this cluster can be tiered by adding NVMe alone, with no DRAM purchase. Negative means it cannot, whatever NVMe is added.",
+  "formula": "((sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|host_provisioned, depth=1}) - (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) + (sum(${adaptertype=VMWARE, objecttype=ClusterComputeResource, metric=summary|total_number_hosts, depth=0}) * 20971520))) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
+  "description": "Installed DRAM minus peak active. POSITIVE means the working set already fits the DRAM you own, so this cluster can be tiered by adding NVMe alone, with no DRAM purchase. Negative means it cannot, whatever NVMe is added. Includes 20 GB per host reserved for vSAN, NSX and the hypervisor: resident, never tierable, and not part of active memory.",
   "unitId": "gb",
   "resourceKinds": [
    {
@@ -217,8 +217,8 @@
  },
  "725d2aa5-8113-5cd0-a446-e488a842e6d2": {
   "name": "MemTier NVMe per Host (GB)",
-  "formula": "(((sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) - sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1})) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576) / sum(${adaptertype=VMWARE, objecttype=ClusterComputeResource, metric=summary|total_number_hosts, depth=0})",
-  "description": "NVMe tier each host would carry at the DRAM floor. COMPARE AGAINST 4096 GB: above that the tier exceeds the per-host kernel and partition limit and the design is not buildable, whatever the cluster total says. Reduce the ratio or add hosts.",
+  "formula": "(((sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) - (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) + (sum(${adaptertype=VMWARE, objecttype=ClusterComputeResource, metric=summary|total_number_hosts, depth=0}) * 20971520))) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576) / sum(${adaptertype=VMWARE, objecttype=ClusterComputeResource, metric=summary|total_number_hosts, depth=0})",
+  "description": "NVMe tier each host would carry at the DRAM floor. COMPARE AGAINST 4096 GB: above that the tier exceeds the per-host kernel and partition limit and the design is not buildable, whatever the cluster total says. Reduce the ratio or add hosts. Includes 20 GB per host reserved for vSAN, NSX and the hypervisor: resident, never tierable, and not part of active memory.",
   "unitId": "gb",
   "resourceKinds": [
    {
@@ -253,8 +253,8 @@
  },
  "a1343c53-30ca-5c1c-a5e6-0b23dc8429a9": {
   "name": "MemTier DRAM Required Floor (GB)",
-  "formula": "(sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
-  "description": "AGGRESSIVE. DRAM sized to the working set and nothing more: at peak, every page the guests are actually touching fits in DRAM and all cold memory lives on NVMe. Blank means the active metric is missing, NOT that no DRAM is needed. This is a floor, not a recommendation -- there is no margin for growth, for a working set that moves, or for active memory being an ESXi estimate rather than a measurement. Read it with the Maximum transformation over 30 days.",
+  "formula": "((sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) + (sum(${adaptertype=VMWARE, objecttype=ClusterComputeResource, metric=summary|total_number_hosts, depth=0}) * 20971520)) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
+  "description": "AGGRESSIVE. DRAM sized to the working set and nothing more: at peak, every page the guests are actually touching fits in DRAM and all cold memory lives on NVMe. Blank means the active metric is missing, NOT that no DRAM is needed. This is a floor, not a recommendation -- there is no margin for growth, for a working set that moves, or for active memory being an ESXi estimate rather than a measurement. Read it with the Maximum transformation over 30 days. Includes 20 GB per host reserved for vSAN, NSX and the hypervisor: resident, never tierable, and not part of active memory.",
   "unitId": "gb",
   "resourceKinds": [
    {
@@ -265,8 +265,8 @@
  },
  "e58afed0-71aa-5eb4-aacd-52816d86aa0a": {
   "name": "MemTier DRAM Required Conservative (GB)",
-  "formula": "(sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) * 4.0 * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
-  "description": "CONSERVATIVE. 4x the working set, so DRAM holds the active set with 4x headroom for growth and for the working set shifting. Starting point for planning, not a final answer -- tune the factor once real peaks are in hand. Read it with the Maximum transformation over 30 days.",
+  "formula": "(((sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) * 4.0) + (sum(${adaptertype=VMWARE, objecttype=ClusterComputeResource, metric=summary|total_number_hosts, depth=0}) * 20971520)) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
+  "description": "CONSERVATIVE. 4x the working set, so DRAM holds the active set with 4x headroom for growth and for the working set shifting. Starting point for planning, not a final answer -- tune the factor once real peaks are in hand. Read it with the Maximum transformation over 30 days. Includes 20 GB per host reserved for vSAN, NSX and the hypervisor: resident, never tierable, and not part of active memory.",
   "unitId": "gb",
   "resourceKinds": [
    {
@@ -277,8 +277,8 @@
  },
  "8f08be08-04f3-5011-a29c-b4ba4a791ddf": {
   "name": "MemTier NVMe Required at Floor (GB)",
-  "formula": "((sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) - sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1})) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
-  "description": "Allocated memory that would sit on NVMe if DRAM were sized to the floor. Negative means the working set already exceeds what is allocated -- investigate before sizing anything on it.",
+  "formula": "((sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2}) - (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) + (sum(${adaptertype=VMWARE, objecttype=ClusterComputeResource, metric=summary|total_number_hosts, depth=0}) * 20971520))) * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))) / 1048576",
+  "description": "Allocated memory that would sit on NVMe if DRAM were sized to the floor. Negative means the working set already exceeds what is allocated -- investigate before sizing anything on it. Includes 20 GB per host reserved for vSAN, NSX and the hypervisor: resident, never tierable, and not part of active memory.",
   "unitId": "gb",
   "resourceKinds": [
    {
@@ -289,8 +289,8 @@
  },
  "d2f53553-4799-5bfa-9839-d377b6eb64a8": {
   "name": "MemTier Implied DRAM Share at Floor (%)",
-  "formula": "(sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2})) * 100 * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))",
-  "description": "DRAM as a share of presented memory at the floor. Compare against the supported ratios: 50% is 1:1, 33% is 1:2, 20% is 1:4. Below 20% the workload is cold enough that the platform's maximum ratio, not the workload, is the limit.",
+  "formula": "((sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) + (sum(${adaptertype=VMWARE, objecttype=ClusterComputeResource, metric=summary|total_number_hosts, depth=0}) * 20971520)) / sum(${adaptertype=VMWARE, objecttype=VirtualMachine, metric=mem|guest_provisioned, depth=2})) * 100 * (sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}) / sum(${adaptertype=VMWARE, objecttype=HostSystem, metric=mem|active_average, depth=1}))",
+  "description": "DRAM as a share of presented memory at the floor. Compare against the supported ratios: 50% is 1:1, 33% is 1:2, 20% is 1:4. Below 20% the workload is cold enough that the platform's maximum ratio, not the workload, is the limit. Includes 20 GB per host reserved for vSAN, NSX and the hypervisor: resident, never tierable, and not part of active memory.",
   "unitId": "percent",
   "resourceKinds": [
    {
