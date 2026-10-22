@@ -619,8 +619,13 @@ def roll(kind, key, depth):
 
 def build_supermetrics():
     KB_PER_GB = 1048576
-    host_avail = roll(HOST, "mem|host_provisioned", 1)
-    host_active = roll(HOST, "mem|active_average", 1)
+    host_avail = roll(CLUSTER, "mem|host_provisioned", 0)
+    # The CLUSTER's own metrics, not a sum over hosts (feedback 2026-10-22): a VM's working set
+    # shows on whichever host it lands, so vMotion and maintenance mode move it between hosts,
+    # and the cluster figure is the one that is the cluster's simultaneous total by definition.
+    # On the lab the two agree exactly (186.79 GB at the 30-day peak); this also reads one value
+    # per cluster instead of rolling up every host each cycle.
+    host_active = roll(CLUSTER, "mem|active_average", 0)
     # --- finding E: a zero or missing `active` must not produce a confident wrong answer ------
     # Every sizing output below is derived from active, so a cluster whose active metric is
     # absent or reads zero yields "this cluster needs no DRAM" -- the cheapest possible buy,
@@ -639,7 +644,7 @@ def build_supermetrics():
     floor_kb = f"({host_active} + {reserve})"
     cons_kb = f"(({host_active} * {CONSERVATIVE_FACTOR}) + {reserve})"
 
-    host_consumed = roll(HOST, "mem|consumed_average", 1)
+    host_consumed = roll(CLUSTER, "mem|consumed_average", 0)
     vm_alloc = roll(VM, "mem|guest_provisioned", 2)
     out = {}
     for k, v in [
@@ -792,10 +797,14 @@ def build_supermetrics():
         # smaller number, extra presented memory buys nothing until CPU is addressed. If
         # memory is the smaller number, tiering is pointed at the real constraint.
         sm(f"{PREFIX} CPU Headroom (%)",
-           f"100 - {roll(HOST, 'cpu|usage_average', 1)} / "
-           f"({roll(HOST, 'cpu|usage_average', 1)} / {roll(HOST, 'cpu|usage_average', 1)})",
+           # The CLUSTER's CPU utilisation. The old formula subtracted the SUM of every host's
+           # percentage from 100 -- four hosts at 40% read -60% headroom. The guard keeps a
+           # missing metric blank rather than reading as 100% headroom.
+           f"(100 - {roll(CLUSTER, 'cpu|capacity_usagepct_average', 0)}) * "
+           f"({roll(CLUSTER, 'cpu|capacity_usagepct_average', 0)} / "
+           f"{roll(CLUSTER, 'cpu|capacity_usagepct_average', 0)})",
            CLUSTER, "percent",
-           "100 - CPU utilisation, as a cluster rollup. Compare against Active of Host RAM: "
+           "100 - the cluster's CPU utilisation. Compare against Active of Host RAM: "
            "the SMALLER headroom is the constraint that binds consolidation first. Tiering only "
            "pays where memory binds before CPU. Blank means the CPU metric is missing."),
         # --- DRAM sizing: a floor and a conservative number -----------------------------

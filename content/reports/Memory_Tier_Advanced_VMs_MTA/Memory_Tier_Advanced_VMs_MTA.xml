@@ -337,8 +337,6 @@
                                     <Property name="attributeIndexes">
                                         <List>
                                         <Item value="1" />
-                                        <Item value="2" />
-                                        <Item value="3" />
                                         <Item value="4" />
                                         </List>
                                     </Property>

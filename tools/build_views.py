@@ -247,10 +247,13 @@ VM_POWERED_ON = ('[[{"filterType":"properties","metricKey":"summary|runtime|powe
 # Per-view options beyond (title, kind, seed, columns). Kept apart so VIEWS stays a 4-tuple
 # list -- build_content.py unpacks it to derive GUIDs.
 VIEW_OPTS = {
-    # Totals on the memory columns (feedback 2026-10-22: "missing sums on the hosts, and the
-    # vms"). Indexes are positions in the view's column list; asserted in main().
-    HOSTS: {"totals": [1, 2, 3]},          # Presented, Consumed (max), Active (max)
-    VMS: {"totals": [1, 2, 3, 4]},         # Configured, Active (max), Consumed (max), Reserved
+    # Totals ONLY on additive, static columns (feedback 2026-10-22). Never on a peak: a VM's
+    # active memory shows on whichever host it lands, so vMotion and maintenance mode count the
+    # same working set on two hosts' peaks, and a sum of per-host or per-VM peaks is a moment that
+    # never happened. The cluster's own simultaneous peak is the cluster-level metric, shown in
+    # the overview and sizing detail. Indexes are column positions; asserted in main().
+    HOSTS: {"totals": [1]},                # Presented memory
+    VMS: {"totals": [1, 4]},               # Configured, Reserved (used)
     MTAT_CLUSTERS: {"days": 30},
     MTAT_HOSTS: {"days": 30, "hide_name": True, "page": 1000},
     MTAT_VMS: {"days": 30, "hide_name": True, "page": 1000, "filter_json": VM_POWERED_ON},
@@ -446,9 +449,10 @@ def main():
         import re as _re
         labels = [_re.search(r'displayName" value="([^"]+)"', c).group(1) for c in cols]
         summed = [labels[i] for i in tot]
-        if not all(("GB" in l or "max" in l or l in ("Presented memory", "Configured", "Reserved (used)"))
-                   for l in summed):
-            print(f"FAILED: {title} totals cover non-memory columns: {summed}", file=sys.stderr)
+        peaks = [l for l in summed if "(max)" in l or "peak" in l.lower() or "(avg)" in l]
+        if peaks:
+            print(f"FAILED: {title} totals a peak or average, which double-counts across hosts "
+                  f"during vMotion: {peaks}", file=sys.stderr)
             return 1
         print(f"   totals on {title}: {summed}")
     for prob in mtat_contract_problems():
