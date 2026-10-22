@@ -324,8 +324,10 @@ VIEWS = [
         # tolerates it declared as a metric column -- nothing says 8.18 does. Identical values
         # on all four lab hosts (2026-10-21), and host_provisioned is a metric on every version.
         column("mem|host_provisioned", "Physical_RAM", HOST, unit="gb"),
-        # Peak, not MTAT's average: hosts are sized on consumed, and an average undersizes.
-        column("mem|consumed_average", "Consumed_GB", HOST, transform="MAX", unit="gb"),
+        # AVERAGE, exactly as MTAT computes it (MTAT_v3_1.ps1 line 3574). The export follows
+        # MTAT's own definition of every column (feedback 2026-10-22: "mtat must line up
+        # perfect"); only the samples differ, 5-minute rather than vCenter's 2-hour rollups.
+        column("mem|consumed_average", "Consumed_GB", HOST, transform="AVG", unit="gb"),
         # The host's own 30-day active peak, a built-in metric. 2.1.3 exported a super metric
         # here (the cluster's simultaneous peak shared per host) and it read "-" whenever the
         # super metrics were not enabled in policy -- which MTAT parses as ZERO, a cluster with
@@ -342,6 +344,43 @@ VIEWS = [
         column("mem|active_average", "Active_GB", VM, transform="MAX", unit="gb"),
     ]),
 ]
+
+
+# The MTAT export's contract: each column as MTAT v3.1 defines it. A change here is a change to
+# what MTAT is told, so the build fails unless the views match this table exactly.
+MTAT_CONTRACT = {
+    MTAT_HOSTS: {
+        "Cluster": ("summary|parentCluster", "CURRENT", ""),
+        "HostName": ("config|name", "CURRENT", ""),
+        "Physical_RAM": ("mem|host_provisioned", "CURRENT", "gb"),   # Hardware.MemorySize / 1GB
+        "Consumed_GB": ("mem|consumed_average", "AVG", "gb"),       # line 3574: Average
+        "Active_GB": ("mem|active_average", "MAX", "gb"),           # line 3573: Maximum
+        "CPU_Pct": ("cpu|usage_average", "AVG", "percent"),         # line 3568: Average
+    },
+    MTAT_VMS: {
+        "Host": ("summary|parentHost", "CURRENT", ""),
+        "VMName": ("config|name", "CURRENT", ""),
+        "Provisioned_GB": ("mem|guest_provisioned", "CURRENT", "gb"),  # vm.MemoryGB
+        "Active_GB": ("mem|active_average", "MAX", "gb"),              # line 3590: Maximum
+    },
+}
+
+
+def mtat_contract_problems():
+    import re as _re
+    problems = []
+    for title, kind, seed, cols in VIEWS:
+        if title not in MTAT_CONTRACT:
+            continue
+        got = {}
+        for c in cols:
+            p = dict(_re.findall(r'<Property name="(\w+)" value="([^"]*)"', c))
+            t = _re.findall(r'<Item value="(\w+)"', c)
+            got[p["displayName"]] = (p["attributeKey"], t[0] if t else "", p["preferredUnitId"])
+        if got != MTAT_CONTRACT[title]:
+            problems.append(f"{title}: export no longer matches MTAT's definitions: "
+                            f"{sorted(set(got.items()) ^ set(MTAT_CONTRACT[title].items()))}")
+    return problems
 
 
 def main():
@@ -365,6 +404,9 @@ def main():
         print(f"   {len(xml):>6} B  {os.path.relpath(path, HERE)}")
         print(f"            guid {guid_for(title)}  subject {kind}  {len(cols)} column(s)")
 
+    for prob in mtat_contract_problems():
+        print("FAILED:", prob, file=sys.stderr)
+        return 1
     # Fail loudly on the one mistake that silently breaks every dashboard binding.
     if len(set(manifest.values())) != len(manifest):
         print("FAILED: two views share a GUID", file=sys.stderr)

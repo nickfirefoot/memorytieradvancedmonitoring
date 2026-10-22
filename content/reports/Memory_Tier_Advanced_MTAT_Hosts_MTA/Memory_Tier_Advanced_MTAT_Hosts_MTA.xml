@@ -96,7 +96,7 @@
                                     <Property name="rollUpCount" value="0" />
                                     <Property name="transformations">
                                         <List>
-                                            <Item value="MAX" />
+                                            <Item value="AVG" />
                                         </List>
                                     </Property>
                                     <Property name="sortCriteria" value="false" />
