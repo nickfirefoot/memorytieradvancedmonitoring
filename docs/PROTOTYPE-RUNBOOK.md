@@ -63,7 +63,9 @@ Both are fixed in the working tree. **Neither is committed**: see step 1.
 6. **Check what landed**: `python3 ~/memory-tiering/probes/p43_pak_install_check.py`.
    Lines 1–3 should pass now; 4–6 need the next step.
 7. **Create an adapter instance**: vCenter FQDN, a read-only account, certificate
-   verification off. The first collection should give 30 VMs (3 pinned, all
+   verification off. **Then press Start Collecting**; after a pak install the instance can sit
+   at FAILED until you do, with no message saying why. The cloud proxy needs to reach both
+   `ghcr.io` and `pkg-containers.githubusercontent.com` to pull the image. The first collection should give 30 VMs (3 pinned, all
    `fully reserved`) and 4 hosts on the lab. Re-run p43: all six lines should pass.
 8. **Enable the `MemTier` super metrics** in the active policy, then wait two collection
    cycles.

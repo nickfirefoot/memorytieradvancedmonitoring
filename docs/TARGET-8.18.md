@@ -44,3 +44,25 @@ there.
 | 16 | MTAT | MTAT needs PowerCLI and a vCenter connection even to import | the export flow needs both on the user's machine | documented on the dashboard |
 
 Anything that turns up here on the lab becomes a row, with what was run and what came back.
+
+## Platform behaviour to plan for (from the vSAN pack, rc.4 to rc.12, 2026-10-23)
+
+- **Content and image install separately, and fail separately.** The pak lands dashboards, views
+  and super metrics with no network access; the adapter **image** is pulled by the cloud proxy, by
+  digest, on first collection. "The dashboards appeared" proves nothing about the image.
+- **After a pak install the adapter instance can sit at FAILED / grey until someone presses
+  Start Collecting.** The install steps must say so.
+- **An upgrade can leave the old adapter container running**, still polling vCenter with its old
+  credentials while Operations shows the instance FAILED. Check on the cloud proxy:
+  `docker ps --filter name=dockerized_adapter_MemTierAdvanced` should list exactly one container.
+  Unverified for this pack: no instance has existed yet (none found on 2026-10-23).
+- **A failed adapter reports nothing in Operations** (`statusMessage` is empty); the reason is only
+  in the adapter log inside the cloud proxy support bundle.
+- **Egress: `ghcr.io` alone is not enough.** GHCR redirects every image layer to
+  `pkg-containers.githubusercontent.com`; a proxy that allowlists only `ghcr.io` fails silently,
+  partway through the pull.
+- **Properties are not metrics.** A property has no time series and never appears in
+  `/stats/latest`; a column declared as a metric for a property reads blank. (Already hit and
+  fixed here: `hardware|memorySize`.)
+- **Always-zero is not always broken.** On the lab, `cpu|percentage_of_vms_facing_cpu_ready` and
+  `summary|undersized|memory` have been 0 for 30 days, which is healthy here. Report these, never fail them.
