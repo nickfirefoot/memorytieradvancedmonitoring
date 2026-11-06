@@ -69,25 +69,47 @@ blank, never zero. If the calculator can't match a cluster to any VMs, it says s
 
 ## 3. What the views contain
 
-**MemTier 8.18 Cluster Sizing Inputs** has one row per cluster, over the last 30 days:
+Three views, all native vCenter metrics, all checked on 8.18.7. Every column is explained in the
+dashboard's **"What every column means"** panel.
 
-| Column | Metric (8.18 name) | Transformation |
-|---|---|---|
-| Hosts | Summary \| Total Number of Hosts | current |
-| Installed GB | Memory \| Total Capacity | current |
-| Active peak GB | Memory \| Guest Active | maximum |
-| Active avg GB | Memory \| Guest Active | average |
-| Consumed avg GB | Memory \| Consumed | average |
-| Consumed peak GB | Memory \| Consumed | maximum |
-| CPU avg % | CPU \| Capacity Usage | average |
-| CPU peak % | CPU \| Capacity Usage | maximum |
+- **MemTier 8.18 Cluster Sizing Inputs**, 27 columns, one row per cluster:
+  - host and VM counts
+  - installed GB and GB available to VMs
+  - **Guest Active total**: now, peak, **P95** and average
+  - vMotion and DRS vMotion counts
+  - consumed memory, peak and average
+  - memory usage %
+  - worst VM memory contention
+  - **balloon, swap-in and swap-out rates, compressed**: memory already short today
+  - VM overhead
+  - CPU average and peak %, MHz used and demanded, CPU ready
+- **MemTier 8.18 Hosts**, 16 columns: the same per host, including MTAT's host inputs with MTAT's
+  own definitions (Installed, Consumed avg, Active peak, CPU avg). Total row: installed GB.
+- **MemTier 8.18 VM Allocation Powered On**, 25 columns:
+  - cluster, host, VM, guest OS
+  - vCPUs and configured GB, for spotting monster VMs (512 GB+ or 128+ vCPUs)
+  - Guest Active peak and Non Zero Active peak
+  - consumed memory
+  - reservation and limit, Fault Tolerance, PCI passthrough: the exclusions Operations can see
+  - swapped, swap-in rate, compressed, guest page-out
+  - oversized and undersized, and 20-second contention and CPU peaks
 
-**MemTier 8.18 VM Allocation Powered On** has one row per powered-on VM, with its cluster and
-configured GB (Memory | Total Capacity), plus a **Total** row. Powered-off VMs and templates are
-excluded because they still report configured memory, which inflates allocated by about 20%.
+  Total rows: configured GB and reserved GB.
 
-The active peak comes from the **cluster** metric. Per-VM Guest Active is **not collected by
-default on 8.18** (Broadcom KB 445499), so a per-VM active column would be blank.
+**Two columns need the policy turned on**, because 8.18 doesn't collect them by default:
+- per-VM **Memory | Guest Active**
+- **Configuration | Security | PCI PassThrough**
+
+To turn them on, edit the active policy, open **Collect Metrics and Properties**, filter for each,
+and set it to **Activate**. Their history starts from that point. Until then, use the cluster
+Guest Active total and per-VM Non Zero Active.
+
+**vMotion spikes:** during vMotion and maintenance mode, a VM's working set can count on two hosts
+at once. If the Active peak sits well above Active P95 and the vMotion columns are non-zero, size
+on P95 and say so.
+
+**Not visible to Operations** (check in vCenter): latency sensitivity, SEV / SGX / TDX, nested
+virtualisation, and 1 GB huge-page backing.
 
 ## 4. The sizing
 
@@ -98,7 +120,8 @@ cluster's powered-on VMs.
 | Figure | Formula | Read it as |
 |---|---|---|
 | Reserve | H × 20 | Allows 20 GB per host for vSAN, NSX and the hypervisor; never tierable. Adjust if the cluster has no vSAN or NSX. |
-| **DRAM required, floor** | A + Reserve | Aggressive: DRAM sized to the peak working set, no margin. |
+| **DRAM recommended (VMware)** | 2 × A + Reserve | VMware's rule: active memory at or under 50% of DRAM. Use this one. |
+| DRAM required, floor | A + Reserve | Absolute minimum, below VMware's guidance. |
 | **DRAM required, conservative** | 4 × A + Reserve | The planning figure. |
 | NVMe needed = RAM saved at floor | V − (A + Reserve) | Negative means investigate before sizing. |
 | RAM saved, conservative | V − (4 × A + Reserve) | Negative means no saving at this factor. |

@@ -19,6 +19,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_target import Ops, env  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# Keys used on purpose although 8.18 does not collect them by default; the manual has the step.
+NEEDS_POLICY = {("VirtualMachine", "mem|active_average"),
+                ("VirtualMachine", "config|security|pci_device_configured")}
 XML = os.path.join(HERE, "build", "818", "MemTier_818_Views.xml")
 
 
@@ -65,7 +68,9 @@ def main():
         what, attr = hit
         dm = attr.get("defaultMonitored")
         flag = "OK  " if dm in (True, None) and (what == "properties") == prop else "WARN"
-        if flag == "WARN":
+        if flag == "WARN" and (kind, key) in NEEDS_POLICY:
+            flag = "POL "   # deliberately used; the manual says to enable it
+        if flag.strip() == "WARN":
             bad += 1
         print(f"   {flag}  {kind:24s} {key:34s} {what[:-1] if what.endswith('s') else what:9s} "
               f"name={attr.get('name')!r} unit={attr.get('unit')!r} defaultMonitored={dm}  ({use})")

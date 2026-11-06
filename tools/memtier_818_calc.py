@@ -51,14 +51,19 @@ def size(c, v, reserve_per_host):
             return None
     res = f(lambda: h * reserve_per_host)
     floor = f(lambda: a + res)
+    # VMware's published rule: active memory at or under 50% of DRAM, i.e. DRAM >= 2 x active.
+    vmw = f(lambda: 2 * a + res)
     cons_dram = f(lambda: 4 * a + res)
     nvme = f(lambda: v - floor)
     return {
         "Hosts": h, "Installed GB": i, "Allocated GB (powered on)": v, "Active peak GB": a,
         "Reserve GB": res,
-        "DRAM floor GB": floor,
+        "DRAM floor GB (1x active, below VMware guidance)": floor,
+        "DRAM recommended GB (VMware 50% rule, 2x active)": vmw,
+        "Active within 50% of installed DRAM today": f(lambda: "yes" if a <= 0.5 * i else "NO"),
         "DRAM conservative GB": cons_dram,
         "NVMe needed / RAM saved at floor GB": nvme,
+        "NVMe needed at VMware rule GB": f(lambda: v - vmw),
         "RAM saved conservative GB": f(lambda: v - cons_dram),
         "NVMe per host GB": f(lambda: nvme / h),
         "NVMe per host within 4096": f(lambda: "yes" if nvme / h <= PER_HOST_NVME_LIMIT_GB else "NO"),
