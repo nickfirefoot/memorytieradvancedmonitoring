@@ -152,6 +152,13 @@ VIEWS = [
         column("cpu|iowaitPct", "IO wait avg %", VM, transform="AVG", unit="percent"),
         column("cpu|20_sec_peak_iowaitPct", "IO wait 20s peak %", VM, transform="MAX", unit="percent"),
         column("cpu|swapwaitPct", "Swap wait peak %", VM, transform="MAX", unit="percent"),
+        # Which storage the IO wait is on. VIRTUAL DISK counters, not Datastore ones: they are
+        # measured in the VMkernel storage stack, so they report the same on vSAN, VMFS (FC/iSCSI),
+        # NFS and vVols. Lab 2026-11-07: virtualDisk peaks on 20/20 VMs (vSAN + NFS); Datastore
+        # latency on 11/20 -- vSAN VMs report none.
+        column("virtualDisk|peak_vDisk_readLatency", "Worst disk read latency peak ms", VM, transform="MAX", unit=""),
+        column("virtualDisk|peak_vDisk_writeLatency", "Worst disk write latency peak ms", VM, transform="MAX", unit=""),
+        column("virtualDisk|20_sec_peak_totalLatency_average", "Disk latency 20s peak ms", VM, transform="MAX", unit=""),
     ], {"filter_json": VM_POWERED_ON, "totals": [5, 9], "page": 1000}),
 ]
 
@@ -258,7 +265,12 @@ visible here; check them by hand.<br>
 <b {B}>Oversized / Undersized by</b>: Operations' right-sizing view of the VM.<br>
 <b {B}>Mem contention / CPU ready 20s peak, CPU co-stop</b>: the worst moment inside a collection cycle.<br>
 <b {B}>IO wait avg / 20s peak, Swap wait</b>: this VM stalled on IO, or on swapped memory. A VM with high
-IO wait looks CPU-busy from inside the guest without using the CPU.</p>
+IO wait looks CPU-busy from inside the guest without using the CPU.<br>
+<b {B}>Worst disk read / write latency, Disk latency 20s peak</b>: the slowest of this VM's virtual disks.
+These are measured in ESXi's storage stack, so they read the same on vSAN, VMFS (FC or iSCSI), NFS and
+vVols; datastore-level latency is not reported for vSAN VMs. High IO wait with high disk latency: the
+wait is storage, so open the VM's Metrics page to see which disk and datastore. High IO wait with low
+disk latency: it is most likely network.</p>
 
 <h4 {H}>The sizing</h4>
 <p {P}>Per cluster, A = Active peak (or P95, see above), H = Running hosts, V = VM Total configured GB, I = Installed GB.

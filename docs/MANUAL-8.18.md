@@ -137,6 +137,8 @@ dashboard's **"What every column means"** panel.
   - consumed memory
   - reservation and limit, PCI passthrough: the exclusions Operations can see
   - swapped, swap-in rate, compressed, guest page-out
+  - IO wait and swap wait, and worst virtual-disk read/write latency (the same on vSAN, VMFS, NFS and
+    vVols), to tell storage-bound IO wait from network
   - oversized and undersized, and 20-second contention and CPU peaks
 
   Total rows: configured GB and reserved GB.
