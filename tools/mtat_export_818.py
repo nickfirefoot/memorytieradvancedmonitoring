@@ -214,6 +214,12 @@ def main():
         batch += rows
         print(f"   {name:40s} {cl or '(no cluster)':24s} {len(rows):6d} rows")
     flush()
+    if len(files) > 1 and files[0][0] == out:
+        # A split happened after the first file was written under the plain name: number it too,
+        # so nobody imports "the" file and misses the rest.
+        first = f"{stem} part 1{ext}"
+        os.replace(out, first)
+        files[0] = (first, files[0][1])
     for f, n in files:
         print(f"wrote {f} ({n} rows)")
     if empty:
