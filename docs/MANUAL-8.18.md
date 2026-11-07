@@ -80,6 +80,38 @@ It prints every figure in section 4 for each cluster and writes them to `sizing.
 `--reserve N` to change the 20 GB per-host reserve. A cell with no data in Operations prints
 blank, never zero. If the calculator can't match a cluster to any VMs, it says so.
 
+## 2b. Export for MTAT (MTAT 3.2 and later)
+
+MTAT 3.2 can import Operations host history directly ("VCF Operations / vROps Host Export"). The
+MTAT repo's *Export from Ops* guide says 3.3 and 4.0 use the same importer.
+
+[`tools/mtat_export_818.py`](../tools/mtat_export_818.py) writes exactly the workbook that
+importer reads: one row per host per 5-minute sample, with every column MTAT uses (Guest
+Active, Consumed, Total Capacity, Capacity Available to VMs, allocated to powered-on VMs, CPU,
+CPU core and cluster). Memory is in raw KB, labelled as such, so MTAT doesn't guess the unit.
+It's read-only, needs only Python 3 (no extra packages), and runs from any laptop that can reach
+Operations. No adapter and no cloud proxy are involved.
+
+```
+python3 mtat_export_818.py --host <ops-host> --user <user> --days 30
+python3 mtat_export_818.py --host <ops-host> --user <user> --days 7   # MTAT can compare the two
+```
+
+It prompts for the password and writes `Host metrics 30 days.xlsx`. On a large estate it splits
+the output into several numbered parts to stay under Excel's row limit.
+
+In MTAT, go to **Offline Import**, choose **VCF Operations / vROps Host Export (.xlsx)**, select
+the file or all its parts, then click **Process Import**. Because the rows are timestamped, MTAT
+gets genuine peaks and averages and its history charts. A one-row-per-host export would give it
+a single value to use as both.
+
+Checked by running MTAT 3.2's own importer code on an export from 8.18.7: all 11 columns were
+recognised, with 0 rows skipped, and the figures reconcile with Operations. MTAT shows decimal GB,
+so Operations' 41.76 GB active peak appears as 44.84 GB.
+
+The export is host-level only, which is all MTAT's Operations importer reads. VM-level checks
+(DRAM-only VMs, page sizes) still come from vCenter.
+
 ## 3. What the views contain
 
 Three views, all native vCenter metrics, all checked on 8.18.7. Every column is explained in the
