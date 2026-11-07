@@ -41,7 +41,9 @@ def allocated_by_cluster(path):
 
 
 def size(c, v, reserve_per_host):
-    h, i, a = num(c.get("Hosts")), num(c.get("Installed GB")), num(c.get("Active peak GB"))
+    # Running hosts first: Installed GB covers only hosts that report memory (2026-11-07 lab).
+    h = num(c.get("Running hosts")) or num(c.get("Hosts"))
+    i, a = num(c.get("Installed GB")), num(c.get("Active peak GB"))
     aavg, cons, cpu = num(c.get("Active avg GB")), num(c.get("Consumed avg GB")), num(c.get("CPU peak %"))
 
     def f(fn):

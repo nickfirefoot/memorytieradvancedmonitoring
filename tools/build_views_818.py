@@ -37,6 +37,12 @@ OUT = os.path.join(HERE, "build", "818")
 
 INPUTS = "MemTier 8.18 Cluster Sizing Inputs"
 HOSTS = "MemTier 8.18 Hosts"
+# Only hosts that carry workload: connected AND not in maintenance. EQUALS, not CONTAINS --
+# "connected" is a substring of "disconnected". Inner list = AND, in the shape 8.18's own views use.
+HOST_RUNNING = ('[[{"condition":"EQUALS","transform":"CURRENT","metricKey":"runtime|connectionState",'
+                '"metricValue":{"isStringMetric":true,"value":"connected"},"filterType":"properties"},'
+                '{"condition":"EQUALS","transform":"CURRENT","metricKey":"runtime|maintenanceState",'
+                '"metricValue":{"isStringMetric":true,"value":"notInMaintenance"},"filterType":"properties"}]]')
 ALLOC = "MemTier 8.18 VM Allocation Powered On"
 
 # Every key below was checked on 8.18.7: declared, and collected by default (verify_818_views.py).
@@ -46,7 +52,11 @@ ALLOC = "MemTier 8.18 VM Allocation Powered On"
 VIEWS = [
     (INPUTS, CLUSTER, 900, [
         column("config|name", "Cluster", CLUSTER, is_property=True, sort=True),
-        column("summary|total_number_hosts", "Hosts", CLUSTER),
+        # Running hosts is the count that matches the capacity: a host that is down or in maintenance
+        # reports no memory, so Installed GB already excludes it (lab, 2026-11-07: 3 running of 4,
+        # Installed = the 3). Size per host on Running hosts; All hosts is context.
+        column("summary|number_running_hosts", "Running hosts", CLUSTER),
+        column("summary|total_number_hosts", "All hosts", CLUSTER),
         column("summary|number_running_vms", "Running VMs", CLUSTER),
         column("summary|total_number_vms", "All VMs", CLUSTER),
         column("mem|host_provisioned", "Installed GB", CLUSTER, unit="gb"),
@@ -99,7 +109,12 @@ VIEWS = [
         column("cpu|usage_average", "CPU peak %", HOST, transform="MAX", unit="percent"),
         column("cpu|usagemhz_average", "CPU used peak MHz", HOST, transform="MAX", unit=""),
         column("cpu|ready_summation", "CPU ready peak ms", HOST, transform="MAX", unit=""),
-    ], {"totals": [3], "page": 500}),
+        # IO wait (vSphere "Other Wait"): vCPUs stalled on storage or network. A high value means
+        # the bottleneck is IO; guest tools count it as busy CPU. Swap Wait is waiting on swapped pages.
+        column("cpu|iowait", "IO wait peak ms", HOST, transform="MAX", unit=""),
+        column("cpu|iowait", "IO wait avg ms", HOST, transform="AVG", unit=""),
+        column("cpu|swapwait_summation", "Swap wait peak ms", HOST, transform="MAX", unit=""),
+    ], {"totals": [3], "page": 500, "filter_json": HOST_RUNNING}),
     # Powered on only: powered-off VMs and templates still report configured memory (~20% of
     # allocated on the lab). Per-VM Guest Active is NOT collected by default on 8.18 (KB 445499),
     # so per-VM active is Non Zero Active, which is. Reservation columns are the native way to
@@ -117,12 +132,11 @@ VIEWS = [
         column("mem|active_average", "Guest Active peak GB (enable in policy)", VM, transform="MAX", unit="gb"),
         column("mem|nonzero_active", "Non Zero Active peak GB", VM, transform="MAX", unit="gb"),
         column("mem|consumed_average", "Consumed peak GB", VM, transform="MAX", unit="gb"),
-        # Exclusions Operations can see: full reservation, Fault Tolerance, PCI passthrough.
+        # Exclusions Operations can see: full reservation, PCI passthrough. (Fault Tolerance columns
+        # dropped 2026-11-07: almost no customer runs FT; it stays in the help text's check list.)
         column("mem|reservation_used", "Reserved used GB", VM, unit="gb"),
         column("config|memoryAllocation|reservation", "Reservation (configured)", VM, is_property=True),
         column("config|memoryAllocation|limit", "Memory limit", VM, is_property=True),
-        column("config|faultTolerant", "Fault Tolerant", VM, is_property=True),
-        column("config|ft_role", "FT role", VM, is_property=True),
         column("config|security|pci_device_configured", "PCI passthrough (enable in policy)", VM, is_property=True),
         # Memory pressure on this VM today.
         column("mem|swapped_average", "Swapped peak GB", VM, transform="MAX", unit="gb"),
@@ -135,6 +149,9 @@ VIEWS = [
         column("cpu|usage_average", "CPU peak %", VM, transform="MAX", unit="percent"),
         column("cpu|20_sec_peak_readyPct", "CPU ready 20s peak %", VM, transform="MAX", unit="percent"),
         column("cpu|costopPct", "CPU co-stop peak %", VM, transform="MAX", unit="percent"),
+        column("cpu|iowaitPct", "IO wait avg %", VM, transform="AVG", unit="percent"),
+        column("cpu|20_sec_peak_iowaitPct", "IO wait 20s peak %", VM, transform="MAX", unit="percent"),
+        column("cpu|swapwaitPct", "Swap wait peak %", VM, transform="MAX", unit="percent"),
     ], {"filter_json": VM_POWERED_ON, "totals": [5, 9], "page": 1000}),
 ]
 
@@ -194,7 +211,9 @@ Metrics chart and plot Memory | Guest Active with Summary | Number of vMotions o
 the peak sits on a vMotion burst or maintenance window, size on P95; otherwise size on the peak.</p>
 
 <h4 {H}>Clusters</h4>
-<p {P}><b {B}>Hosts / Running VMs / All VMs</b>: counts now. All VMs includes powered-off VMs and templates.<br>
+<p {P}><b {B}>Running hosts / All hosts</b>: hosts connected and out of maintenance, and all hosts.
+Installed memory and the sizing use <b {B}>Running hosts</b>: a host that is down or in maintenance
+reports no memory. <b {B}>Running VMs / All VMs</b>: All VMs includes powered-off VMs and templates.<br>
 <b {B}>Installed GB</b> (Memory | Total Capacity): physical DRAM in the cluster's hosts. On a host already
 tiered it would include the NVMe tier; on ESXi 8 it is DRAM.<br>
 <b {B}>Available to VMs GB</b> (Memory | Capacity Available to VMs): installed minus what ESXi keeps for itself.<br>
@@ -214,8 +233,13 @@ cluster is already short of DRAM; tier only after that is understood.<br>
 <b {B}>VMs facing CPU ready %</b>: CPU headroom. Tiering only pays where memory runs out before CPU.</p>
 
 <h4 {H}>Hosts</h4>
-<p {P}>The same memory and CPU columns per host, to spot imbalance: a cluster that only fits because one host is
-nearly empty. <b {B}>CPU ready ms</b> is time VMs waited for a CPU. Total row: installed GB.</p>
+<p {P}>Only hosts that are connected and not in maintenance; a down host would otherwise add a blank row.
+The same memory and CPU columns per host, to spot imbalance: a cluster that only fits because one host is
+nearly empty. <b {B}>CPU ready ms</b> is time VMs waited for a CPU. Total row: installed GB.<br>
+<b {B}>IO wait</b> (vSphere's Other Wait): time vCPUs sat stalled on storage or network IO.
+<b {B}>Swap wait</b>: time spent waiting for swapped-out memory. High IO wait means the workload is
+IO-bound: guest-OS tools report that time as busy CPU, so read CPU figures with it, and tiering memory
+will not fix it.</p>
 
 <h4 {H}>Powered-on VMs</h4>
 <p {P}><b {B}>Configured GB</b> (Memory | Total Capacity): memory given to the VM. The Total row is
@@ -232,10 +256,12 @@ visible here; check them by hand.<br>
 <b {B}>Host / Guest OS / vCPUs</b>: where it runs and what it is; vCPUs and Configured GB identify monster VMs.<br>
 <b {B}>Swapped, Swap-in rate, Compressed, Guest page-out 20s peak</b>: this VM is already short of memory.<br>
 <b {B}>Oversized / Undersized by</b>: Operations' right-sizing view of the VM.<br>
-<b {B}>Mem contention / CPU ready 20s peak, CPU co-stop</b>: the worst moment inside a collection cycle.</p>
+<b {B}>Mem contention / CPU ready 20s peak, CPU co-stop</b>: the worst moment inside a collection cycle.<br>
+<b {B}>IO wait avg / 20s peak, Swap wait</b>: this VM stalled on IO, or on swapped memory. A VM with high
+IO wait looks CPU-busy from inside the guest without using the CPU.</p>
 
 <h4 {H}>The sizing</h4>
-<p {P}>Per cluster, A = Active peak (or P95, see above), H = Hosts, V = VM Total configured GB, I = Installed GB.
+<p {P}>Per cluster, A = Active peak (or P95, see above), H = Running hosts, V = VM Total configured GB, I = Installed GB.
 <b {B}>VMware's rule</b>: active memory should be <b {B}>50% or less of DRAM</b>, so the
 <b {B}>recommended DRAM</b> = 2 &times; A + 20 GB &times; H. <b {B}>Floor</b> (1 &times; A + reserve) is the
 absolute minimum and sits below VMware's guidance. <b {B}>Conservative</b> = 4 &times; A + reserve.
@@ -245,10 +271,9 @@ for vSAN, NSX and the hypervisor. Export the tables (Export as CSV) and <code {C
 prints all of it.</p>
 
 <h4 {H}>Which VMs cannot be tiered</h4>
-<p {P}>From VMware's guidance. <b {B}>Visible here</b>: Fault Tolerance (Fault Tolerant, FT role); full
-memory reservation (Reservation equal to Configured); <b {B}>monster VMs</b>, 512 GB or more configured or
+<p {P}>From VMware's guidance. <b {B}>Visible here</b>: full memory reservation (Reservation equal to Configured); <b {B}>monster VMs</b>, 512 GB or more configured or
 128 or more vCPUs (sort the VM table); PCI passthrough (enable in policy).
-<b {W}>Not visible in Operations</b>, check in vCenter: latency sensitivity High, SEV / SGX / TDX
+<b {W}>Not shown here</b>, check in vCenter: Fault Tolerance (rare), latency sensitivity High, SEV / SGX / TDX
 confidential computing, nested virtualisation, 1 GB huge-page backing.</p>
 
 <h4 {H}>Matches MTAT</h4>

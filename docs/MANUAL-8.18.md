@@ -135,7 +135,7 @@ dashboard's **"What every column means"** panel.
   - vCPUs and configured GB, for spotting monster VMs (512 GB+ or 128+ vCPUs)
   - Guest Active peak and Non Zero Active peak
   - consumed memory
-  - reservation and limit, Fault Tolerance, PCI passthrough: the exclusions Operations can see
+  - reservation and limit, PCI passthrough: the exclusions Operations can see
   - swapped, swap-in rate, compressed, guest page-out
   - oversized and undersized, and 20-second contention and CPU peaks
 
@@ -163,7 +163,7 @@ can lift it by up to the evacuated host's active memory.
 
 The cluster Guest Active is the hosts' active memory, not the sum of the VMs' Guest Active.
 
-**Not visible to Operations** (check in vCenter): latency sensitivity, SEV / SGX / TDX, nested
+**Not shown** (check in vCenter): Fault Tolerance (rare), latency sensitivity, SEV / SGX / TDX, nested
 virtualisation, and 1 GB huge-page backing.
 
 ## 4. The sizing
