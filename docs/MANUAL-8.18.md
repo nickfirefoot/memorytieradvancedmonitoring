@@ -77,7 +77,7 @@ python3 memtier_818_calc.py "MemTier 8.18 Cluster Sizing Inputs.csv" \
 ```
 
 It prints every figure in section 4 for each cluster and writes them to `sizing.csv`. Use
-`--reserve N` to change the 20 GB per-host reserve. A cell with no data in Operations prints
+`--reserve N` to force a flat N GB per host instead of the measured reserve. A cell with no data in Operations prints
 blank, never zero. If the calculator can't match a cluster to any VMs, it says so.
 
 ## 2b. Export for MTAT (MTAT 3.2 and later)
@@ -176,7 +176,7 @@ cluster's powered-on VMs.
 
 | Figure | Formula | Read it as |
 |---|---|---|
-| Reserve | H × 20 | Allows 20 GB per host for vSAN, NSX and the hypervisor; never tierable. Adjust if the cluster has no vSAN or NSX. |
+| Reserve | Installed GB − Available to VMs GB | Memory ESXi keeps for the hypervisor, vSAN and NSX, measured by Operations; never tierable. On the lab it is about 57 GB per host. If the column is missing, 20 GB per host is used. |
 | **DRAM recommended (VMware)** | 2 × A + Reserve | VMware's rule: active memory at or under 50% of DRAM. Use this one. |
 | DRAM required, floor | A + Reserve | Absolute minimum, below VMware's guidance. |
 | **DRAM required, conservative** | 4 × A + Reserve | The planning figure. |

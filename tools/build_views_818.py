@@ -273,13 +273,14 @@ wait is storage, so open the VM's Metrics page to see which disk and datastore. 
 disk latency: it is most likely network.</p>
 
 <h4 {H}>The sizing</h4>
-<p {P}>Per cluster, A = Active peak (or P95, see above), H = Running hosts, V = VM Total configured GB, I = Installed GB.
+<p {P}>Per cluster, A = Active peak (or P95, see above), H = Running hosts, V = VM Total configured GB, I = Installed GB,
+<b {B}>R = reserve</b> = Installed GB &minus; Available to VMs GB: the memory ESXi keeps for the hypervisor, vSAN
+and NSX, measured by Operations, resident and never tierable.
 <b {B}>VMware's rule</b>: active memory should be <b {B}>50% or less of DRAM</b>, so the
-<b {B}>recommended DRAM</b> = 2 &times; A + 20 GB &times; H. <b {B}>Floor</b> (1 &times; A + reserve) is the
-absolute minimum and sits below VMware's guidance. <b {B}>Conservative</b> = 4 &times; A + reserve.
+<b {B}>recommended DRAM</b> = 2 &times; A + R. <b {B}>Floor</b> (1 &times; A + R) is the
+absolute minimum and sits below VMware's guidance. <b {B}>Conservative</b> = 4 &times; A + R.
 <b {B}>NVMe needed</b> = V &minus; DRAM; per host it must stay under <b {B}>4,096 GB</b>.
-<b {B}>Retrofit headroom</b> = I &minus; DRAM: positive means NVMe alone is enough. The 20 GB per host is held
-for vSAN, NSX and the hypervisor. Export the tables (Export as CSV) and <code {C}>memtier_818_calc.py</code>
+<b {B}>Retrofit headroom</b> = I &minus; DRAM: positive means NVMe alone is enough. Export the tables (Export as CSV) and <code {C}>memtier_818_calc.py</code>
 prints all of it.</p>
 
 <h4 {H}>Which VMs cannot be tiered</h4>

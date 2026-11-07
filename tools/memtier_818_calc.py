@@ -44,6 +44,7 @@ def size(c, v, reserve_per_host):
     # Running hosts first: Installed GB covers only hosts that report memory (2026-11-07 lab).
     h = num(c.get("Running hosts")) or num(c.get("Hosts"))
     i, a = num(c.get("Installed GB")), num(c.get("Active peak GB"))
+    avail = num(c.get("Available to VMs GB"))
     aavg, cons, cpu = num(c.get("Active avg GB")), num(c.get("Consumed avg GB")), num(c.get("CPU peak %"))
 
     def f(fn):
@@ -51,7 +52,14 @@ def size(c, v, reserve_per_host):
             return fn()
         except (TypeError, ZeroDivisionError):
             return None
-    res = f(lambda: h * reserve_per_host)
+    # Reserve = memory ESXi keeps for itself (hypervisor, vSAN, NSX), resident and never tierable.
+    # Measured by Operations as Installed - Available to VMs (lab: ~57 GB/host, well above the old
+    # flat 20). A flat per-host figure is used only if the column is missing or --reserve is given.
+    if reserve_per_host is None and i is not None and avail is not None and i >= avail:
+        res, basis = i - avail, "measured (Installed - Available to VMs)"
+    else:
+        rph = 20.0 if reserve_per_host is None else reserve_per_host
+        res, basis = f(lambda: h * rph), f"flat {rph:g} GB x running hosts"
     floor = f(lambda: a + res)
     # VMware's published rule: active memory at or under 50% of DRAM, i.e. DRAM >= 2 x active.
     vmw = f(lambda: 2 * a + res)
@@ -60,6 +68,7 @@ def size(c, v, reserve_per_host):
     return {
         "Hosts": h, "Installed GB": i, "Allocated GB (powered on)": v, "Active peak GB": a,
         "Reserve GB": res,
+        "Reserve basis": basis,
         "DRAM floor GB (1x active, below VMware guidance)": floor,
         "DRAM recommended GB (VMware 50% rule, 2x active)": vmw,
         "Active within 50% of installed DRAM today": f(lambda: "yes" if a <= 0.5 * i else "NO"),
@@ -90,8 +99,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("clusters_csv")
     ap.add_argument("vms_csv")
-    ap.add_argument("--reserve", type=float, default=20.0,
-                    help="GB per host held back for vSAN, NSX and the hypervisor (default 20)")
+    ap.add_argument("--reserve", type=float, default=None,
+                    help="override: GB per host held back for vSAN, NSX and the hypervisor. Default: "
+                         "measured from the export as Installed - Available to VMs (20 if missing)")
     ap.add_argument("--out", help="also write the results to this CSV")
     a = ap.parse_args()
     alloc = allocated_by_cluster(a.vms_csv)
