@@ -66,6 +66,9 @@ Do this for **each** of the two views:
 The views cover the last 30 days. To change the window, use **Select Date Range** before
 exporting.
 
+The CSV contains **every row, not just the page on screen**. Tested on 8.18.7 with 5 rows per page:
+the export still held all 20 VMs and the full Total. Large estates export complete.
+
 ## 2a. Turn the CSVs into the sizing (optional)
 
 [`tools/memtier_818_calc.py`](../tools/memtier_818_calc.py) needs only Python 3 (standard library),
@@ -105,7 +108,7 @@ the file or all its parts, then click **Process Import**. Because the rows are t
 gets genuine peaks and averages and its history charts. A one-row-per-host export would give it
 a single value to use as both.
 
-Checked by running MTAT 3.2's own importer code on an export from 8.18.7: all 11 columns were
+It also opens cleanly in openpyxl, a strict Excel-format reader. Checked by running MTAT 3.2's own importer code on an export from 8.18.7: all 11 columns were
 recognised, with 0 rows skipped, and the figures reconcile with Operations. MTAT shows decimal GB,
 so Operations' 41.76 GB active peak appears as 44.84 GB.
 
@@ -143,13 +146,26 @@ dashboard's **"What every column means"** panel.
 
   Total rows: configured GB and reserved GB.
 
-**Two columns need the policy turned on**, because 8.18 doesn't collect them by default:
-- per-VM **Memory | Guest Active**
-- **Configuration | Security | PCI PassThrough**
+**Two columns need the policy turned on**, because 8.18 doesn't collect them by default: per-VM
+**Memory | Guest Active** and **Configuration | Security | PCI PassThrough**. Clicked through on 8.18.7;
+the Guest Active column filled on 20 of 20 VMs about 4 minutes after saving.
 
-To turn them on, edit the active policy, open **Collect Metrics and Properties**, filter for each,
-and set it to **Activate**. Their history starts from that point. Until then, use the cluster
-Guest Active total and per-VM Non Zero Active.
+1. **Operations → Configurations → Policy Definition.**
+2. Click the policy whose Status is **Active** (normally **Default Policy**), then click **EDIT POLICY**
+   at the top right of its panel.
+3. Click the **Metrics and Properties** card.
+4. **Select Object Type:** type `Virtual Machine` and pick **vCenter → Virtual Machine**.
+5. In **Type here to apply filters**, type `Guest Active` and press Enter, then click **Expand All**
+   (the second icon above the table).
+6. On **Memory → Guest Active (KB)**, open the **State** dropdown (it reads *Deactivated, Inherited*)
+   and choose **Activated**.
+7. For PCI passthrough, clear the filter, type `PCI`, and set **Configuration → Security → PCI
+   PassThrough** to **Activated** the same way.
+8. Click **SAVE**. The policy page then shows *Metrics and Properties: Locally defined attributes 1*
+   (or 2). No further save is needed.
+
+History starts from that moment. Until then, use the cluster Guest Active total and per-VM Non Zero
+Active.
 
 **vMotion and maintenance-mode spikes (measured on a lab).** After a vMotion, the destination host
 counts the arriving VM's active memory at about double for roughly 10 minutes. The cluster's

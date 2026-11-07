@@ -252,7 +252,8 @@ will not fix it.</p>
 <p {P}><b {B}>Configured GB</b> (Memory | Total Capacity): memory given to the VM. The Total row is
 <b {B}>allocated</b>, the amount the tiered design must present. Powered-off VMs are excluded.<br>
 <b {B}>Guest Active peak</b>: per-VM Guest Active. <b {W}>Not collected by default on 8.18</b>: blank until
-enabled in the policy (Collect Metrics and Properties, Virtual Machine, Memory | Guest Active), and its history
+enabled in the policy (Operations &rarr; Configurations &rarr; Policy Definition &rarr; the Active policy &rarr; EDIT POLICY &rarr;
+Metrics and Properties &rarr; Virtual Machine &rarr; Memory | Guest Active (KB) &rarr; Activated &rarr; SAVE), and its history
 starts then. Do not add per-VM peaks together: they happen at different times. Use the cluster total.<br>
 <b {B}>Non Zero Active peak</b>: collected by default, so it has the 30 days; use it per VM until Guest Active
 has history.<br>
