@@ -51,14 +51,15 @@ VIEWS = [
         column("summary|total_number_vms", "All VMs", CLUSTER),
         column("mem|host_provisioned", "Installed GB", CLUSTER, unit="gb"),
         column("mem|totalCapacity_average", "Available to VMs GB", CLUSTER, unit="gb"),
-        # Guest Active total: the cluster metric IS the sum of its VMs' guest active memory,
-        # sampled at the same moment, so it is the one total that never double counts.
+        # Guest Active total: the hosts' active memory at the same moment. NOT the sum of the VMs'
+        # Guest Active (measured 2026-11-07: one VM read more than its whole host).
         column("mem|active_average", "Guest Active total now GB", CLUSTER, transform="CURRENT", unit="gb"),
         column("mem|active_average", "Active peak GB", CLUSTER, transform="MAX", unit="gb"),
         pct_column("mem|active_average", "Active P95 GB", CLUSTER, 95, unit="gb"),
         column("mem|active_average", "Active avg GB", CLUSTER, transform="AVG", unit="gb"),
-        # vMotion and maintenance mode can count a VM's working set on two hosts at once; a
-        # peak far above P95 alongside vMotions in the window is that, not workload.
+        # Measured 2026-11-07: a vMotion lifts the destination host by ~2x the VM's active for
+        # ~10 minutes. These are 30-day maxima with no time link to the peak; the help text
+        # sends the reader to the overlay chart to decide.
         column("summary|number_vmotion", "vMotions (max per 5 min)", CLUSTER, transform="MAX"),
         column("summary|number_drs_vmotion", "DRS vMotions (max per 5 min)", CLUSTER, transform="MAX"),
         column("mem|consumed_average", "Consumed peak GB", CLUSTER, transform="MAX", unit="gb"),
@@ -182,20 +183,25 @@ column covers the <b {B}>last 30 days</b>. <b {B}>Peak</b> = the highest 5-minut
 (Operations keeps no finer peak for memory). <b {B}>P95</b> = the value 95% of 5-minute samples stay under.
 <b {B}>Avg</b> = the 30-day mean. <b {B}>Now</b> = the latest sample.</p>
 
-<p {P}><b {W}>vMotion and maintenance-mode spikes.</b> While a VM moves, its working set can be counted on
-the source and the destination host in the same sample, and DRS evacuations move many VMs at once. The
-Guest Active <i>peak</i> can therefore be a moment that never really happened. If <b {B}>Active peak</b> sits
-well above <b {B}>Active P95</b> and the <b {B}>vMotions</b> columns are non-zero, treat the peak as a
-migration artefact and size on <b {B}>P95</b> (state which one you used). A peak close to P95 is real demand.</p>
+<p {P}><b {W}>vMotion and maintenance-mode spikes.</b> Measured on a lab: after a vMotion the
+destination host counts the arriving VM's active memory at about <b {B}>double</b> for roughly
+<b {B}>10 minutes</b>, so the cluster's Guest Active reads high by about that VM's working set. A
+maintenance-mode evacuation moves a whole host's VMs, so the cluster can read high by up to that host's
+active memory for a similar time. The <b {B}>peak</b> may therefore be a migration artefact.
+<b {B}>P95</b> drops all short spikes, real or not. The vMotion columns are 30-day maxima with no time
+link to the peak, so they only show that migrations happen. <b {B}>To decide:</b> open the cluster's
+Metrics chart and plot Memory | Guest Active with Summary | Number of vMotions over the same 30 days. If
+the peak sits on a vMotion burst or maintenance window, size on P95; otherwise size on the peak.</p>
 
 <h4 {H}>Clusters</h4>
 <p {P}><b {B}>Hosts / Running VMs / All VMs</b>: counts now. All VMs includes powered-off VMs and templates.<br>
 <b {B}>Installed GB</b> (Memory | Total Capacity): physical DRAM in the cluster's hosts. On a host already
 tiered it would include the NVMe tier; on ESXi 8 it is DRAM.<br>
 <b {B}>Available to VMs GB</b> (Memory | Capacity Available to VMs): installed minus what ESXi keeps for itself.<br>
-<b {B}>Guest Active total</b> (Memory | Guest Active): memory the guests actually touched, summed over every
-VM in the cluster at the same moment. This is the working set and the basis of the DRAM figure. It is an
-estimate ESXi makes by sampling pages. Shown as now, peak, P95 and average.<br>
+<b {B}>Guest Active total</b> (Memory | Guest Active): the cluster's working set, the hosts' active
+memory added together at the same moment. It is the basis of the DRAM figure. It is ESXi's sampled
+estimate and is <b {B}>not</b> the sum of the VMs' own Guest Active (hosts measure machine memory after
+page sharing). Shown as now, peak, P95 and average.<br>
 <b {B}>vMotions / DRS vMotions</b> (max per 5 min): migration activity; read it beside the active peak.<br>
 <b {B}>Consumed</b> (Memory | Consumed): host memory backing the guests. Includes memory the guest touched once
 and never released, so it is usually far above active. Cold memory = consumed minus active.<br>
@@ -297,11 +303,14 @@ def build_dashboard_zip(path):
     import build_content as bc
     g = {t: guid_for(t) for t, *_ in VIEWS}
     dash_id = str(_uuid.uuid5(_uuid.NAMESPACE_URL, "memtier-818/dashboard"))
-    help_html = f"<div {bc._CARD}>" + HELP_818.format(H=bc._H, P=bc._P, B=bc._B, W=bc._W, C=bc._C) + "</div>"
+    # Same card, palette and inline-style rules as the pak and the netstats pack (build_content
+    # text_panel): bare <i> runs get their own colour, never inherit.
+    body = HELP_818.format(H=bc._H, P=bc._P, B=bc._B, W=bc._W, C=bc._C).replace("<i>", f"<i {bc._I}>")
+    help_html = f"<div {bc._CARD}>" + body + "</div>"
     prov = _provider("Clusters (click one)", g[INPUTS], y=1, h=6)
     recv = [_receiver("Hosts in the selected cluster", g[HOSTS], y=7, h=7),
             _receiver("Powered-on VMs in the selected cluster", g[ALLOC], y=14, h=11)]
-    widgets = [prov] + recv + [_text("What every column means", help_html, y=25, h=22)]
+    widgets = [prov] + recv + [_text("How to read this", help_html, y=25, h=22)]
     kinds = ["ClusterComputeResource", "vSphere World", "HostSystem", "VirtualMachine"]
     env = {
         "entries": {

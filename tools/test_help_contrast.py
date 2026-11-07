@@ -249,10 +249,14 @@ def panels():
         return out
     with zipfile.ZipFile(sys.argv[1]) as pak:
         for name in sorted(pak.namelist()):
-            if name.startswith("content/dashboards/") and name.endswith(".json"):
+            # A pak carries content/dashboards/<Name>/<Name>.json; a UI-import dashboard zip
+            # (the 8.18 manual set) carries dashboard/dashboard.json. Check either.
+            if (name.startswith("content/dashboards/") or name == "dashboard/dashboard.json") \
+                    and name.endswith(".json"):
                 body = pak.read(name).decode()
+                label = name.split("/")[2] if name.startswith("content/") else os.path.basename(sys.argv[1])
                 for raw in EDITOR.findall(body):
-                    out.append((name.split("/")[2], json.loads('"' + raw + '"')))
+                    out.append((label, json.loads('"' + raw + '"')))
     return out
 
 

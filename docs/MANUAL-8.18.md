@@ -34,6 +34,19 @@ The attached vCenter was a 9.1.1 lab. Per-host memory figures were identical on 
 
 If you re-import, choose **Overwrite existing View**.
 
+### Then the dashboard (import the views first)
+
+1. **Operations → Dashboards → Manage**, click **⋯** next to **ADD**, then **Import**.
+2. **Browse…** to `MemTier_818_Dashboard.zip`, choose **Overwrite**, then click **IMPORT**.
+3. Wait for *"Dashboard imported successfully."*
+4. Open **MemTier 8.18 Sizing**. **For up to about 15 minutes, every table reads *"The widget is
+   not configured. Select a view to render."* with an hourglass beside its title.** That is
+   8.18 binding the dashboard to its views in the background, not a fault, so don't edit the
+   widgets. Once it clears, the clusters table fills, the first cluster is selected, and the
+   hosts and VMs tables below follow it.
+5. The message **without** an hourglass, after 15 minutes, means the views weren't imported
+   first. Import them, then import the dashboard again.
+
 ## 2. Run and export
 
 Do this for **each** of the two views:
@@ -104,9 +117,19 @@ To turn them on, edit the active policy, open **Collect Metrics and Properties**
 and set it to **Activate**. Their history starts from that point. Until then, use the cluster
 Guest Active total and per-VM Non Zero Active.
 
-**vMotion spikes:** during vMotion and maintenance mode, a VM's working set can count on two hosts
-at once. If the Active peak sits well above Active P95 and the vMotion columns are non-zero, size
-on P95 and say so.
+**vMotion and maintenance-mode spikes (measured on a lab).** After a vMotion, the destination host
+counts the arriving VM's active memory at about double for roughly 10 minutes. The cluster's
+Guest Active therefore reads high by about that VM's working set. A maintenance-mode evacuation
+can lift it by up to the evacuated host's active memory.
+
+- **The peak may be a migration artefact.** P95 drops all short spikes, genuine ones included.
+- **The vMotion columns don't show when migrations happened.** They are 30-day maxima with no
+  timing link to the peak.
+- **To decide which to size on:** on the cluster's Metrics chart, plot Memory | Guest Active and
+  Summary | Number of vMotions over the same 30 days. If the peak sits on a vMotion burst or a
+  maintenance window, size on P95; otherwise, size on the peak.
+
+The cluster Guest Active is the hosts' active memory, not the sum of the VMs' Guest Active.
 
 **Not visible to Operations** (check in vCenter): latency sensitivity, SEV / SGX / TDX, nested
 virtualisation, and 1 GB huge-page backing.
