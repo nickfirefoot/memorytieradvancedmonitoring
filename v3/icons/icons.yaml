@@ -1,0 +1,5 @@
+# Icon mapping (optional). Unmapped kinds fall back to the builder's default icon.
+adapter_kind_icon: default.svg
+resource_kinds:
+  memtier_advanced: default.svg
+  World:            world.svg

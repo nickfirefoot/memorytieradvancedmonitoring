@@ -1,0 +1,107 @@
+id: 53fdc60f-073c-5ebc-a5e2-baa2c62a531a
+name: "Memory Tier Advanced - Hosts"
+description: >
+  Memory Tier Advanced. Generated from tools/build_views_818.py (validated on Aria Operations 8.18.7); edit there, not here.
+
+subject:
+  adapter_kind: VMWARE
+  resource_kind: HostSystem
+  filter:
+    - filter_type: properties
+      metric_key: "runtime|connectionState"
+      condition: EQUALS
+      value: "connected"
+      transform: CURRENT
+    - filter_type: properties
+      metric_key: "runtime|maintenanceState"
+      condition: EQUALS
+      value: "notInMaintenance"
+      transform: CURRENT
+
+time_window:
+  unit: DAYS
+  count: 30
+
+summary:
+  - display_name: Total
+    aggregation: SUM
+    columns: [3]
+
+columns:
+  - attribute: "summary|parentCluster"
+    display_name: "Cluster"
+    unit: ""
+    is_property: true
+    is_string_attribute: true
+  - attribute: "config|name"
+    display_name: "Host"
+    unit: ""
+    is_property: true
+    is_string_attribute: true
+  - attribute: "summary|number_running_vms"
+    display_name: "Running VMs"
+    unit: ""
+  - attribute: "mem|host_provisioned"
+    display_name: "Installed GB"
+    unit: "gb"
+  - attribute: "mem|active_average"
+    display_name: "Active peak GB"
+    unit: "gb"
+    transformation: MAX
+  - attribute: "mem|active_average"
+    display_name: "Active P95 GB"
+    unit: "gb"
+    transformation: PERCENTILE
+    percentile: 95
+  - attribute: "summary|number_vmotion"
+    display_name: "vMotions (max per 5 min)"
+    unit: ""
+    transformation: MAX
+  - attribute: "mem|consumed_average"
+    display_name: "Consumed avg GB"
+    unit: "gb"
+    transformation: AVG
+  - attribute: "mem|consumed_average"
+    display_name: "Consumed peak GB"
+    unit: "gb"
+    transformation: MAX
+  - attribute: "mem|usage_average"
+    display_name: "Memory usage peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "mem|vmmemctl_average"
+    display_name: "Balloon peak GB"
+    unit: "gb"
+    transformation: MAX
+  - attribute: "mem|swapinRate_average"
+    display_name: "Swap-in rate peak KBps"
+    unit: ""
+    transformation: MAX
+  - attribute: "cpu|usage_average"
+    display_name: "CPU avg %"
+    unit: "percent"
+    transformation: AVG
+  - attribute: "cpu|usage_average"
+    display_name: "CPU peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "cpu|usagemhz_average"
+    display_name: "CPU used peak MHz"
+    unit: ""
+    transformation: MAX
+  - attribute: "cpu|ready_summation"
+    display_name: "CPU ready peak ms"
+    unit: ""
+    transformation: MAX
+  - attribute: "cpu|iowait"
+    display_name: "IO wait peak ms"
+    unit: ""
+    transformation: MAX
+  - attribute: "cpu|iowait"
+    display_name: "IO wait avg ms"
+    unit: ""
+    transformation: AVG
+  - attribute: "cpu|swapwait_summation"
+    display_name: "Swap wait peak ms"
+    unit: ""
+    transformation: MAX

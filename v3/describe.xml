@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  describe.xml -- Memory Tier Advanced v3.
+  The adapter has no target system: no credential kind, one optional label on the instance, and
+  a World resource (the traversal anchor every factory pak registers). No metric kinds of its own;
+  the pak's value is its bundled views and dashboard over VMWARE metrics.
+-->
+<AdapterKind xmlns="http://schemas.vmware.com/vcops/schema"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             key="memtier_advanced"
+             nameKey="1"
+             version="1"
+             xsi:schemaLocation="http://schemas.vmware.com/vcops/schema describeSchema.xsd">
+
+	<ResourceKinds>
+
+		<!-- Adapter instance (type=7). Nothing to connect to; the label only names the instance. -->
+		<ResourceKind key="memtier_advanced" nameKey="5" type="7" monitoringInterval="60">
+			<ResourceIdentifier key="label" nameKey="6" type="string"
+			                    required="false" dispOrder="1" default="Memory Tier Advanced"/>
+		</ResourceKind>
+
+		<!-- World: traversal entry point. -->
+		<ResourceKind key="World" nameKey="10" type="1">
+			<ResourceIdentifier key="world_id" nameKey="11" type="string" required="true" dispOrder="1"/>
+		</ResourceKind>
+
+	</ResourceKinds>
+
+	<TraversalSpecKinds>
+		<TraversalSpecKind name="Memory Tier Advanced"
+		                   nameKey="30"
+		                   rootAdapterKind="memtier_advanced"
+		                   rootResourceKind="World"
+		                   filterType="GENERIC_RELATION"
+		                   usedFor="ALL">
+			<ResourcePath path="memtier_advanced::World"/>
+		</TraversalSpecKind>
+	</TraversalSpecKinds>
+
+	<LicenseConfig enabled="false"/>
+
+</AdapterKind>

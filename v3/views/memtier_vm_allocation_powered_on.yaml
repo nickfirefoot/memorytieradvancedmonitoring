@@ -1,0 +1,144 @@
+id: 44ebc2a6-515e-59e6-bf0a-475c77429bb7
+name: "Memory Tier Advanced - Powered-on VMs"
+description: >
+  Memory Tier Advanced. Generated from tools/build_views_818.py (validated on Aria Operations 8.18.7); edit there, not here.
+
+subject:
+  adapter_kind: VMWARE
+  resource_kind: VirtualMachine
+  filter:
+    - filter_type: properties
+      metric_key: "summary|runtime|powerState"
+      condition: EQUALS
+      value: "Powered On"
+
+time_window:
+  unit: DAYS
+  count: 30
+
+summary:
+  - display_name: Total
+    aggregation: SUM
+    columns: [5, 9]
+
+columns:
+  - attribute: "summary|parentCluster"
+    display_name: "Cluster"
+    unit: ""
+    is_property: true
+    is_string_attribute: true
+  - attribute: "summary|parentHost"
+    display_name: "Host"
+    unit: ""
+    is_property: true
+    is_string_attribute: true
+  - attribute: "config|name"
+    display_name: "VM"
+    unit: ""
+    is_property: true
+    is_string_attribute: true
+  - attribute: "config|guestFullName"
+    display_name: "Guest OS"
+    unit: ""
+    is_property: true
+    is_string_attribute: true
+  - attribute: "config|hardware|numCpu"
+    display_name: "vCPUs"
+    unit: ""
+    is_property: true
+    is_string_attribute: true
+  - attribute: "mem|guest_provisioned"
+    display_name: "Configured GB"
+    unit: "gb"
+  - attribute: "mem|active_average"
+    display_name: "Guest Active peak GB (enable in policy)"
+    unit: "gb"
+    transformation: MAX
+  - attribute: "mem|nonzero_active"
+    display_name: "Non Zero Active peak GB"
+    unit: "gb"
+    transformation: MAX
+  - attribute: "mem|consumed_average"
+    display_name: "Consumed peak GB"
+    unit: "gb"
+    transformation: MAX
+  - attribute: "mem|reservation_used"
+    display_name: "Reserved used GB"
+    unit: "gb"
+  - attribute: "config|memoryAllocation|reservation"
+    display_name: "Reservation (configured)"
+    unit: ""
+    is_property: true
+    is_string_attribute: true
+  - attribute: "config|memoryAllocation|limit"
+    display_name: "Memory limit"
+    unit: ""
+    is_property: true
+    is_string_attribute: true
+  - attribute: "config|security|pci_device_configured"
+    display_name: "PCI passthrough (enable in policy)"
+    unit: ""
+    is_property: true
+    is_string_attribute: true
+  - attribute: "mem|swapped_average"
+    display_name: "Swapped peak GB"
+    unit: "gb"
+    transformation: MAX
+  - attribute: "mem|swapinRate_average"
+    display_name: "Swap-in rate peak KBps"
+    unit: ""
+    transformation: MAX
+  - attribute: "mem|compressed_average"
+    display_name: "Compressed peak GB"
+    unit: "gb"
+    transformation: MAX
+  - attribute: "guest|20_sec_peak_page.outRate_latest"
+    display_name: "Guest page-out 20s peak"
+    unit: ""
+    transformation: MAX
+  - attribute: "summary|oversized|memory"
+    display_name: "Oversized by GB"
+    unit: "gb"
+  - attribute: "summary|undersized|memory"
+    display_name: "Undersized by GB"
+    unit: "gb"
+  - attribute: "mem|20_sec_peak_host_contentionPct"
+    display_name: "Mem contention 20s peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "cpu|usage_average"
+    display_name: "CPU peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "cpu|20_sec_peak_readyPct"
+    display_name: "CPU ready 20s peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "cpu|costopPct"
+    display_name: "CPU co-stop peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "cpu|iowaitPct"
+    display_name: "IO wait avg %"
+    unit: "percent"
+    transformation: AVG
+  - attribute: "cpu|20_sec_peak_iowaitPct"
+    display_name: "IO wait 20s peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "cpu|swapwaitPct"
+    display_name: "Swap wait peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "virtualDisk|peak_vDisk_readLatency"
+    display_name: "Worst disk read latency peak ms"
+    unit: ""
+    transformation: MAX
+  - attribute: "virtualDisk|peak_vDisk_writeLatency"
+    display_name: "Worst disk write latency peak ms"
+    unit: ""
+    transformation: MAX
+  - attribute: "virtualDisk|20_sec_peak_totalLatency_average"
+    display_name: "Disk latency 20s peak ms"
+    unit: ""
+    transformation: MAX

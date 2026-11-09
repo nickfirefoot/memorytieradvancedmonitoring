@@ -1,0 +1,121 @@
+id: 2223efe6-772f-519c-bb35-dc4aa8e36e99
+name: "Memory Tier Advanced - Cluster Sizing Inputs"
+description: >
+  Memory Tier Advanced. Generated from tools/build_views_818.py (validated on Aria Operations 8.18.7); edit there, not here.
+
+subject:
+  adapter_kind: VMWARE
+  resource_kind: ClusterComputeResource
+
+time_window:
+  unit: DAYS
+  count: 30
+
+columns:
+  - attribute: "config|name"
+    display_name: "Cluster"
+    unit: ""
+    is_property: true
+    is_string_attribute: true
+  - attribute: "summary|number_running_hosts"
+    display_name: "Running hosts"
+    unit: ""
+  - attribute: "summary|total_number_hosts"
+    display_name: "All hosts"
+    unit: ""
+  - attribute: "summary|number_running_vms"
+    display_name: "Running VMs"
+    unit: ""
+  - attribute: "summary|total_number_vms"
+    display_name: "All VMs"
+    unit: ""
+  - attribute: "mem|host_provisioned"
+    display_name: "Installed GB"
+    unit: "gb"
+  - attribute: "mem|totalCapacity_average"
+    display_name: "Available to VMs GB"
+    unit: "gb"
+  - attribute: "mem|active_average"
+    display_name: "Guest Active total now GB"
+    unit: "gb"
+  - attribute: "mem|active_average"
+    display_name: "Active peak GB"
+    unit: "gb"
+    transformation: MAX
+  - attribute: "mem|active_average"
+    display_name: "Active P95 GB"
+    unit: "gb"
+    transformation: PERCENTILE
+    percentile: 95
+  - attribute: "mem|active_average"
+    display_name: "Active avg GB"
+    unit: "gb"
+    transformation: AVG
+  - attribute: "summary|number_vmotion"
+    display_name: "vMotions (max per 5 min)"
+    unit: ""
+    transformation: MAX
+  - attribute: "summary|number_drs_vmotion"
+    display_name: "DRS vMotions (max per 5 min)"
+    unit: ""
+    transformation: MAX
+  - attribute: "mem|consumed_average"
+    display_name: "Consumed peak GB"
+    unit: "gb"
+    transformation: MAX
+  - attribute: "mem|consumed_average"
+    display_name: "Consumed avg GB"
+    unit: "gb"
+    transformation: AVG
+  - attribute: "mem|usage_average"
+    display_name: "Memory usage peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "mem|max_vm_mem_contention"
+    display_name: "Worst VM mem contention peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "mem|vmmemctl_average"
+    display_name: "Balloon peak GB"
+    unit: "gb"
+    transformation: MAX
+  - attribute: "mem|swapinRate_average"
+    display_name: "Swap-in rate peak KBps"
+    unit: ""
+    transformation: MAX
+  - attribute: "mem|swapoutRate_average"
+    display_name: "Swap-out rate peak KBps"
+    unit: ""
+    transformation: MAX
+  - attribute: "mem|compressed_average"
+    display_name: "Compressed peak GB"
+    unit: "gb"
+    transformation: MAX
+  - attribute: "mem|overhead_average"
+    display_name: "VM overhead peak GB"
+    unit: "gb"
+    transformation: MAX
+  - attribute: "cpu|capacity_usagepct_average"
+    display_name: "CPU avg %"
+    unit: "percent"
+    transformation: AVG
+  - attribute: "cpu|capacity_usagepct_average"
+    display_name: "CPU peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "cpu|usagemhz_average"
+    display_name: "CPU used peak MHz"
+    unit: ""
+    transformation: MAX
+  - attribute: "cpu|demandmhz"
+    display_name: "CPU demand peak MHz"
+    unit: ""
+    transformation: MAX
+  - attribute: "cpu|max_cpu_ready"
+    display_name: "Worst VM CPU ready peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "cpu|percentage_of_vms_facing_cpu_ready"
+    display_name: "VMs facing CPU ready peak %"
+    unit: "percent"
+    transformation: MAX
