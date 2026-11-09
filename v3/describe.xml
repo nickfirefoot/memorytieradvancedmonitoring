@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  describe.xml -- Memory Tier Advanced v3.
+  describe.xml: Memory Tier Advanced v3.
   The adapter has no target system: no credential kind, one optional label on the instance, and
   a World resource (the traversal anchor every factory pak registers). No metric kinds of its own;
   the pak's value is its bundled views and dashboard over VMWARE metrics.
