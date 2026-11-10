@@ -107,7 +107,32 @@ def view_yaml(title, kind, cols, opts):
     return "\n".join(lines) + "\n"
 
 
+# What the pak can't switch on by itself. Click paths walked on 8.18.7 and 9.1.1 (2026-11-10).
+SETUP = """<h3 {H}>Complete the install</h3>
+<p {P}>The pak adds the views and this dashboard. Two steps need doing by hand, once.</p>
+<p {P}><b {B}>1. Add the adapter instance.</b> Administration → Integrations → Repository → click
+<b {B}>Memory Tier Advanced</b> → <b {B}>ADD ACCOUNT</b>. Type a Name, leave Label and Collector as
+they are, click <b {B}>ADD</b>. It collects nothing and turns green within a few minutes. After an
+upgrade, check it under Integrations → Accounts; if it shows stopped, choose <b {B}>Start Collecting</b>.</p>
+<p {P}><b {B}>2. Turn on two VM metrics in the active policy.</b></p>
+<ol style="margin:4px 0 4px 20px;padding:0;color:#e9edf0">
+<li {P}>Open <b {B}>Policy Definition</b>: on 8.18, Operations → Configurations; on 9.x,
+Administration → Configurations.</li>
+<li {P}>Click the policy whose Status is <b {B}>Active</b> (normally Default Policy), then
+<b {B}>EDIT POLICY</b> → <b {B}>Metrics and Properties</b>.</li>
+<li {P}>Select Object Type: <code {C}>Virtual Machine</code> (vCenter → Virtual Machine).</li>
+<li {P}>Filter <code {C}>Guest Active</code>, click Expand All, and set <b {B}>Memory → Guest Active
+(KB)</b> to <b {B}>Activated</b>. 8.18 only; 9.x collects it already.</li>
+<li {P}>Filter <code {C}>PCI</code> and set <b {B}>Configuration → Security → PCI PassThrough</b> to
+<b {B}>Activated</b>. Both versions.</li>
+<li {P}>Click <b {B}>SAVE</b>.</li>
+</ol>
+<p {P}><b {W}>Until step 2,</b> the VM Guest Active and PCI passthrough columns stay blank. Their
+history starts when you save; Guest Active fills in within about 5 minutes. No super metrics are needed.</p>"""
+
+
 def dashboard_yaml():
+    setup = f"<div {bc._CARD}>" + SETUP.format(H=bc._H, P=bc._P, B=bc._B, W=bc._W, C=bc._C) + "</div>"
     help_body = (b.HELP_818.format(H=bc._H, P=bc._P, B=bc._B, W=bc._W, C=bc._C)
                  .replace("<i>", f"<i {bc._I}>")
                  # v3 targets 8.18 and 9.1.1; the 8.18-only title stays in the 8.18 set.
@@ -156,6 +181,11 @@ widgets:
   title: "How to read this"
   coords: {{x: 1, y: 25, w: 12, h: 22}}
   html: {q(html)}
+- id: setup
+  type: TextDisplay
+  title: "Complete the install"
+  coords: {{x: 1, y: 47, w: 12, h: 11}}
+  html: {q(setup)}
 """
 
 
