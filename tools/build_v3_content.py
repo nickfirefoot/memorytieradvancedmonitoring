@@ -32,6 +32,13 @@ TITLE = {b.INPUTS: "Memory Tier Advanced - Cluster Sizing Inputs",
          b.ALLOC: "Memory Tier Advanced - Powered-on VMs"}
 
 
+# Properties Operations declares in KB (8.18 describe: unit='KB'). Without a unit the view shows
+# raw KB (25,165,824 for 24 GB) -- the defect in Nick's 9.1.1 screenshot. rc.2 tests "gb" on them.
+KB_PROPERTIES = {"config|memoryAllocation|reservation", "config|memoryAllocation|limit"}
+LABEL_V3 = {"config|memoryAllocation|reservation": "Reservation configured GB",
+            "config|memoryAllocation|limit": "Memory limit GB (negative = no limit)"}
+
+
 def q(s):
     """YAML double-quoted scalar."""
     return json.dumps(s, ensure_ascii=False)
@@ -78,10 +85,16 @@ def view_yaml(title, kind, cols, opts):
     for xml in cols:
         c = parse_column(xml)
         lines.append(f"  - attribute: {q(c['attribute'])}")
-        lines.append(f"    display_name: {q(c['display_name'])}")
-        lines.append(f"    unit: {q(c['unit'])}")
+        label = LABEL_V3.get(c["attribute"], c["display_name"])
+        lines.append(f"    display_name: {q(label)}")
+        unit = c["unit"]
+        if c["attribute"] in KB_PROPERTIES:
+            unit = "gb"
+        lines.append(f"    unit: {q(unit)}")
         if c["is_property"]:
-            lines += ["    is_property: true", "    is_string_attribute: true"]
+            # Numeric KB properties must not be string attributes, or no unit conversion happens.
+            numeric = c["attribute"] in KB_PROPERTIES
+            lines += ["    is_property: true", f"    is_string_attribute: {'false' if numeric else 'true'}"]
         elif c["transformation"] != "CURRENT":
             lines.append(f"    transformation: {c['transformation']}")
             if c["transformation"] == "PERCENTILE":
@@ -90,10 +103,14 @@ def view_yaml(title, kind, cols, opts):
 
 
 def dashboard_yaml():
-    help_body = b.HELP_818.format(H=bc._H, P=bc._P, B=bc._B, W=bc._W, C=bc._C).replace("<i>", f"<i {bc._I}>")
+    help_body = (b.HELP_818.format(H=bc._H, P=bc._P, B=bc._B, W=bc._W, C=bc._C)
+                 .replace("<i>", f"<i {bc._I}>")
+                 # v3 targets 8.18 and 9.1.1; the 8.18-only title stays in the 8.18 set.
+                 .replace("Memory tiering sizing (Aria Operations 8.18)", "Memory tiering sizing"))
     html = f"<div {bc._CARD}>" + help_body + "</div>"
     return f"""id: {b._uuid.uuid5(b._uuid.NAMESPACE_URL, "memtier-v3/dashboard")}
-name: "Memory Tier Advanced - Sizing"
+name: "Sizing"
+name_path: "Memory Tier Advanced"
 description: >
   Memory tiering sizing from native vCenter metrics, last 30 days. Click a cluster; its running
   hosts and powered-on VMs follow. Generated from tools/build_views_818.py.

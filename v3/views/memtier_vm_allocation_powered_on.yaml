@@ -66,15 +66,15 @@ columns:
     display_name: "Reserved used GB"
     unit: "gb"
   - attribute: "config|memoryAllocation|reservation"
-    display_name: "Reservation (configured)"
-    unit: ""
+    display_name: "Reservation configured GB"
+    unit: "gb"
     is_property: true
-    is_string_attribute: true
+    is_string_attribute: false
   - attribute: "config|memoryAllocation|limit"
-    display_name: "Memory limit"
-    unit: ""
+    display_name: "Memory limit GB (negative = no limit)"
+    unit: "gb"
     is_property: true
-    is_string_attribute: true
+    is_string_attribute: false
   - attribute: "config|security|pci_device_configured"
     display_name: "PCI passthrough (enable in policy)"
     unit: ""

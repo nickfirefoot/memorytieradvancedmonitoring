@@ -13,7 +13,7 @@ description: >
   allocation, memory pressure, CPU and IO wait headroom, and the VM exclusions Operations can see.
   Ships views and a dashboard; the adapter collects nothing.
 version: 3.0.0
-build_number: 1
+build_number: 2
 tier: 2
 released: false
 content_naming: unprefixed
