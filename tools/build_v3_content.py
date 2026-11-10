@@ -34,9 +34,14 @@ TITLE = {b.INPUTS: "Memory Tier Advanced - Cluster Sizing Inputs",
 
 # Properties Operations declares in KB (8.18 describe: unit='KB'). Without a unit the view shows
 # raw KB (25,165,824 for 24 GB) -- the defect in Nick's 9.1.1 screenshot. rc.2 tests "gb" on them.
-KB_PROPERTIES = {"config|memoryAllocation|reservation", "config|memoryAllocation|limit"}
+# rc.2 tested both in GB on 8.18: reservation reads correctly (nsx02 24, ops_networks 32), but the
+# limit's "no limit" sentinel is -1 KB, which renders as "-0" GB. So only the reservation converts;
+# the limit stays raw KB with the sentinel spelled out.
+KB_PROPERTIES = {"config|memoryAllocation|reservation"}
 LABEL_V3 = {"config|memoryAllocation|reservation": "Reservation configured GB",
-            "config|memoryAllocation|limit": "Memory limit GB (negative = no limit)"}
+            "config|memoryAllocation|limit": "Memory limit KB (-1 = no limit)"}
+# The dashboard name is identity on upgrade: Operations matches pak dashboards by NAME, so a rename
+# leaves the old dashboard behind (rc.1 -> rc.2, both labs). Never change "Sizing" / its folder.
 
 
 def q(s):

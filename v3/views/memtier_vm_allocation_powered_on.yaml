@@ -71,10 +71,10 @@ columns:
     is_property: true
     is_string_attribute: false
   - attribute: "config|memoryAllocation|limit"
-    display_name: "Memory limit GB (negative = no limit)"
-    unit: "gb"
+    display_name: "Memory limit KB (-1 = no limit)"
+    unit: ""
     is_property: true
-    is_string_attribute: false
+    is_string_attribute: true
   - attribute: "config|security|pci_device_configured"
     display_name: "PCI passthrough (enable in policy)"
     unit: ""
