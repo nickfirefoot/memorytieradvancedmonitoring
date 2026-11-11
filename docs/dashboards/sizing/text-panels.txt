@@ -1,0 +1,86 @@
+Memory Tier Advanced › Sizing: dashboard text panels
+Generated from v3/dashboards/memtier_sizing.yaml by tools/export_dashboard_docs.py. Do not edit by hand.
+
+########################
+### How to read this ###
+########################
+
+Memory tiering sizing
+=====================
+
+Click a cluster in the top table; the hosts and powered-on VMs below follow it. Every column covers the last 30 days. Peak = the highest 5-minute average in that window (Operations keeps no finer peak for memory). P95 = the value 95% of 5-minute samples stay under. Avg = the 30-day mean. Now = the latest sample.
+
+vMotion and maintenance-mode spikes. Measured on a lab: after a vMotion the destination host counts the arriving VM's active memory at about double for roughly 10 minutes, so the cluster's Guest Active reads high by about that VM's working set. A maintenance-mode evacuation moves a whole host's VMs, so the cluster can read high by up to that host's active memory for a similar time. The peak may therefore be a migration artefact. P95 drops all short spikes, real or not. The vMotion columns are 30-day maxima with no time link to the peak, so they only show that migrations happen. To decide: open the cluster's Metrics chart and plot Memory | Guest Active with Summary | Number of vMotions over the same 30 days. If the peak sits on a vMotion burst or maintenance window, size on P95; otherwise size on the peak.
+
+Clusters
+--------
+
+Running hosts / All hosts: hosts connected and out of maintenance, and all hosts. Installed memory and the sizing use Running hosts: a host that is down or in maintenance reports no memory. Running VMs / All VMs: All VMs includes powered-off VMs and templates.
+Installed GB (Memory | Total Capacity): physical DRAM in the cluster's hosts. On a host already tiered it would include the NVMe tier; on ESXi 8 it is DRAM.
+Available to VMs GB (Memory | Capacity Available to VMs): installed minus what ESXi keeps for itself.
+Guest Active total (Memory | Guest Active): the cluster's working set, the hosts' active memory added together at the same moment. It is the basis of the DRAM figure. It is ESXi's sampled estimate and is not the sum of the VMs' own Guest Active (hosts measure machine memory after page sharing). Shown as now, peak, P95 and average.
+vMotions / DRS vMotions (max per 5 min): migration activity; read it beside the active peak.
+Consumed (Memory | Consumed): host memory backing the guests. Includes memory the guest touched once and never released, so it is usually far above active. Cold memory = consumed minus active.
+Memory usage %: consumed as a share of capacity.
+Worst VM mem contention %: the worst any VM waited for memory. Non-zero means memory is already short.
+Balloon, Swap-in/out rate, Compressed: ESXi reclaiming memory today. Any non-zero value means the cluster is already short of DRAM; tier only after that is understood.
+VM overhead: memory ESXi uses to run the VMs; stays in DRAM.
+CPU avg / peak % (CPU | Capacity Usage), CPU used / demand MHz, Worst VM CPU ready %, VMs facing CPU ready %: CPU headroom. Tiering only pays where memory runs out before CPU.
+
+Hosts
+-----
+
+Only hosts that are connected and not in maintenance; a down host would otherwise add a blank row. The same memory and CPU columns per host, to spot imbalance: a cluster that only fits because one host is nearly empty. CPU ready ms is time VMs waited for a CPU. Total row: installed GB.
+IO wait (vSphere's Other Wait): time vCPUs sat stalled on storage or network IO. Swap wait: time spent waiting for swapped-out memory. High IO wait means the workload is IO-bound: guest-OS tools report that time as busy CPU, so read CPU figures with it, and tiering memory will not fix it.
+
+Powered-on VMs
+--------------
+
+Configured GB (Memory | Total Capacity): memory given to the VM. The Total row is allocated, the amount the tiered design must present. Powered-off VMs are excluded.
+Guest Active peak: per-VM Guest Active. Not collected by default on 8.18: blank until enabled in the policy (Operations → Configurations → Policy Definition → the Active policy → EDIT POLICY → Metrics and Properties → Virtual Machine → Memory | Guest Active (KB) → Activated → SAVE), and its history starts then. Do not add per-VM peaks together: they happen at different times. Use the cluster total.
+Non Zero Active peak: collected by default, so it has the 30 days; use it per VM until Guest Active has history.
+Consumed peak: host memory backing this VM.
+Reserved used GB / Reservation / Memory limit: a VM whose reservation equals its configured memory is pinned to DRAM and cannot be tiered; subtract it. Latency-sensitive VMs are also pinned and are not visible here; check them by hand.
+Host / Guest OS / vCPUs: where it runs and what it is; vCPUs and Configured GB identify monster VMs.
+Swapped, Swap-in rate, Compressed, Guest page-out 20s peak: this VM is already short of memory.
+Oversized / Undersized by: Operations' right-sizing view of the VM.
+Mem contention / CPU ready 20s peak, CPU co-stop: the worst moment inside a collection cycle.
+IO wait avg / 20s peak, Swap wait: this VM stalled on IO, or on swapped memory. A VM with high IO wait looks CPU-busy from inside the guest without using the CPU.
+Worst disk read / write latency, Disk latency 20s peak: the slowest of this VM's virtual disks. These are measured in ESXi's storage stack, so they read the same on vSAN, VMFS (FC or iSCSI), NFS and vVols; datastore-level latency is not reported for vSAN VMs. High IO wait with high disk latency: the wait is storage, so open the VM's Metrics page to see which disk and datastore. High IO wait with low disk latency: it is most likely network.
+
+The sizing
+----------
+
+Per cluster, A = Active peak (or P95, see above), H = Running hosts, V = VM Total configured GB, I = Installed GB, R = reserve = Installed GB − Available to VMs GB: the memory ESXi keeps for the hypervisor, vSAN and NSX, measured by Operations, resident and never tierable. VMware's rule: active memory should be 50% or less of DRAM, so the recommended DRAM = 2 × A + R. Floor (1 × A + R) is the absolute minimum and sits below VMware's guidance. Conservative = 4 × A + R. NVMe needed = V − DRAM; per host it must stay under 4,096 GB. Retrofit headroom = I − DRAM: positive means NVMe alone is enough. Export the tables (Export as CSV) and memtier_818_calc.py prints all of it.
+
+Which VMs cannot be tiered
+--------------------------
+
+From VMware's guidance. Visible here: full memory reservation (Reservation equal to Configured); monster VMs, 512 GB or more configured or 128 or more vCPUs (sort the VM table); PCI passthrough (enable in policy). Not shown here, check in vCenter: Fault Tolerance (rare), latency sensitivity High, SEV / SGX / TDX confidential computing, nested virtualisation, 1 GB huge-page backing.
+
+Matches MTAT
+------------
+
+The Hosts table carries MTAT's host inputs with MTAT's own definitions: Installed GB (Physical_RAM), Consumed avg (Consumed_GB, average), Active peak (Active_GB, maximum), CPU avg (CPU_Pct, average). The VM table carries Host, VM, Configured GB (Provisioned_GB) and Guest Active peak (Active_GB). MTAT reads vCenter's 7-day history; these read Operations' 30 days of 5-minute samples.
+
+
+############################
+### Complete the install ###
+############################
+
+Complete the install
+====================
+
+The pak adds the views and this dashboard. Two steps need doing by hand, once.
+
+1. Add the adapter instance. Administration → Integrations → Repository → click Memory Tier Advanced → ADD ACCOUNT. Type a Name, leave Label and Collector as they are, click ADD. It collects nothing and turns green within a few minutes. After an upgrade, check it under Integrations → Accounts; if it shows stopped, choose Start Collecting.
+
+2. Turn on two VM metrics in the active policy.
+   1. Open Policy Definition: on 8.18, Operations → Configurations; on 9.x, Administration → Configurations.
+   2. Click the policy whose Status is Active (normally Default Policy), then EDIT POLICY → Metrics and Properties.
+   3. Select Object Type: Virtual Machine (vCenter → Virtual Machine).
+   4. Filter Guest Active, click Expand All, and set Memory → Guest Active (KB) to Activated. 8.18 only; 9.x collects it already.
+   5. Filter PCI and set Configuration → Security → PCI PassThrough to Activated. Both versions.
+   6. Click SAVE.
+
+Until step 2, the VM Guest Active and PCI passthrough columns stay blank. Their history starts when you save; Guest Active fills in within about 5 minutes. No super metrics are needed.
