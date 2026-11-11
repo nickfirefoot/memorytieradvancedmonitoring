@@ -115,7 +115,8 @@ SETUP = """<h3 {H}>Complete the install</h3>
 <p {P}><b {B}>1. Add the adapter instance.</b> Administration → Integrations → Repository → click
 <b {B}>Memory Tier Advanced</b> → <b {B}>ADD ACCOUNT</b>. Type a Name, leave Label and Collector as
 they are, click <b {B}>ADD</b>. It collects nothing and turns green within a few minutes. After an
-upgrade, check it under Integrations → Accounts; if it shows stopped, choose <b {B}>Start Collecting</b>.</p>
+upgrade, check it: Integrations → Accounts → expand Memory Tier Advanced; if it is stopped, open
+<b {B}>⋮</b> on its row and choose <b {B}>Start Collecting</b>.</p>
 <p {P}><b {B}>2. Turn on two VM metrics in the active policy.</b></p>
 <ol style="margin:4px 0 4px 20px;padding:0;color:#e9edf0">
 <li {P}>Open <b {B}>Policy Definition</b>: on 8.18, Operations → Configurations; on 9.x,

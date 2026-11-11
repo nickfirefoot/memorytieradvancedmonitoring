@@ -1,5 +1,9 @@
 # Changelog
 
+## Build 5 (2026-11-11)
+
+- v3 rc.4: Memory Pressure dashboard and report, pressure as %, help fixes; docs rewritten for v3
+
 ## Build 3 (2026-11-10)
 
 - v3 rc.3: Complete the install panel (adapter instance, policy steps for 8.18 and 9.x)

@@ -14,7 +14,7 @@ description: >
   A second dashboard shows which clusters are out of memory now. Ships two dashboards, six views and
   a report; the adapter collects nothing.
 version: 3.0.0
-build_number: 5
+build_number: 6
 tier: 2
 released: false
 content_naming: unprefixed

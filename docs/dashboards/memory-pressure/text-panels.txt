@@ -37,7 +37,7 @@ Complete the install
 
 The pak adds the views and this dashboard. Two steps need doing by hand, once.
 
-1. Add the adapter instance. Administration → Integrations → Repository → click Memory Tier Advanced → ADD ACCOUNT. Type a Name, leave Label and Collector as they are, click ADD. It collects nothing and turns green within a few minutes. After an upgrade, check it under Integrations → Accounts; if it shows stopped, choose Start Collecting.
+1. Add the adapter instance. Administration → Integrations → Repository → click Memory Tier Advanced → ADD ACCOUNT. Type a Name, leave Label and Collector as they are, click ADD. It collects nothing and turns green within a few minutes. After an upgrade, check it: Integrations → Accounts → expand Memory Tier Advanced; if it is stopped, open ⋮ on its row and choose Start Collecting.
 
 2. Turn on two VM metrics in the active policy.
    1. Open Policy Definition: on 8.18, Operations → Configurations; on 9.x, Administration → Configurations.

@@ -1,6 +1,6 @@
 # Memory Tier Advanced Reference
 
-Generated from `describe.xml` and `resources.properties` for build 0.0.0.5.
+Generated from `describe.xml` and `resources.properties` for build 0.0.0.6.
 
 ## Adapter
 

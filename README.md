@@ -40,8 +40,9 @@ Screenshots and the full text of each dashboard's help panels: [docs/dashboards]
 
 ### Upgrading
 
-- Install the new pak over the old one. On 9.1.1, check the adapter instance under Integrations →
-  Accounts afterwards: an upgrade once left it stopped, and **Start Collecting** fixed it.
+- Install the new pak over the old one. Then check the adapter instance: Administration → Integrations
+  → Accounts → expand Memory Tier Advanced. If it is stopped (an upgrade once left it so on 9.1.1),
+  open **⋮** on its row and choose **Start Collecting**.
 - **From v3.0.0-rc.1 only:** rc.2 renamed the dashboard, and Operations matches pak dashboards by
   name, so the rc.1 dashboard ("Memory Tier Advanced - Sizing") is left behind. Delete it by hand.
   An uninstall after that upgrade also leaves "Memory Tier Advanced › Sizing" behind; delete it too.

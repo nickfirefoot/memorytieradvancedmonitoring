@@ -48,7 +48,7 @@ None. The adapter makes no outbound connection, so the pak works air-gapped.
 | Symptom | Fix |
 |---|---|
 | "Pak installation is in progress" | Another pak is installing on the instance; wait and retry. |
-| Adapter instance stopped after an upgrade (seen on 9.1.1) | Integrations → Accounts → the instance → **Start Collecting**. |
+| Adapter instance stopped after an upgrade (seen on 9.1.1) | Administration → Integrations → Accounts → expand Memory Tier Advanced → **⋮** on the account row → **Start Collecting**. |
 | Widgets "not configured" | Wait up to 15 minutes after install or upgrade. |
 | Guest Active per VM blank | Step 4; history starts when the policy is saved. |
 | Old dashboard still present after upgrading from rc.1 | Delete "Memory Tier Advanced - Sizing" by hand (rc.2 renamed it). |
