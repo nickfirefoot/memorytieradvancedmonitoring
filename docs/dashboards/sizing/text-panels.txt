@@ -26,12 +26,13 @@ Worst VM mem contention %: the worst any VM waited for memory. Non-zero means me
 Balloon, Swap-in/out rate, Compressed: ESXi reclaiming memory today. Any non-zero value means the cluster is already short of DRAM; tier only after that is understood.
 VM overhead: memory ESXi uses to run the VMs; stays in DRAM.
 CPU avg / peak % (CPU | Capacity Usage), CPU used / demand MHz, Worst VM CPU ready %, VMs facing CPU ready %: CPU headroom. Tiering only pays where memory runs out before CPU.
+CPU contention %: time VMs could not run because of the host (ready, co-stop, power management, hyperthreading). Worst VM CPU contention / co-stop %: the worst VM. Memory contention % (the % one of two metrics both called Memory | Contention; the other is KB): contended memory as a share of the cluster's. It is diluted across the whole cluster, so VMs facing mem contention % and the worst-VM column move first.
 
 Hosts
 -----
 
-Only hosts that are connected and not in maintenance; a down host would otherwise add a blank row. The same memory and CPU columns per host, to spot imbalance: a cluster that only fits because one host is nearly empty. CPU ready ms is time VMs waited for a CPU. Total row: installed GB.
-IO wait (vSphere's Other Wait): time vCPUs sat stalled on storage or network IO. Swap wait: time spent waiting for swapped-out memory. High IO wait means the workload is IO-bound: guest-OS tools report that time as busy CPU, so read CPU figures with it, and tiering memory will not fix it.
+Only hosts that are connected and not in maintenance; a down host would otherwise add a blank row. The same memory and CPU columns per host, to spot imbalance: a cluster that only fits because one host is nearly empty. Total row: installed GB.
+CPU demand %: what the VMs asked for as a share of the host. CPU contention %, Worst VM CPU ready %, VMs facing CPU ready %, Worst VM co-stop %, Memory contention %: the host's pressure in percent. A host's own ready, IO wait and swap wait exist only as milliseconds summed over every vCPU, which cannot be compared between hosts, so they are not shown. IO wait % exists only per VM: see the VM table.
 
 Powered-on VMs
 --------------
@@ -44,14 +45,23 @@ Reserved used GB / Reservation / Memory limit: a VM whose reservation equals its
 Host / Guest OS / vCPUs: where it runs and what it is; vCPUs and Configured GB identify monster VMs.
 Swapped, Swap-in rate, Compressed, Guest page-out 20s peak: this VM is already short of memory.
 Oversized / Undersized by: Operations' right-sizing view of the VM.
-Mem contention / CPU ready 20s peak, CPU co-stop: the worst moment inside a collection cycle.
-IO wait avg / 20s peak, Swap wait: this VM stalled on IO, or on swapped memory. A VM with high IO wait looks CPU-busy from inside the guest without using the CPU.
+Mem contention / CPU ready / co-stop 20s peak: the worst moment inside a collection cycle. CPU ready avg %: the 5-minute average beside it. CPU co-stop peak %: a multi-vCPU VM held back so its vCPUs stay in step; high co-stop usually means too many vCPUs.
+IO wait avg / 20s peak % (vSphere's Other Wait), Swap wait %: this VM stalled on storage or network IO, or on swapped memory. High IO wait means the workload is IO-bound: guest-OS tools report that time as busy CPU, so read CPU figures with it, and tiering memory will not fix it.
 Worst disk read / write latency, Disk latency 20s peak: the slowest of this VM's virtual disks. These are measured in ESXi's storage stack, so they read the same on vSAN, VMFS (FC or iSCSI), NFS and vVols; datastore-level latency is not reported for vSAN VMs. High IO wait with high disk latency: the wait is storage, so open the VM's Metrics page to see which disk and datastore. High IO wait with low disk latency: it is most likely network.
 
 The sizing
 ----------
 
 Per cluster, A = Active peak (or P95, see above), H = Running hosts, V = VM Total configured GB, I = Installed GB, R = reserve = Installed GB − Available to VMs GB: the memory ESXi keeps for the hypervisor, vSAN and NSX, measured by Operations, resident and never tierable. VMware's rule: active memory should be 50% or less of DRAM, so the recommended DRAM = 2 × A + R. Floor (1 × A + R) is the absolute minimum and sits below VMware's guidance. Conservative = 4 × A + R. NVMe needed = V − DRAM; per host it must stay under 4,096 GB. Retrofit headroom = I − DRAM: positive means NVMe alone is enough. Export the tables (Export as CSV) and memtier_818_calc.py prints all of it.
+
+Hard to find in the Operations UI
+---------------------------------
+
+20-second peaks: Operations charts 5-minute averages; the worst moment inside each cycle is a separate metric (CPU | 20 Second Peak ..., Memory | 20 Second Peak ...), per VM only.
+Worst VM and % of VMs facing: cluster and host rollups of ready, co-stop and contention. They show trouble that a cluster average hides.
+IO wait is called Other Wait in vSphere, and is a % only per VM.
+Memory | Contention exists twice on a cluster or host, once in % and once in KB: check the unit.
+Memory demand is not active memory. Demand (Memory | Machine Demand, Host Demand, Workload %) is Operations' own estimate, typically 2 to 4 times Guest Active, and it drives Capacity Remaining and Time Remaining. VMware's tiering guidance sizes DRAM on active memory, so this dashboard does too. Use demand for "is this cluster out of memory now", active for "how much DRAM after tiering".
 
 Which VMs cannot be tiered
 --------------------------

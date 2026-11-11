@@ -1,8 +1,8 @@
 # adapter.yaml -- Memory Tier Advanced v3 (Java Tier 2 pak, VCF Content Factory build).
 #
-# The pak's job is the CONTENT: three views and one dashboard over native vCenter metrics, the set
-# validated on Aria Operations 8.18.7 (tools/build_views_818.py; v3 YAML is generated from it by
-# tools/build_v3_content.py). The adapter is deliberately minimal: no credentials, no outbound
+# The pak's job is the CONTENT: six views, two dashboards and a report over native vCenter metrics,
+# validated on Aria Operations 8.18.7 and VCF Operations 9.1.1 (tools/build_views_818.py and
+# tools/build_v3_content.py, which writes the v3 YAML). The adapter is deliberately minimal: no credentials, no outbound
 # connection, registers its own World only, and writes nothing onto any VMWARE object.
 adapter_kind: memtier_advanced
 entry_class: com.vcfcf.adapters.memtier_advanced.MemTierAdvancedAdapter
@@ -11,9 +11,10 @@ description: >
   Sizes vSphere clusters for NVMe memory tiering from metrics VCF Operations already collects:
   cluster Guest Active (peak, P95, average), installed and available memory, powered-on VM
   allocation, memory pressure, CPU and IO wait headroom, and the VM exclusions Operations can see.
-  Ships views and a dashboard; the adapter collects nothing.
+  A second dashboard shows which clusters are out of memory now. Ships two dashboards, six views and
+  a report; the adapter collects nothing.
 version: 3.0.0
-build_number: 3
+build_number: 5
 tier: 2
 released: false
 content_naming: unprefixed
@@ -22,5 +23,11 @@ bundled_content:
     - views/memtier_cluster_sizing_inputs.yaml
     - views/memtier_hosts.yaml
     - views/memtier_vm_allocation_powered_on.yaml
+    - views/memtier_pressure_clusters.yaml
+    - views/memtier_pressure_hosts.yaml
+    - views/memtier_pressure_vms.yaml
   dashboards:
     - dashboards/memtier_sizing.yaml
+    - dashboards/memtier_pressure.yaml
+  reports:
+    - reports/memtier_pressure_report.yaml

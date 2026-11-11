@@ -1,15 +1,20 @@
 # Memory tiering sizing on Aria Operations 8.18: manual install
 
-Two views, no management pack, no adapter, no super metrics. They read only metrics the built-in
-vCenter integration already collects, so they work **air-gapped** and show **30 days of history
-the moment they are imported**.
+Three views and a dashboard, no management pack, no adapter, no super metrics. They read only
+metrics the built-in vCenter integration already collects, so they work **air-gapped** and show
+**30 days of history the moment they are imported**.
 
-File: [`content/818/MemTier_818_Views.xml`](../content/818/MemTier_818_Views.xml) (one file, both views, about 24 KB).
+**Use this only where the pak can't be installed.** The Memory Tier Advanced pak
+([latest release](../../../releases/latest)) carries the same tables, plus the Memory Pressure dashboard and
+report, and binds its dashboard without the manual steps below.
+
+Files: [`content/818/MemTier_818_Views.xml`](../content/818/MemTier_818_Views.xml) (all three views) and
+[`content/818/MemTier_818_Dashboard.zip`](../content/818/MemTier_818_Dashboard.zip).
 
 Tested on Aria Operations 8.18.7 (2026-11-05):
 - Every metric is present and collected by default.
 - The UI import succeeds, and the views export back unchanged.
-- With a vCenter attached, both views fill. The VM total matched the API exactly (19 VMs,
+- With a vCenter attached, the views fill. The VM total matched the API exactly (19 VMs,
   331 GB), and the calculator's figures were checked by hand.
 
 The attached vCenter was a 9.1.1 lab. Per-host memory figures were identical on Ops 8.18 and
@@ -118,9 +123,9 @@ The export is host-level only, which is all MTAT's Operations importer reads. VM
 ## 3. What the views contain
 
 Three views, all native vCenter metrics, all checked on 8.18.7. Every column is explained in the
-dashboard's **"What every column means"** panel.
+dashboard's **"How to read this"** panel.
 
-- **MemTier 8.18 Cluster Sizing Inputs**, 27 columns, one row per cluster:
+- **MemTier 8.18 Cluster Sizing Inputs**, 33 columns, one row per cluster:
   - host and VM counts
   - installed GB and GB available to VMs
   - **Guest Active total**: now, peak, **P95** and average
@@ -130,19 +135,24 @@ dashboard's **"What every column means"** panel.
   - worst VM memory contention
   - **balloon, swap-in and swap-out rates, compressed**: memory already short today
   - VM overhead
-  - CPU average and peak %, MHz used and demanded, CPU ready
-- **MemTier 8.18 Hosts**, 16 columns: the same per host, including MTAT's host inputs with MTAT's
-  own definitions (Installed, Consumed avg, Active peak, CPU avg). Total row: installed GB.
-- **MemTier 8.18 VM Allocation Powered On**, 25 columns:
+  - CPU average and peak %, MHz used and demanded, worst-VM CPU ready and VMs facing CPU ready
+  - contention as %: CPU contention, worst-VM CPU contention and co-stop, memory contention, VMs
+    facing memory contention
+- **MemTier 8.18 Hosts**, 21 columns: the same per host, including MTAT's host inputs with MTAT's
+  own definitions (Installed, Consumed avg, Active peak, CPU avg), and pressure as %: CPU demand, CPU
+  contention, worst-VM ready, VMs facing ready, worst-VM co-stop, memory contention. Hosts report
+  ready, IO wait and swap wait only as milliseconds summed over every vCPU, so those aren't shown;
+  IO wait % is per VM. Total row: installed GB.
+- **MemTier 8.18 VM Allocation Powered On**, 31 columns:
   - cluster, host, VM, guest OS
   - vCPUs and configured GB, for spotting monster VMs (512 GB+ or 128+ vCPUs)
   - Guest Active peak and Non Zero Active peak
   - consumed memory
   - reservation and limit, PCI passthrough: the exclusions Operations can see
   - swapped, swap-in rate, compressed, guest page-out
-  - IO wait and swap wait, and worst virtual-disk read/write latency (the same on vSAN, VMFS, NFS and
+  - IO wait and swap wait as %, and worst virtual-disk read/write latency (the same on vSAN, VMFS, NFS and
     vVols), to tell storage-bound IO wait from network
-  - oversized and undersized, and 20-second contention and CPU peaks
+  - oversized and undersized, 20-second contention, CPU ready and co-stop peaks, and CPU ready average
 
   Total rows: configured GB and reserved GB.
 

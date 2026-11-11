@@ -5,6 +5,7 @@ One folder per dashboard the Memory Tier Advanced pak installs. Each folder hold
 | Dashboard | Folder |
 |---|---|
 | Memory Tier Advanced › Sizing | [sizing/](sizing/) |
+| Memory Tier Advanced › Memory Pressure | [memory-pressure/](memory-pressure/) |
 
 ## Updating
 

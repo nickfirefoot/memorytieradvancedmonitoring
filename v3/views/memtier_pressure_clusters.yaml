@@ -1,0 +1,100 @@
+id: c795b2d8-d6bc-5d29-91cb-30b2dc178357
+name: Memory Tier Advanced - Cluster Memory Pressure (24 hours)
+description: 'Memory Tier Advanced: memory pressure over the last 24 hours. Generated from tools/build_v3_content.py; edit there, not here.'
+subject:
+  adapter_kind: VMWARE
+  resource_kind: ClusterComputeResource
+time_window:
+  unit: HOURS
+  count: 24
+columns:
+- attribute: config|name
+  display_name: Cluster
+  unit: ''
+  is_property: true
+  is_string_attribute: true
+- attribute: summary|number_running_hosts
+  display_name: Running hosts
+  unit: ''
+- attribute: mem|demand|max_host_workload
+  display_name: Busiest host memory workload peak %
+  unit: percent
+  transformation: MAX
+  yellow_bound: 80
+  orange_bound: 90
+  red_bound: 100
+  ascending_range: false
+  sort: desc
+- attribute: mem|workload
+  display_name: Memory workload peak %
+  unit: percent
+  transformation: MAX
+  yellow_bound: 80
+  orange_bound: 90
+  red_bound: 100
+  ascending_range: false
+- attribute: OnlineCapacityAnalytics|mem|demand|capacityRemaining
+  display_name: Capacity remaining GB
+  unit: gb
+- attribute: OnlineCapacityAnalytics|mem|demand|timeRemaining
+  display_name: Time remaining days
+  unit: ''
+- attribute: mem|is_workload_non_green
+  display_name: Operations flags memory (1 = yes)
+  unit: ''
+  transformation: MAX
+- attribute: mem|max_vm_mem_contention
+  display_name: Worst VM mem contention peak %
+  unit: percent
+  transformation: MAX
+  yellow_bound: 1
+  orange_bound: 2
+  red_bound: 5
+  ascending_range: false
+- attribute: mem|percentage_of_vms_facing_memory_contention
+  display_name: VMs facing mem contention peak %
+  unit: percent
+  transformation: MAX
+  yellow_bound: 5
+  orange_bound: 10
+  red_bound: 25
+  ascending_range: false
+- attribute: mem|host_contentionPct
+  display_name: Cluster mem contention peak %
+  unit: percent
+  transformation: MAX
+  yellow_bound: 1
+  orange_bound: 2
+  red_bound: 5
+  ascending_range: false
+- attribute: mem|vmmemctl_average
+  display_name: Balloon peak GB
+  unit: gb
+  transformation: MAX
+- attribute: mem|swapinRate_average
+  display_name: Swap-in rate peak KBps
+  unit: ''
+  transformation: MAX
+- attribute: mem|swapoutRate_average
+  display_name: Swap-out rate peak KBps
+  unit: ''
+  transformation: MAX
+- attribute: mem|compressed_average
+  display_name: Compressed peak GB
+  unit: gb
+  transformation: MAX
+- attribute: mem|host_demand
+  display_name: Machine demand peak GB
+  unit: gb
+  transformation: MAX
+- attribute: mem|active_average
+  display_name: Guest Active peak GB
+  unit: gb
+  transformation: MAX
+- attribute: mem|consumed_average
+  display_name: Consumed peak GB
+  unit: gb
+  transformation: MAX
+- attribute: mem|demand|usableCapacity
+  display_name: Usable after HA and buffer GB
+  unit: gb

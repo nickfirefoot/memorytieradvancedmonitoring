@@ -1,0 +1,48 @@
+id: 54035b8a-7d07-55f0-ae73-e5285e6b62a3
+name: "Memory Pressure"
+name_path: "Memory Tier Advanced"
+description: >
+  Which clusters are out of memory now: demand, contention and reclaim over the last 24 hours,
+  worst first. Generated from tools/build_v3_content.py. Never rename it (pak dashboards are matched by name).
+released: false
+version: "3.0.0"
+
+interactions:
+- from: clusters
+  to: hosts
+  type: resourceId
+- from: clusters
+  to: vms
+  type: resourceId
+
+widgets:
+- id: clusters
+  type: View
+  title: "Clusters, worst first (click one)"
+  coords: {x: 1, y: 1, w: 12, h: 6}
+  self_provider: true
+  select_first_row: true
+  pin:
+    adapter_kind: VMWARE
+    resource_kind: vSphere World
+  view: "Memory Tier Advanced - Cluster Memory Pressure (24 hours)"
+- id: hosts
+  type: View
+  title: "Hosts in the selected cluster"
+  coords: {x: 1, y: 7, w: 12, h: 7}
+  view: "Memory Tier Advanced - Host Memory Pressure (24 hours)"
+- id: vms
+  type: View
+  title: "VMs in the selected cluster, most contended first"
+  coords: {x: 1, y: 14, w: 12, h: 10}
+  view: "Memory Tier Advanced - VM Memory Pressure (24 hours)"
+- id: help
+  type: TextDisplay
+  title: "How to read this"
+  coords: {x: 1, y: 24, w: 12, h: 11}
+  html: "<div style=\"font-family:'Metropolis','Segoe UI',sans-serif;font-size:13px;line-height:1.45;padding:12px 14px;background:#2b3137;color:#e9edf0;border-radius:6px;border:1px solid #4a535d\"><h3 style=\"font-size:15px;margin:4px 0 10px 0;color:#ffffff\">Which clusters are out of memory now</h3>\n<p style=\"margin:5px 0;line-height:1.45;color:#e9edf0\">Last <b style=\"font-weight:700;color:#ffffff\">24 hours</b>, peak of 5-minute samples, worst cluster first. Click a cluster; its hosts and the\nVMs that waited for memory follow. Yellow, orange and red mark the % columns.</p>\n<p style=\"margin:5px 0;line-height:1.45;color:#e9edf0\"><b style=\"font-weight:700;color:#ffd79a\">Out of memory today</b> = the busiest host's memory workload near 100% <b style=\"font-weight:700;color:#ffffff\">and</b> VMs facing\ncontention, or balloon, swap or compression above 0. Workload alone means no headroom; contention or\nreclaim on top means users are waiting.</p>\n<h4 style=\"font-size:15px;margin:4px 0 10px 0;color:#ffffff\">Columns</h4>\n<p style=\"margin:5px 0;line-height:1.45;color:#e9edf0\"><b style=\"font-weight:700;color:#ffffff\">Busiest host / Memory workload %</b>: memory demand as a share of usable memory. The cluster\nfigure is an average, so one full host can hide behind it; the busiest-host column cannot.<br>\n<b style=\"font-weight:700;color:#ffffff\">Capacity remaining, Time remaining</b>: Operations' capacity engine, on demand after HA and buffer.\n0 means out now; \"&gt; 1 Year\" means a year or more.<br>\n<b style=\"font-weight:700;color:#ffffff\">Operations flags memory</b>: 1 when Operations itself rates the cluster's memory workload not green.<br>\n<b style=\"font-weight:700;color:#ffffff\">Worst VM mem contention %</b>: a VM waited for memory. Above 1 to 2% sustained is felt.\n<b style=\"font-weight:700;color:#ffffff\">VMs facing mem contention %</b>: how widespread it is. <b style=\"font-weight:700;color:#ffffff\">Cluster mem contention %</b> is diluted\nacross the whole cluster and moves last.<br>\n<b style=\"font-weight:700;color:#ffffff\">Balloon, Swap-in/out rate, Compressed</b>: ESXi taking memory back from guests. Swap-in is the\none users feel.<br>\n<b style=\"font-weight:700;color:#ffffff\">Machine demand, Guest Active, Consumed</b>: demand is Operations' estimate and drives the capacity\nfigures; it typically runs 2 to 4 times Guest Active. Size DRAM for tiering on active (the Sizing\ndashboard), not on demand.</p>\n<h4 style=\"font-size:15px;margin:4px 0 10px 0;color:#ffffff\">Hosts and VMs</h4>\n<p style=\"margin:5px 0;line-height:1.45;color:#e9edf0\">Hosts: the same signals per running host, fullest first. VMs: powered-on VMs in the cluster, most\ncontended first, with swap wait (time stalled on swapped memory), CPU ready and IO wait as %. A VM with\nhigh IO wait is waiting on storage or network, which more memory will not fix.</p></div>"
+- id: setup
+  type: TextDisplay
+  title: "Complete the install"
+  coords: {x: 1, y: 35, w: 12, h: 9}
+  html: "<div style=\"font-family:'Metropolis','Segoe UI',sans-serif;font-size:13px;line-height:1.45;padding:12px 14px;background:#2b3137;color:#e9edf0;border-radius:6px;border:1px solid #4a535d\"><h3 style=\"font-size:15px;margin:4px 0 10px 0;color:#ffffff\">Complete the install</h3>\n<p style=\"margin:5px 0;line-height:1.45;color:#e9edf0\">The pak adds the views and this dashboard. Two steps need doing by hand, once.</p>\n<p style=\"margin:5px 0;line-height:1.45;color:#e9edf0\"><b style=\"font-weight:700;color:#ffffff\">1. Add the adapter instance.</b> Administration → Integrations → Repository → click\n<b style=\"font-weight:700;color:#ffffff\">Memory Tier Advanced</b> → <b style=\"font-weight:700;color:#ffffff\">ADD ACCOUNT</b>. Type a Name, leave Label and Collector as\nthey are, click <b style=\"font-weight:700;color:#ffffff\">ADD</b>. It collects nothing and turns green within a few minutes. After an\nupgrade, check it under Integrations → Accounts; if it shows stopped, choose <b style=\"font-weight:700;color:#ffffff\">Start Collecting</b>.</p>\n<p style=\"margin:5px 0;line-height:1.45;color:#e9edf0\"><b style=\"font-weight:700;color:#ffffff\">2. Turn on two VM metrics in the active policy.</b></p>\n<ol style=\"margin:4px 0 4px 20px;padding:0;color:#e9edf0\">\n<li style=\"margin:5px 0;line-height:1.45;color:#e9edf0\">Open <b style=\"font-weight:700;color:#ffffff\">Policy Definition</b>: on 8.18, Operations → Configurations; on 9.x,\nAdministration → Configurations.</li>\n<li style=\"margin:5px 0;line-height:1.45;color:#e9edf0\">Click the policy whose Status is <b style=\"font-weight:700;color:#ffffff\">Active</b> (normally Default Policy), then\n<b style=\"font-weight:700;color:#ffffff\">EDIT POLICY</b> → <b style=\"font-weight:700;color:#ffffff\">Metrics and Properties</b>.</li>\n<li style=\"margin:5px 0;line-height:1.45;color:#e9edf0\">Select Object Type: <code style=\"font-family:monospace;background:#363d45;color:#8fd3ff;padding:1px 3px;border-radius:3px\">Virtual Machine</code> (vCenter → Virtual Machine).</li>\n<li style=\"margin:5px 0;line-height:1.45;color:#e9edf0\">Filter <code style=\"font-family:monospace;background:#363d45;color:#8fd3ff;padding:1px 3px;border-radius:3px\">Guest Active</code>, click Expand All, and set <b style=\"font-weight:700;color:#ffffff\">Memory → Guest Active\n(KB)</b> to <b style=\"font-weight:700;color:#ffffff\">Activated</b>. 8.18 only; 9.x collects it already.</li>\n<li style=\"margin:5px 0;line-height:1.45;color:#e9edf0\">Filter <code style=\"font-family:monospace;background:#363d45;color:#8fd3ff;padding:1px 3px;border-radius:3px\">PCI</code> and set <b style=\"font-weight:700;color:#ffffff\">Configuration → Security → PCI PassThrough</b> to\n<b style=\"font-weight:700;color:#ffffff\">Activated</b>. Both versions.</li>\n<li style=\"margin:5px 0;line-height:1.45;color:#e9edf0\">Click <b style=\"font-weight:700;color:#ffffff\">SAVE</b>.</li>\n</ol>\n<p style=\"margin:5px 0;line-height:1.45;color:#e9edf0\"><b style=\"font-weight:700;color:#ffd79a\">Until step 2,</b> the VM Guest Active and PCI passthrough columns stay blank. Their\nhistory starts when you save; Guest Active fills in within about 5 minutes. No super metrics are needed.</p></div>"

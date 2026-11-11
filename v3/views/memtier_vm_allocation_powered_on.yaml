@@ -142,3 +142,11 @@ columns:
     display_name: "Disk latency 20s peak ms"
     unit: ""
     transformation: MAX
+  - attribute: "cpu|readyPct"
+    display_name: "CPU ready avg %"
+    unit: "percent"
+    transformation: AVG
+  - attribute: "cpu|20_sec_peak_costopPct"
+    display_name: "CPU co-stop 20s peak %"
+    unit: "percent"
+    transformation: MAX

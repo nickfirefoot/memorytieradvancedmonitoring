@@ -1,0 +1,20 @@
+id: b4f5e69a-8449-5957-86f5-0f10389c49b1
+name: "Memory Tier Advanced - Cluster Memory Pressure"
+description: >
+  Every cluster's memory demand, contention and reclaim over the last 24 hours, worst first.
+  Run it on vSphere World, or schedule it daily (Reports, then Schedule). PDF and CSV.
+released: false
+sections:
+- type: View
+  view: "Memory Tier Advanced - Cluster Memory Pressure (24 hours)"
+  orientation: Landscape
+  colorize: true
+settings:
+  output_formats:
+  - pdf
+  - csv
+  show_page_footer: true
+subject_types:
+- adapter_kind: VMWARE
+  resource_kind: vSphere World
+  type: self

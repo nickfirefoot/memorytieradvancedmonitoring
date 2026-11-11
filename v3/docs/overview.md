@@ -1,23 +1,37 @@
 # Overview: Memory Tier Advanced
 
-> **Scaffold:** edit this file to describe your pack. It is generated once and
-> not overwritten on subsequent builds.
+For the version, see [docs/README.md](README.md) (regenerated on every build) or the GitHub release.
 
 ## What's in the Pack
 
-Memory Tier Advanced. For the version, see [docs/README.md](README.md) (regenerated on every build) or the GitHub release.
+Sizes vSphere clusters for NVMe memory tiering, and shows which clusters are out of memory now, from
+native vCenter metrics VCF Operations already collects. No super metrics.
 
-Sizes vSphere clusters for NVMe memory tiering from metrics VCF Operations already collects: cluster Guest Active (peak, P95, average), installed and available memory, powered-on VM allocation, memory pressure, CPU and IO wait headroom, and the VM exclusions Operations can see. Ships views and a dashboard; the adapter collects nothing.
+| Content | Purpose |
+|---|---|
+| **Memory Tier Advanced › Sizing** dashboard | 30-day sizing: clusters, running hosts, powered-on VMs |
+| **Memory Tier Advanced › Memory Pressure** dashboard | Last 24 hours: demand, contention and reclaim, worst first |
+| Views: Cluster Sizing Inputs, Hosts, Powered-on VMs | The Sizing tables |
+| Views: Cluster / Host / VM Memory Pressure (24 hours) | The Memory Pressure tables |
+| Report: Cluster Memory Pressure | PDF and CSV of the cluster pressure table |
+
+Screenshots and the dashboards' help text: [docs/dashboards](../../docs/dashboards/).
 
 ### Resource Kinds (1)
 
-- **Memory Tier Advanced World** (`World`)
+- **Memory Tier Advanced World** (`World`): the adapter's only object. It has no metrics and no
+  relationships.
 
 ## Cross-Adapter Notes
 
-<!-- Describe LLDP stitching, ARIA_OPS metric stitching, or other cross-adapter
-     relationships here. -->
+All content reads the built-in vCenter adapter's objects (`VMWARE`: ClusterComputeResource,
+HostSystem, VirtualMachine). The adapter writes nothing onto them.
 
 ## Known Limitations
 
-<!-- List known limitations, gaps, or caveats here. -->
+- Two VM metrics need enabling in the policy: Guest Active (8.18 only) and PCI PassThrough.
+- IO wait as a % exists only per VM; hosts and clusters report it only in milliseconds.
+- The Memory Pressure table is sorted worst first, not filtered: the factory's view filters cannot
+  express "balloon OR swap OR non-green".
+- Tested on Aria Operations 8.18.7 and VCF Operations 9.1.1, both against a VCF 9.1.1 vCenter; not
+  yet against a vCenter 8.

@@ -1,45 +1,71 @@
 # Releasing
 
-Same tag scheme as the vSAN Host Metrics pack (`~/vsan-net-mp/README.md`, "To release").
+How a Memory Tier Advanced v3 pak is built, checked and published. Nothing here runs in CI: this
+repository has no workflows, so every check below is run by hand and recorded in the release notes.
 
-| | Dev build | Release |
-|---|---|---|
-| Tag | `vX.Y.Z-rc.N`, from any branch | `vX.Y.Z`, from the release branch |
-| GitHub | **published pre-release**, named after the tag | full release |
-| Pak file | `MemoryTierAdvanced_X.Y.Z-rc.N.pak`; `manifest.txt` inside carries the plain target `X.Y.Z` | `MemoryTierAdvanced_X.Y.Z.pak` |
-| Image tag | `X.Y.Z-rc.N` | `X.Y.Z` |
-| Assets | the pak + `SHA256SUMS` | the same |
+## Versions
 
-- **Download URLs are permanent:** `…/releases/download/<tag>/<file>`. Never hand out a draft
-  release's `untagged-…` link; it dies when the draft is published or re-cut.
-- **The rc is in the file name** so every download says which build it is. Operations itself
-  shows only `X.Y.Z`; confirm which rc is installed with `p43_pak_install_check.py`.
-- **Builds are not byte-reproducible** (zip timestamps), so a rebuild of the same commit gets a
-  different sha256. Never upload a rebuild under a name that is already published; the release
-  asset is the artefact of record.
-- **A version is never re-cut.** If `vX.Y.Z` is wrong, release `vX.Y.(Z+1)`. Each rc of the same
-  target carries the same pak version, so reinstalling one over another needs *Install even if
-  already installed*.
-- **Promote to a release only after an install on an instance that isn't the development lab**
-  (the gate in the development repo's `RELEASING.md`), and for this pack, on the **8.18**
-  target (`docs/TARGET-8.18.md`).
-- **No signing.** The vSAN pack signs and attests through CI; this repo has no CI, so nothing
-  here is signed. The image digest in `MemTierAdvanced.conf` matches the release notes, which
-  proves the pak and the image match each other and nothing about who built them.
+| | |
+|---|---|
+| Git tag and release | `v3.0.0-rc.N` while testing; `v3.0.0` for the final |
+| Pak file | `vcfcf_sdk_memtier_advanced.0.0.0.N.pak`. The VCF Content Factory stamps every build not made by its own CI on its hand-built `0.0.0.N` line, with N = `build_number` in `v3/adapter.yaml`. The release tag is the version of record. |
+| Assets | the pak, `memtier_818_calc.py`, `mtat_export_818.py`, `SHA256SUMS` |
 
-## Cutting a dev build
+- **Download URLs are permanent:** `…/releases/download/<tag>/<file>`. `…/releases/latest` always
+  opens the newest full release.
+- **A published asset is never replaced.** Builds are not byte-reproducible, so a rebuild gets a new
+  sha256: bump `build_number` and cut a new rc instead.
+- **Never rename a dashboard.** Operations matches pak dashboards by name, so a rename leaves the old
+  one behind on upgrade (rc.1 → rc.2). Views are identified by a uuid5 of their title, so renaming a
+  view also makes a new object.
 
-1. `cd tools && python3 build_content.py && python3 build_views.py && MEMTIER_RC=N ~/.mp/bin/python3 build_pak.py`
-   (the SDK's Python, so the describe/adapter comparison runs).
-2. `cd build && sha256sum MemoryTierAdvanced_X.Y.Z-rc.N.pak > SHA256SUMS`
-3. Commit, then `git tag -a vX.Y.Z-rc.N -m …` and push the branch and the tag.
-4. If the adapter changed: build the image, test it (`p42_adapter_local_run.py --image`), push it,
-   pin its digest in `build_pak.py`, and rebuild the pak.
-5. Tag the image `X.Y.Z-rc.N`.
-6. Create the release with `prerelease: true`, upload the pak and `SHA256SUMS`, then download
-   the pak **anonymously** from its permanent URL and compare its sha256.
+## Build
+
+1. Edit `tools/build_views_818.py` (views and help text shared with the manual 8.18 set) or
+   `tools/build_v3_content.py` (v3 names, Memory Pressure dashboard, report, "Complete the install").
+2. Regenerate and check:
+   ```
+   python3 tools/build_v3_content.py              # v3/views, v3/dashboards, v3/reports
+   python3 tools/build_views_818.py               # tools/build/818; copy the three files to content/818/
+   python3 tools/verify_818_views.py              # every key declared and collected by default on 8.18
+   python3 tools/export_dashboard_docs.py         # docs/dashboards/*/text-panels.txt
+   ```
+3. Bump `build_number` in `v3/adapter.yaml`, then build with the factory:
+   ```
+   PYTHONPATH=<factory>/src python3 -m vcfcf_managementpacks validate-sdk v3
+   PYTHONPATH=<factory>/src python3 -m vcfcf_managementpacks build-sdk v3 --output <dir> --sdk-jar <vrops-adapters-sdk.jar>
+   ```
+   The SDK jar is compile-only and never ships. The factory's own `--release` mode needs a CI
+   reference pak, which this repository doesn't have, so builds are hand builds.
+4. `python3 tools/test_help_contrast.py <pak>`: every text panel legible in light and dark themes.
+
+## Verify before publishing
+
+On **Aria Operations 8.18** and **VCF Operations 9.1.1**, through the UI a customer uses
+(Integrations → Repository → ADD), never by content import:
+
+- Install over the previous build: solution version, adapter instance GREEN (Start Collecting if
+  stopped), VMs keep their host links.
+- Every dashboard binds (no "not configured" after ~15 minutes) and shows data.
+- After changing a dashboard's layout, look at it: text panels must not be clipped.
+- Before each install or uninstall, check no other pak operation is running on the instance
+  (`/casa/deployment/cluster/info`: `is_pak_installation_active`, `is_pak_uninstall_active`).
+
+## Publish
+
+1. Commit, push the branch.
+2. Create the release from that commit with `prerelease: true`, the notes, and the four assets.
+3. Download every asset **anonymously** from its permanent URL and check it against `SHA256SUMS`.
+4. Promote to a full release (untick pre-release, set as latest) only when the owner decides.
+
+## Docs
+
+Refresh `docs/dashboards/` when a dashboard changes: regenerate the text with
+`tools/export_dashboard_docs.py`, and retake screenshots from a lab with every object name replaced
+(see [docs/dashboards/README.md](dashboards/README.md)).
 
 ## History
 
-`v2.1.1` to `v2.1.6` were private draft test builds cut before this scheme; only 2.1.1 onwards
-installed. `v2.2.0-rc.1` carries the same content as 2.1.6.
+2.x was built differently (Python adapter image, super metrics, `tools/build_pak.py`); its notes are
+in [docs/history](history/). `v2.1.1` to `v2.1.6` were private draft test builds; `v2.2.0-rc.1`
+carries the same content as 2.1.6.

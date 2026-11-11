@@ -1,3 +1,5 @@
+> **Historical: Memory Tier Advanced 2.x working notes.** Superseded by v3; kept for the record. The current docs start at the [README](../../README.md).
+
 # Target: Aria Operations 8.18 with vCenter 8
 
 **The pak's target is Operations 8.18 and vCenter 8.** Everything built so far was proven on

@@ -1,0 +1,96 @@
+id: 0ed8c68a-7de8-5cc3-90e4-8673310d0af5
+name: Memory Tier Advanced - Host Memory Pressure (24 hours)
+description: 'Memory Tier Advanced: memory pressure over the last 24 hours. Generated from tools/build_v3_content.py; edit there, not here.'
+subject:
+  adapter_kind: VMWARE
+  resource_kind: HostSystem
+  filter:
+    - filter_type: properties
+      metric_key: "runtime|connectionState"
+      condition: EQUALS
+      value: "connected"
+      transform: CURRENT
+    - filter_type: properties
+      metric_key: "runtime|maintenanceState"
+      condition: EQUALS
+      value: "notInMaintenance"
+      transform: CURRENT
+time_window:
+  unit: HOURS
+  count: 24
+columns:
+- attribute: summary|parentCluster
+  display_name: Cluster
+  unit: ''
+  is_property: true
+  is_string_attribute: true
+- attribute: config|name
+  display_name: Host
+  unit: ''
+  is_property: true
+  is_string_attribute: true
+- attribute: mem|workload
+  display_name: Memory workload peak %
+  unit: percent
+  transformation: MAX
+  yellow_bound: 80
+  orange_bound: 90
+  red_bound: 100
+  ascending_range: false
+  sort: desc
+- attribute: mem|max_vm_mem_contention
+  display_name: Worst VM mem contention peak %
+  unit: percent
+  transformation: MAX
+  yellow_bound: 1
+  orange_bound: 2
+  red_bound: 5
+  ascending_range: false
+- attribute: mem|percentage_of_vms_facing_memory_contention
+  display_name: VMs facing mem contention peak %
+  unit: percent
+  transformation: MAX
+  yellow_bound: 5
+  orange_bound: 10
+  red_bound: 25
+  ascending_range: false
+- attribute: mem|host_contentionPct
+  display_name: Host mem contention peak %
+  unit: percent
+  transformation: MAX
+  yellow_bound: 1
+  orange_bound: 2
+  red_bound: 5
+  ascending_range: false
+- attribute: mem|vmmemctl_average
+  display_name: Balloon peak GB
+  unit: gb
+  transformation: MAX
+- attribute: mem|swapinRate_average
+  display_name: Swap-in rate peak KBps
+  unit: ''
+  transformation: MAX
+- attribute: mem|swapoutRate_average
+  display_name: Swap-out rate peak KBps
+  unit: ''
+  transformation: MAX
+- attribute: mem|compressed_average
+  display_name: Compressed peak GB
+  unit: gb
+  transformation: MAX
+- attribute: mem|host_demand
+  display_name: Machine demand peak GB
+  unit: gb
+  transformation: MAX
+- attribute: mem|active_average
+  display_name: Guest Active peak GB
+  unit: gb
+  transformation: MAX
+- attribute: mem|consumed_average
+  display_name: Consumed peak GB
+  unit: gb
+  transformation: MAX
+- attribute: mem|usage_average
+  display_name: Memory usage peak %
+  unit: percent
+  transformation: MAX

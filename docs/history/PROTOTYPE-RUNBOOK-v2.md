@@ -1,3 +1,5 @@
+> **Historical: Memory Tier Advanced 2.x working notes.** Superseded by v3; kept for the record. The current docs start at the [README](../../README.md).
+
 # Memory Tier Advanced 2.1.0: prototype runbook
 
 Written 2026-10-17. Targets: a **working prototype by Monday**, **something ready for scale

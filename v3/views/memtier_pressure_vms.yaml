@@ -1,0 +1,73 @@
+id: 2f5e2d84-1a9a-5718-bb70-1561058903cf
+name: Memory Tier Advanced - VM Memory Pressure (24 hours)
+description: 'Memory Tier Advanced: memory pressure over the last 24 hours. Generated from tools/build_v3_content.py; edit there, not here.'
+subject:
+  adapter_kind: VMWARE
+  resource_kind: VirtualMachine
+  filter:
+    - filter_type: properties
+      metric_key: "summary|runtime|powerState"
+      condition: EQUALS
+      value: "Powered On"
+time_window:
+  unit: HOURS
+  count: 24
+columns:
+- attribute: summary|parentHost
+  display_name: Host
+  unit: ''
+  is_property: true
+  is_string_attribute: true
+- attribute: config|name
+  display_name: VM
+  unit: ''
+  is_property: true
+  is_string_attribute: true
+- attribute: mem|20_sec_peak_host_contentionPct
+  display_name: Mem contention 20s peak %
+  unit: percent
+  transformation: MAX
+  yellow_bound: 1
+  orange_bound: 2
+  red_bound: 5
+  ascending_range: false
+  sort: desc
+- attribute: mem|host_contentionPct
+  display_name: Mem contention avg %
+  unit: percent
+  transformation: AVG
+  yellow_bound: 1
+  orange_bound: 2
+  red_bound: 5
+  ascending_range: false
+- attribute: mem|swapped_average
+  display_name: Swapped peak GB
+  unit: gb
+  transformation: MAX
+- attribute: mem|swapinRate_average
+  display_name: Swap-in rate peak KBps
+  unit: ''
+  transformation: MAX
+- attribute: mem|compressed_average
+  display_name: Compressed peak GB
+  unit: gb
+  transformation: MAX
+- attribute: cpu|swapwaitPct
+  display_name: Swap wait peak %
+  unit: percent
+  transformation: MAX
+- attribute: mem|workload
+  display_name: Memory workload peak %
+  unit: percent
+  transformation: MAX
+- attribute: mem|guest_provisioned
+  display_name: Configured GB
+  unit: gb
+- attribute: cpu|20_sec_peak_readyPct
+  display_name: CPU ready 20s peak %
+  unit: percent
+  transformation: MAX
+- attribute: cpu|iowaitPct
+  display_name: IO wait avg %
+  unit: percent
+  transformation: AVG

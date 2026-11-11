@@ -19,6 +19,6 @@
 ## Quick Reference
 
 - **Adapter kind:** `memtier_advanced`
-- **Version:** 0.0.0.2
+- **Version:** 0.0.0.5
 - **Traversal spec:** Memory Tier Advanced
 - **Resource kinds:** 1

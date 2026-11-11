@@ -89,19 +89,27 @@ columns:
     display_name: "CPU used peak MHz"
     unit: ""
     transformation: MAX
-  - attribute: "cpu|ready_summation"
-    display_name: "CPU ready peak ms"
-    unit: ""
+  - attribute: "cpu|demandPct"
+    display_name: "CPU demand peak %"
+    unit: "percent"
     transformation: MAX
-  - attribute: "cpu|iowait"
-    display_name: "IO wait peak ms"
-    unit: ""
+  - attribute: "cpu|capacity_contentionPct"
+    display_name: "CPU contention peak %"
+    unit: "percent"
     transformation: MAX
-  - attribute: "cpu|iowait"
-    display_name: "IO wait avg ms"
-    unit: ""
-    transformation: AVG
-  - attribute: "cpu|swapwait_summation"
-    display_name: "Swap wait peak ms"
-    unit: ""
+  - attribute: "cpu|max_cpu_ready"
+    display_name: "Worst VM CPU ready peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "cpu|percentage_of_vms_facing_cpu_ready"
+    display_name: "VMs facing CPU ready peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "cpu|max_cpu_costop"
+    display_name: "Worst VM co-stop peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "mem|host_contentionPct"
+    display_name: "Memory contention peak %"
+    unit: "percent"
     transformation: MAX

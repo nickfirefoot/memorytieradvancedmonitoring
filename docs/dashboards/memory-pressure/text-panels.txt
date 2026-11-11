@@ -1,0 +1,50 @@
+Memory Tier Advanced › Memory Pressure: dashboard text panels
+Generated from v3/dashboards/memtier_pressure.yaml by tools/export_dashboard_docs.py. Do not edit by hand.
+
+########################
+### How to read this ###
+########################
+
+Which clusters are out of memory now
+====================================
+
+Last 24 hours, peak of 5-minute samples, worst cluster first. Click a cluster; its hosts and the VMs that waited for memory follow. Yellow, orange and red mark the % columns.
+
+Out of memory today = the busiest host's memory workload near 100% and VMs facing contention, or balloon, swap or compression above 0. Workload alone means no headroom; contention or reclaim on top means users are waiting.
+
+Columns
+-------
+
+Busiest host / Memory workload %: memory demand as a share of usable memory. The cluster figure is an average, so one full host can hide behind it; the busiest-host column cannot.
+Capacity remaining, Time remaining: Operations' capacity engine, on demand after HA and buffer. 0 means out now; "> 1 Year" means a year or more.
+Operations flags memory: 1 when Operations itself rates the cluster's memory workload not green.
+Worst VM mem contention %: a VM waited for memory. Above 1 to 2% sustained is felt. VMs facing mem contention %: how widespread it is. Cluster mem contention % is diluted across the whole cluster and moves last.
+Balloon, Swap-in/out rate, Compressed: ESXi taking memory back from guests. Swap-in is the one users feel.
+Machine demand, Guest Active, Consumed: demand is Operations' estimate and drives the capacity figures; it typically runs 2 to 4 times Guest Active. Size DRAM for tiering on active (the Sizing dashboard), not on demand.
+
+Hosts and VMs
+-------------
+
+Hosts: the same signals per running host, fullest first. VMs: powered-on VMs in the cluster, most contended first, with swap wait (time stalled on swapped memory), CPU ready and IO wait as %. A VM with high IO wait is waiting on storage or network, which more memory will not fix.
+
+
+############################
+### Complete the install ###
+############################
+
+Complete the install
+====================
+
+The pak adds the views and this dashboard. Two steps need doing by hand, once.
+
+1. Add the adapter instance. Administration → Integrations → Repository → click Memory Tier Advanced → ADD ACCOUNT. Type a Name, leave Label and Collector as they are, click ADD. It collects nothing and turns green within a few minutes. After an upgrade, check it under Integrations → Accounts; if it shows stopped, choose Start Collecting.
+
+2. Turn on two VM metrics in the active policy.
+   1. Open Policy Definition: on 8.18, Operations → Configurations; on 9.x, Administration → Configurations.
+   2. Click the policy whose Status is Active (normally Default Policy), then EDIT POLICY → Metrics and Properties.
+   3. Select Object Type: Virtual Machine (vCenter → Virtual Machine).
+   4. Filter Guest Active, click Expand All, and set Memory → Guest Active (KB) to Activated. 8.18 only; 9.x collects it already.
+   5. Filter PCI and set Configuration → Security → PCI PassThrough to Activated. Both versions.
+   6. Click SAVE.
+
+Until step 2, the VM Guest Active and PCI passthrough columns stay blank. Their history starts when you save; Guest Active fills in within about 5 minutes. No super metrics are needed.

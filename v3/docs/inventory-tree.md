@@ -1,6 +1,6 @@
 # Inventory Tree: Memory Tier Advanced
 
-> Generated from `describe.xml` v0.0.0.2. Do not edit: regenerated on every build.
+> Generated from `describe.xml` v0.0.0.5. Do not edit: regenerated on every build.
 
 **Traversal Spec:** Memory Tier Advanced
 

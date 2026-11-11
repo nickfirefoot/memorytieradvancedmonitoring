@@ -119,3 +119,23 @@ columns:
     display_name: "VMs facing CPU ready peak %"
     unit: "percent"
     transformation: MAX
+  - attribute: "cpu|capacity_contentionPct"
+    display_name: "CPU contention peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "cpu|max_vm_cpu_contention"
+    display_name: "Worst VM CPU contention peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "cpu|max_cpu_costop"
+    display_name: "Worst VM co-stop peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "mem|host_contentionPct"
+    display_name: "Memory contention peak %"
+    unit: "percent"
+    transformation: MAX
+  - attribute: "mem|percentage_of_vms_facing_memory_contention"
+    display_name: "VMs facing mem contention peak %"
+    unit: "percent"
+    transformation: MAX

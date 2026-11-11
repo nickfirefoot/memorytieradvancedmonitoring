@@ -1,222 +1,139 @@
-> ## Released: [v2.0.0](../../releases/tag/v2.0.0)
->
-> `MemoryTierAdvanced_2.0.0.pak` — 29 super metrics, 3 views, **2 dashboards**, an opt-in
-> custom group, and an adapter that collects the tiering disqualifiers Operations cannot
-> otherwise see.
->
-> **Install** — Administration → Integrations → Repository → Add, ticking both *Install even if
-> already installed* and *Ignore signature checking*. Unsigned installs must be enabled once per
-> instance at `https://<ops>/admin` → Administrator Settings → Security Settings.
-> **Then enable the super metrics in the active policy** — they arrive disabled however they are
-> imported.
->
-> **Configure an adapter instance** (vCenter FQDN, a **read-only** account, certificate
-> verification off unless the VMCA root is trusted). Unlike earlier builds this adapter does
-> collect: VM advanced parameters, VM options and ESXi advanced settings, as properties.
->
-> **Opt clusters in** by tagging them `memtier-include` in vCenter. A cluster you are deferring
-> is then excluded from the fleet total while staying visible per-cluster.
->
-> ### Known defect in v2.0.0 — the fleet total reads blank
->
-> The four `MemTier Fleet *` super metrics in **v2.0.0 are bound to a resource kind that does
-> not exist** (`VMWARE/Environment`; group kinds belong to the `Container` adapter). They
-> import without error and then attach to nothing, so the opted-in fleet projection never
-> produces a value. **Per-cluster figures are unaffected.** Found and fixed in source on
-> 2026-10-16, on branch `agent/memtier-sizing`; not yet released, because a release here is
-> gated on a pak completing an install on an instance that is not the author's lab, and that
-> has still not happened. See `docs/` and the development repo's `LESSONS.md` §10.3.
->
-> ### Unreleased, on branch `agent/memtier-sizing`
->
-> A third dashboard, **Export for MTAT**, produces the Hosts and VMs import files for
-> Broadcom's Memory Tiering Assessment Tool from Operations data, so MTAT sizes on 5-minute
-> peaks instead of vCenter's 2-hour averages. Steps are on the dashboard itself.
->
-> **Verified on VCF Operations 9.1.1**: content imports and resolves, every metric key present
-> on live objects, image pulls anonymously and matches the pinned digest.
-> **Not yet verified on 8.18**, and the pak install itself is not yet proven end to end.
+# Memory Tier Advanced for VCF Operations
 
-# Memory Tiering Sizing for VCF Operations
+Sizes vSphere clusters for **NVMe memory tiering**, and shows which clusters are **out of memory now**,
+from metrics VCF Operations already collects. No super metrics, no vCenter credentials, no outbound
+connection: it works air-gapped.
 
-Dashboards and super metrics that size a vSphere estate for **VCF 9 NVMe memory tiering**,
-using only metrics the built-in vCenter adapter already collects.
+**Download: [latest release](../../releases/latest).** Tested on **Aria Operations 8.18.7** and
+**VCF Operations 9.1.1**.
 
-Built for **Aria Operations 8.18** and **VCF Operations 9.x**.
+## What it ships
 
-The dashboards and super metrics read only metrics the built-in vCenter adapter already
-collects, so the sizing content stands on its own. From 2.0.0 the pak **also** ships a small
-read-only collector for the one thing vCenter does not expose — the per-VM settings that
-disqualify a workload from tiering. Configuring it is optional; without it the pinned columns
-read blank and every saving figure should be read as an upper bound.
+One pak (`vcfcf_sdk_memtier_advanced.<version>.pak`) containing:
 
----
+| | |
+|---|---|
+| **Sizing** dashboard | Clusters, their running hosts and powered-on VMs over the last 30 days: Guest Active (now, peak, P95, average), installed and available memory, consumed, memory and CPU pressure, IO wait and disk latency, and the VMs that cannot be tiered. |
+| **Memory Pressure** dashboard | Which clusters are out of memory now: demand, workload, capacity remaining, contention, balloon and swap over the last 24 hours, worst first and colour-coded. |
+| 6 views | The tables behind both dashboards, usable on their own and exportable as CSV. |
+| 1 report | *Memory Tier Advanced - Cluster Memory Pressure*, PDF and CSV, ready to schedule. |
+| A minimal adapter | Needed for a Java pak; it registers one World object and collects nothing. |
 
-## What question it answers
-
-You are planning a VCF 9 upgrade and want to know, per cluster:
-
-- how much memory is **allocated** to VMs versus **consumed** by hosts versus actually **active**
-- how much of that is **cold** — backed in DRAM but outside the working set, the candidate for an NVMe tier
-- what **DRAM:NVMe ratio** the workload could carry (1:1, 1:2, 1:4), and which clusters cannot tier at all
-- which **VMs are least suited** to tiering — high active share, or fully reserved and therefore pinned to DRAM
-
-Two use cases, and they need different maths:
-
-| | Hardware replacement | Retrofit |
-|---|---|---|
-| Installed DRAM is | an **output** — size it to the workload | a **constraint** — you already own it |
-| The gate | the supported ratio covers the workload | peak active must fit the DRAM you have |
-| You want | GB of DRAM + GB of NVMe to buy | GB of NVMe to add, and how much more workload then fits |
-
-## What it is not
-
-**A sizing tool, not a monitoring tool.** On a vSphere 8 estate there is no tiering to report —
-that is the point; the assessment happens *before* the upgrade. Nothing here reads tiering
-telemetry, because none exists on the source estate.
-
-**Do not point it at a cluster that already has tiering enabled.** There,
-`mem|host_provisioned` reports *presented* memory — installed DRAM plus the NVMe tier — not
-installed DRAM. Measured on a tiered host: 639.4 GiB presented against a 127.9 GiB DRAM tier, a
-5.00× overstatement, with no visible symptom. On an untiered vSphere 8 host the two are the
-same number.
-
-**Tiles show the latest sample, not a peak.** Sizing must be done on business-cycle peaks, which
-need a View transformation rather than a dashboard tile. Treat the values as a shape check, not
-as the number that goes on a quote.
-
----
+Screenshots and the full text of each dashboard's help panels: [docs/dashboards](docs/dashboards/).
 
 ## Install
 
-### Recommended: the installer
+1. **Administration → Integrations → Repository → ADD.** Choose the `.pak`, tick **Ignore the PAK
+   file signature checking**, **UPLOAD**, **NEXT**, answer **YES** to the unsigned-pak warning, accept
+   the EULA, **NEXT**. It takes a few minutes. On 9.1.1 the wizard stages the pak for about 30
+   seconds after the upload reaches 100% before NEXT enables.
+2. **Complete the install**: the same steps are in a panel at the bottom of each dashboard.
+   - **Add the adapter instance:** Integrations → Repository → click **Memory Tier Advanced** →
+     **ADD ACCOUNT** → type a Name → **ADD**. It turns green within a few minutes.
+   - **Turn on two VM metrics in the active policy:** per-VM **Guest Active** (8.18 only; 9.x
+     collects it already) and **PCI PassThrough** (both). Policy Definition is under Operations →
+     Configurations on 8.18 and Administration → Configurations on 9.x; then the Active policy →
+     EDIT POLICY → Metrics and Properties → Virtual Machine → set each to **Activated** → SAVE.
+3. **Wait.** Dashboards can show "The widget is not configured" with an hourglass for up to 15
+   minutes after an install or upgrade while Operations links them to their views. Per-VM Guest
+   Active history starts when the policy is saved; everything else already has 30 days.
 
-```sh
-python3 tools/install_content.py --host <ops-host> --user <user>
-```
+### Upgrading
 
-Imports the dashboard and the super metrics through
-`POST /suite-api/api/content/operations/import`, then enables the super metrics in the active
-policy. That last step matters: **super metrics arrive disabled however they are imported**, and
-a dashboard whose tiles all read no data looks exactly like a failed install.
+- Install the new pak over the old one. On 9.1.1, check the adapter instance under Integrations →
+  Accounts afterwards: an upgrade once left it stopped, and **Start Collecting** fixed it.
+- **From v3.0.0-rc.1 only:** rc.2 renamed the dashboard, and Operations matches pak dashboards by
+  name, so the rc.1 dashboard ("Memory Tier Advanced - Sizing") is left behind. Delete it by hand.
+  An uninstall after that upgrade also leaves "Memory Tier Advanced › Sizing" behind; delete it too.
+  Dashboard names are frozen from rc.3 on.
+- **Not a drop-in over 2.x:** v3's adapter kind is `memtier_advanced`. Uninstall 2.x first (see below).
 
-| Flag | Effect |
-|---|---|
-| `--dry-run` | build the content zips locally, send nothing |
-| `--no-enable` | import, but do not touch the active policy — enable the super metrics yourself |
+### Uninstall
 
-The enable step exports your active policy, adds `<SuperMetric enabled="true">` entries and
-re-imports it with `forceImport=true`. That is a real change to the policy governing the whole
-instance. `--no-enable` avoids it at the cost of one manual step in
-Administration → Policies → *your policy* → Super Metrics.
+Integrations → Repository → click **Memory Tier Advanced** → **⋯** → **Uninstall**, tick *I understand
+the risk and agree*, **OK**. It removes the solution, the adapter instance and its World, the views,
+dashboards and report; vCenter's objects are untouched. Takes about 10 minutes.
 
-### Manual, through the UI
+### Without the pak
 
-1. **Administration → Super Metrics → Import** → `content/supermetric.json`
-2. Enable all six in the policy that applies to your vCenter
-3. **Visualize → Dashboards → Manage → Import** → `content/Dashboard.zip`
+For an instance where an unsigned pak cannot be installed, the sizing views can be imported by hand
+on 8.18: [docs/MANUAL-8.18.md](docs/MANUAL-8.18.md). That set has the Sizing tables only, not the
+Memory Pressure dashboard or the report.
 
-The zip, not the loose `dashboard.json` — a dashboard export is a zip containing
-`dashboard/dashboard.json` at that exact path, and the import dialog will not take a bare file.
+## How the sizing works
 
-Give it two or three collection cycles before judging a tile. A dashboard whose widgets read
-*"not configured — select a view"* with hourglasses is the import still running; it corrects
-itself.
+Per cluster, from the Sizing dashboard: **A** = Guest Active peak (or P95), **R** = reserve =
+Installed − Available to VMs (what ESXi keeps for itself, never tierable), **V** = configured memory of
+powered-on VMs.
 
----
+- **VMware's rule:** active memory should be 50% or less of DRAM, so **recommended DRAM = 2 × A + R**.
+  Floor = A + R; conservative = 4 × A + R.
+- **NVMe needed = V − DRAM**, at most 4,096 GB per host.
+- **Exclude** VMs that cannot be tiered: full memory reservation, PCI passthrough, latency
+  sensitivity (not visible in Operations; check by hand), and monster VMs.
 
-## What ships
+Export the Sizing tables as CSV and run [`tools/memtier_818_calc.py`](tools/memtier_818_calc.py) for every
+figure, or [`tools/mtat_export_818.py`](tools/mtat_export_818.py) to build an import workbook for
+VMware's Memory Tiering Assessment Tool (MTAT 3.2 and later). Both are attached to each release and
+need only Python 3.
 
-```
-content/Dashboard.zip      the dashboard, ready for the UI import dialog
-content/dashboard.json     the same JSON unzipped, for diffing
-content/supermetric.json   6 super metrics
-tools/install_content.py   the installer
-tools/build_content.py     regenerates the content with your own thresholds
-tools/build_pak.py         experimental: assembles a .pak (see Status)
-```
+**Active, not demand.** Operations' memory *demand* (Workload %, Capacity Remaining, Time Remaining)
+runs 2 to 4 times Guest Active on the lab. It answers "is this cluster out of memory now", which is
+what the Memory Pressure dashboard shows. VMware sizes tiering on active memory, so the Sizing
+dashboard does.
 
-### The dashboard
+## Known limits
 
-Eight widgets, all bound by **resource kind** — no host, VM, cluster or datacentre name appears
-anywhere in the JSON, so it works on any estate. Cluster scoreboard on native rollups; a host
-heat map coloured by usage and sized by presented memory; Paretos for hosts by consumed and
-active, and for VMs by configured, active and reserved memory.
+- **vMotion and maintenance mode inflate the active peak.** Measured on the lab: a vMotion makes the
+  destination host count the arriving VM's active memory about twice for roughly 10 minutes. The
+  Sizing help panel explains how to tell a migration spike from real demand.
+- **IO wait as a % exists only per VM.** Hosts report ready, IO wait and swap wait only as summed
+  milliseconds; the dashboards show hosts' and clusters' pressure as contention %, worst-VM and
+  %-of-VMs columns instead.
+- **Not yet tested against a vCenter 8.** Both labs run a VCF 9.1.1 vCenter. Every key used is checked
+  native and collected by default on 8.18.7.
+- **Pak version reads 0.0.0.N.** The VCF Content Factory stamps every build not made by its own CI that
+  way; the GitHub release tag is the version of record.
+- **The EULA shown at install is the VCF Content Factory's MIT licence,** because the pak includes its
+  MIT-licensed framework jar. This repository is Apache 2.0.
 
-Low utilisation reads **dark grey**, not green — the capacity convention, because unused memory
-you paid for is the finding, not a healthy state.
+## Building from source
 
-### The super metrics
+The views and dashboards are defined once in `tools/build_views_818.py` (shared with the manual 8.18
+set) and `tools/build_v3_content.py`, which writes the pak's YAML under `v3/`. The pak is built with
+the [VCF Content Factory](https://github.com/sentania-labs/vcf-content-factory). See
+[docs/RELEASING.md](docs/RELEASING.md).
 
-| Name | What it is |
-|---|---|
-| `Sizing\|Allocated (GB)` | sum of configured memory across the cluster's VMs |
-| `Sizing\|Tierable of Used (GB)` | cold memory: `(consumed − active) / 2` |
-| `Sizing\|Active of Allocated (%)` | the figure that decides the ratio — no headroom baked in |
-| `Sizing\|Active of Consumed (%)` | the sanity check: 8–12% typical, ~15% with databases |
-| `Sizing\|TEST Fleet Active depth3/depth10 (GB)` | an A/B pair — see Known unknowns |
+## Memory Tier Advanced 2.x
 
-### Rebuilding with your own numbers
+2.x was a different design: 29 super metrics, a vCenter-credentialed adapter and an opt-in custom
+group, released as **v2.0.0**. It is superseded by v3.
 
-```sh
-python3 tools/build_content.py --verify
-```
+**Known defect in v2.0.0: the fleet total reads blank.** The four `MemTier Fleet *` super metrics are
+bound to a resource kind that does not exist (`VMWARE/Environment`; group kinds belong to the
+`Container` adapter). They import without error and attach to nothing, so the opted-in fleet
+projection never produces a value. Per-cluster figures are unaffected. It was fixed in source but
+never released; v3 replaces it.
 
-`--verify` checks every metric key against a live instance before writing anything. Thresholds,
-the headroom factor and the plausibility band are arguments, not literals in the JSON.
-
----
-
-## Known unknowns
-
-Stated rather than buried, because each one changes how you should read the output.
-
-**Super metric rollup depth.** The two `TEST` metrics are identical except `depth=3` versus
-`depth=10` from `vSphere World`. Measured tree depth from that object to `HostSystem` on a
-9.1.1 instance is **3**. Import both, enable them, and look at the vSphere World object: if
-depth3 has data and depth10 does not, `depth=N` means *exactly* N; if both do, it means *up to*
-N and anything reachable by two paths risks double counting. Delete them once you know.
-
-**Powered-off VMs inflate `Allocated`.** They keep reporting configured memory — measured at
-19.1% of allocated on one lab — so treat the figure as an upper bound. Templates do the same and
-do not even report a power state.
-
-**Peak versus latest.** See above; the tiles are instantaneous.
-
----
-
-## Status
-
-| Piece | State |
-|---|---|
-| Dashboard and super metrics | built, metric keys verified against a live 9.1.1 instance |
-| `install_content.py` | wire format verified offline; **not yet run end to end against an instance** |
-| `build_pak.py` | **experimental and not working** — see below |
-
-**The `.pak` does not install yet.** Five builds have been tried. A pak with no `<Kind>.conf`
-installs with a clean log and registers nothing at all; a pak with a `.conf` but no
-`REGISTRY`/`REPOSITORY`/`DIGEST` fails at *Applied Adapter*. Every known-working pak carries all
-three image fields, which means a pak wants a real container image even when its content needs
-no collector. Until that is resolved, the installer is the supported route. `build_pak.py` is
-in the tree because the investigation is reproducible, not because it works.
-
----
+To remove 2.x: uninstall it the same way as above, then delete any `MemTier` super metrics and the
+`memtier-include` custom group if they remain. 2.x working notes are in [docs/history](docs/history/).
 
 ## Credits
 
-The content-import wire format — marker discovery, the `dashboards/<ownerId>` inner zip,
-`dashboardsharings`, `usermappings`, and the two-step super-metric enable — was reverse
-engineered from
-[sentania-labs/vcf-content-factory-bundles](https://github.com/sentania-labs/vcf-content-factory-bundles).
+Built with the [VCF Content Factory](https://github.com/sentania-labs/vcf-content-factory) by Scott Bowe
+(MIT licence).
 
-Pak structure and the super-metric packaging convention follow
+The content-import wire format used by 2.x was reverse engineered from
+[sentania-labs/vcf-content-factory-bundles](https://github.com/sentania-labs/vcf-content-factory-bundles).
+2.x's pak structure and super-metric packaging followed
 [vmbro/VCF-Operations-vCommunity](https://github.com/vmbro/VCF-Operations-vCommunity).
 
-`tools/describeSchema.xsd` is VMware's published describe schema, shipped unmodified, as the
-VCF Operations Integration SDK and community packs do.
+`tools/describeSchema.xsd` is VMware's published describe schema, shipped unmodified, as the VCF
+Operations Integration SDK and community packs do.
 
 Not affiliated with or endorsed by Broadcom or VMware.
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE).
+Apache License 2.0: see [LICENSE](LICENSE). The pak also carries the VCF Content Factory's MIT
+licence for its framework jar.

@@ -88,6 +88,13 @@ VIEWS = [
         column("cpu|demandmhz", "CPU demand peak MHz", CLUSTER, transform="MAX", unit=""),
         column("cpu|max_cpu_ready", "Worst VM CPU ready peak %", CLUSTER, transform="MAX", unit="percent"),
         column("cpu|percentage_of_vms_facing_cpu_ready", "VMs facing CPU ready peak %", CLUSTER, transform="MAX", unit="percent"),
+        # Contention as %, all native (2026-11-11). Cluster contention % is diluted across the whole
+        # cluster; the worst-VM and %-of-VMs columns are the ones that move first.
+        column("cpu|capacity_contentionPct", "CPU contention peak %", CLUSTER, transform="MAX", unit="percent"),
+        column("cpu|max_vm_cpu_contention", "Worst VM CPU contention peak %", CLUSTER, transform="MAX", unit="percent"),
+        column("cpu|max_cpu_costop", "Worst VM co-stop peak %", CLUSTER, transform="MAX", unit="percent"),
+        column("mem|host_contentionPct", "Memory contention peak %", CLUSTER, transform="MAX", unit="percent"),
+        column("mem|percentage_of_vms_facing_memory_contention", "VMs facing mem contention peak %", CLUSTER, transform="MAX", unit="percent"),
     ], {}),
     # Per host, for imbalance: a cluster that only fits because one host is empty.
     (HOSTS, HOST, 940, [
@@ -108,12 +115,15 @@ VIEWS = [
         column("cpu|usage_average", "CPU avg %", HOST, transform="AVG", unit="percent"),
         column("cpu|usage_average", "CPU peak %", HOST, transform="MAX", unit="percent"),
         column("cpu|usagemhz_average", "CPU used peak MHz", HOST, transform="MAX", unit=""),
-        column("cpu|ready_summation", "CPU ready peak ms", HOST, transform="MAX", unit=""),
-        # IO wait (vSphere "Other Wait"): vCPUs stalled on storage or network. A high value means
-        # the bottleneck is IO; guest tools count it as busy CPU. Swap Wait is waiting on swapped pages.
-        column("cpu|iowait", "IO wait peak ms", HOST, transform="MAX", unit=""),
-        column("cpu|iowait", "IO wait avg ms", HOST, transform="AVG", unit=""),
-        column("cpu|swapwait_summation", "Swap wait peak ms", HOST, transform="MAX", unit=""),
+        # Percentages only (2026-11-11): a host's ready, IO wait and swap wait are sums of
+        # milliseconds across every vCPU, which no reader can compare between hosts. Operations has
+        # no host IO wait %; IO wait % is per VM, in the VM table.
+        column("cpu|demandPct", "CPU demand peak %", HOST, transform="MAX", unit="percent"),
+        column("cpu|capacity_contentionPct", "CPU contention peak %", HOST, transform="MAX", unit="percent"),
+        column("cpu|max_cpu_ready", "Worst VM CPU ready peak %", HOST, transform="MAX", unit="percent"),
+        column("cpu|percentage_of_vms_facing_cpu_ready", "VMs facing CPU ready peak %", HOST, transform="MAX", unit="percent"),
+        column("cpu|max_cpu_costop", "Worst VM co-stop peak %", HOST, transform="MAX", unit="percent"),
+        column("mem|host_contentionPct", "Memory contention peak %", HOST, transform="MAX", unit="percent"),
     ], {"totals": [3], "page": 500, "filter_json": HOST_RUNNING}),
     # Powered on only: powered-off VMs and templates still report configured memory (~20% of
     # allocated on the lab). Per-VM Guest Active is NOT collected by default on 8.18 (KB 445499),
@@ -159,6 +169,9 @@ VIEWS = [
         column("virtualDisk|peak_vDisk_readLatency", "Worst disk read latency peak ms", VM, transform="MAX", unit=""),
         column("virtualDisk|peak_vDisk_writeLatency", "Worst disk write latency peak ms", VM, transform="MAX", unit=""),
         column("virtualDisk|20_sec_peak_totalLatency_average", "Disk latency 20s peak ms", VM, transform="MAX", unit=""),
+        # The 5-minute ready average beside the 20-second peak above, and co-stop's 20s peak.
+        column("cpu|readyPct", "CPU ready avg %", VM, transform="AVG", unit="percent"),
+        column("cpu|20_sec_peak_costopPct", "CPU co-stop 20s peak %", VM, transform="MAX", unit="percent"),
     ], {"filter_json": VM_POWERED_ON, "totals": [5, 9], "page": 1000}),
 ]
 
@@ -237,16 +250,22 @@ and never released, so it is usually far above active. Cold memory = consumed mi
 cluster is already short of DRAM; tier only after that is understood.<br>
 <b {B}>VM overhead</b>: memory ESXi uses to run the VMs; stays in DRAM.<br>
 <b {B}>CPU avg / peak %</b> (CPU | Capacity Usage), <b {B}>CPU used / demand MHz</b>, <b {B}>Worst VM CPU ready %</b>,
-<b {B}>VMs facing CPU ready %</b>: CPU headroom. Tiering only pays where memory runs out before CPU.</p>
+<b {B}>VMs facing CPU ready %</b>: CPU headroom. Tiering only pays where memory runs out before CPU.<br>
+<b {B}>CPU contention %</b>: time VMs could not run because of the host (ready, co-stop, power management,
+hyperthreading). <b {B}>Worst VM CPU contention / co-stop %</b>: the worst VM. <b {B}>Memory contention %</b>
+(the % one of two metrics both called Memory | Contention; the other is KB): contended memory as a share of
+the cluster's. It is diluted across the whole cluster, so <b {B}>VMs facing mem contention %</b> and the
+worst-VM column move first.</p>
 
 <h4 {H}>Hosts</h4>
 <p {P}>Only hosts that are connected and not in maintenance; a down host would otherwise add a blank row.
 The same memory and CPU columns per host, to spot imbalance: a cluster that only fits because one host is
-nearly empty. <b {B}>CPU ready ms</b> is time VMs waited for a CPU. Total row: installed GB.<br>
-<b {B}>IO wait</b> (vSphere's Other Wait): time vCPUs sat stalled on storage or network IO.
-<b {B}>Swap wait</b>: time spent waiting for swapped-out memory. High IO wait means the workload is
-IO-bound: guest-OS tools report that time as busy CPU, so read CPU figures with it, and tiering memory
-will not fix it.</p>
+nearly empty. Total row: installed GB.<br>
+<b {B}>CPU demand %</b>: what the VMs asked for as a share of the host. <b {B}>CPU contention %</b>,
+<b {B}>Worst VM CPU ready %</b>, <b {B}>VMs facing CPU ready %</b>, <b {B}>Worst VM co-stop %</b>,
+<b {B}>Memory contention %</b>: the host's pressure in percent. A host's own ready, IO wait and swap wait
+exist only as milliseconds summed over every vCPU, which cannot be compared between hosts, so they are
+not shown. <b {B}>IO wait %</b> exists only per VM: see the VM table.</p>
 
 <h4 {H}>Powered-on VMs</h4>
 <p {P}><b {B}>Configured GB</b> (Memory | Total Capacity): memory given to the VM. The Total row is
@@ -264,9 +283,12 @@ visible here; check them by hand.<br>
 <b {B}>Host / Guest OS / vCPUs</b>: where it runs and what it is; vCPUs and Configured GB identify monster VMs.<br>
 <b {B}>Swapped, Swap-in rate, Compressed, Guest page-out 20s peak</b>: this VM is already short of memory.<br>
 <b {B}>Oversized / Undersized by</b>: Operations' right-sizing view of the VM.<br>
-<b {B}>Mem contention / CPU ready 20s peak, CPU co-stop</b>: the worst moment inside a collection cycle.<br>
-<b {B}>IO wait avg / 20s peak, Swap wait</b>: this VM stalled on IO, or on swapped memory. A VM with high
-IO wait looks CPU-busy from inside the guest without using the CPU.<br>
+<b {B}>Mem contention / CPU ready / co-stop 20s peak</b>: the worst moment inside a collection cycle.
+<b {B}>CPU ready avg %</b>: the 5-minute average beside it. <b {B}>CPU co-stop peak %</b>: a multi-vCPU VM held back
+so its vCPUs stay in step; high co-stop usually means too many vCPUs.<br>
+<b {B}>IO wait avg / 20s peak %</b> (vSphere's Other Wait), <b {B}>Swap wait %</b>: this VM stalled on storage or
+network IO, or on swapped memory. High IO wait means the workload is IO-bound: guest-OS tools report that
+time as busy CPU, so read CPU figures with it, and tiering memory will not fix it.<br>
 <b {B}>Worst disk read / write latency, Disk latency 20s peak</b>: the slowest of this VM's virtual disks.
 These are measured in ESXi's storage stack, so they read the same on vSAN, VMFS (FC or iSCSI), NFS and
 vVols; datastore-level latency is not reported for vSAN VMs. High IO wait with high disk latency: the
@@ -283,6 +305,18 @@ absolute minimum and sits below VMware's guidance. <b {B}>Conservative</b> = 4 &
 <b {B}>NVMe needed</b> = V &minus; DRAM; per host it must stay under <b {B}>4,096 GB</b>.
 <b {B}>Retrofit headroom</b> = I &minus; DRAM: positive means NVMe alone is enough. Export the tables (Export as CSV) and <code {C}>memtier_818_calc.py</code>
 prints all of it.</p>
+
+<h4 {H}>Hard to find in the Operations UI</h4>
+<p {P}><b {B}>20-second peaks</b>: Operations charts 5-minute averages; the worst moment inside each cycle is a
+separate metric (CPU | 20 Second Peak ..., Memory | 20 Second Peak ...), per VM only.<br>
+<b {B}>Worst VM and % of VMs facing</b>: cluster and host rollups of ready, co-stop and contention. They show
+trouble that a cluster average hides.<br>
+<b {B}>IO wait</b> is called <b {B}>Other Wait</b> in vSphere, and is a % only per VM.<br>
+<b {B}>Memory | Contention</b> exists twice on a cluster or host, once in % and once in KB: check the unit.<br>
+<b {B}>Memory demand is not active memory.</b> Demand (Memory | Machine Demand, Host Demand, Workload %) is
+Operations' own estimate, typically 2 to 4 times Guest Active, and it drives Capacity Remaining and Time
+Remaining. VMware's tiering guidance sizes DRAM on active memory, so this dashboard does too. Use demand for
+"is this cluster out of memory now", active for "how much DRAM after tiering".</p>
 
 <h4 {H}>Which VMs cannot be tiered</h4>
 <p {P}>From VMware's guidance. <b {B}>Visible here</b>: full memory reservation (Reservation equal to Configured); <b {B}>monster VMs</b>, 512 GB or more configured or
@@ -349,7 +383,7 @@ def build_dashboard_zip(path):
     prov = _provider("Clusters (click one)", g[INPUTS], y=1, h=6)
     recv = [_receiver("Hosts in the selected cluster", g[HOSTS], y=7, h=7),
             _receiver("Powered-on VMs in the selected cluster", g[ALLOC], y=14, h=11)]
-    widgets = [prov] + recv + [_text("How to read this", help_html, y=25, h=22)]
+    widgets = [prov] + recv + [_text("How to read this", help_html, y=25, h=34)]
     kinds = ["ClusterComputeResource", "vSphere World", "HostSystem", "VirtualMachine"]
     env = {
         "entries": {

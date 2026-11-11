@@ -1,18 +1,32 @@
-# Memory Tier Advanced
+# Memory Tier Advanced (v3 pak project)
 
-Sizes vSphere clusters for NVMe memory tiering from metrics VCF Operations already collects: cluster Guest Active (peak, P95, average), installed and available memory, powered-on VM allocation, memory pressure, CPU and IO wait headroom, and the VM exclusions Operations can see. Ships views and a dashboard; the adapter collects nothing.
+The VCF Content Factory project for the Memory Tier Advanced pak. Start at the
+[repository README](../README.md) for what the pack does, how to install it and how to read it.
+
+| Path | What it is |
+|---|---|
+| `adapter.yaml` | Pak manifest: name, `build_number`, and the bundled content list |
+| `describe.xml`, `src/` | The minimal Java adapter: no credentials, no outbound connection, registers one World object |
+| `views/`, `dashboards/`, `reports/` | **Generated** by `tools/build_v3_content.py`; edit the generator, not these |
+| `docs/` | Pak docs; `docs/README.md` and `inventory-tree.*` are regenerated on every build |
+| `REFERENCE*.md`, `CHANGELOG.generated.md` | Regenerated on every build |
+
+Build and release steps: [docs/RELEASING.md](../docs/RELEASING.md).
 
 ## Installation
 
-Upload the `.pak` file via **Administration → Solutions** in VCF Operations.
+Administration → Integrations → Repository → ADD, tick **Ignore the PAK file signature checking**, and
+accept the unsigned-pak warning and the EULA. Then follow the **Complete the install** panel at the
+bottom of either dashboard. Details: [docs/installing.md](docs/installing.md).
 
 ## Configuration
 
-Create an adapter instance under **Integrations → Repository** and provide:
+One adapter instance (Integrations → Repository → Memory Tier Advanced → ADD ACCOUNT):
 
 | Field | Description | Default |
 |---|---|---|
-| Label | | Memory Tier Advanced |
+| Name | Any name | |
+| Label | Leave as it is | Memory Tier Advanced |
 
 ## Object Types
 
